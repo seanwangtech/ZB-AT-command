@@ -70,7 +70,7 @@ void AT_App_Init(uint8 task_id ){
   HalKeyConfig (1, NULL);//enable interrupt
   RegisterForKeys( task_id );
   
-  NLME_PermitJoiningRequest(0);      //Do not permit joining
+  //NLME_PermitJoiningRequest(10);      //permit joining in 16 seconds 
   
   osal_set_event(task_id, AT_ENTRY_EVENT);
 }
@@ -209,43 +209,25 @@ uint8 AT_handleEntryEvt(void){
 Handles all key events for this device.
 *******************************************************/
 void AT_App_HandleKeys( uint8 shift, uint8 keys ){
-  switch (shift){
-  case 0: //pressing time less than 5 seconds
-    if ( keys & HAL_KEY_SW_1 )
-    {
-      AT_Cmd_ANNCE(0,"\r");//announce in the network
-      //build broadcast address
-      afAddrType_t AT_AF_broad_addr={
-        {AT_AF_GROUP_ID},                       //addr
-        (afAddrMode_t)AddrGroup,              //addr mode
-        AT_AF_ENDPOINT,                         //end point
-        NULL                                    //PAN ID
-      };
-      AF_DataRequest( &AT_AF_broad_addr, &AT_AF_epDesc,
-                         AT_AF_TEST_KEY_CLUSTERID,
-                         0,
-                         0,
-                         &AT_AF_TransID,
-                         AF_DISCV_ROUTE,
-                         AF_DEFAULT_RADIUS );
-     HalLedBlink( HAL_LED_2, 4, 50, 250 );
-    }else if(keys & HAL_KEY_SW_2){
-     HalLedBlink( HAL_LED_2, 4, 50, 250 );
-    }
-    break;
-  case 1: //pressing time during 5 to 10 seconds
+  if ( (~keys) & HAL_KEY_SW_1 )
+  {
     
-    if ( keys & HAL_KEY_SW_1 )
-    {
-      NLME_PermitJoiningRequest(30);//allow join in 30 seconds
-      HalLedBlink( HAL_LED_2, 30, 10, 1000 );
-    }
-    break;
-  case 2: //pressing time during 10 to 15 
-    AT_Cmd_AT_F(0, "\r");//recover factory setting, so it will search PAN which has the strongest singal and join that PAN
-    break;
-  default:
-    break;
+    //build broadcast address
+    afAddrType_t AT_AF_broad_addr={
+      {AT_AF_GROUP_ID},                       //addr
+      (afAddrMode_t)AddrGroup,              //addr mode
+      AT_AF_ENDPOINT,                         //end point
+      NULL                                    //PAN ID
+    };
+    AF_DataRequest( &AT_AF_broad_addr, &AT_AF_epDesc,
+                       AT_AF_TEST_KEY_CLUSTERID,
+                       0,
+                       0,
+                       &AT_AF_TransID,
+                       AF_DISCV_ROUTE,
+                       AF_DEFAULT_RADIUS );
+    
+    HalLedBlink( HAL_LED_2, 4, 50, 250 );
   }
 }
 

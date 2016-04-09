@@ -462,8 +462,6 @@
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
           <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\Source\hal</state>
-          <state>$PROJ_DIR$\..\Source\Modified</state>
           <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB</state>
@@ -1539,8 +1537,6 @@
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
           <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\Source\Modified</state>
-          <state>$PROJ_DIR$\..\Source\hal</state>
           <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB</state>
@@ -2616,8 +2612,6 @@
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
           <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\Source\hal</state>
-          <state>$PROJ_DIR$\..\Source\Modified</state>
           <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB</state>
@@ -3329,33 +3323,6 @@
       </file>
     </group>
     <group>
-      <name>hal</name>
-      <file>
-        <name>$PROJ_DIR$\..\Source\hal\hal_board_cfg.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\hal\hal_drivers.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\hal\hal_drivers.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\hal\hal_key.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\hal\hal_key.h</name>
-      </file>
-    </group>
-    <group>
-      <name>Modified</name>
-      <file>
-        <name>$PROJ_DIR$\..\Source\Modified\OnBoard.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\Modified\OnBoard.h</name>
-      </file>
-    </group>
-    <group>
       <name>others</name>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_EXTERN.h</name>
@@ -3411,6 +3378,9 @@
       <file>
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\common\hal_assert.c</name>
       </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\common\hal_drivers.c</name>
+      </file>
     </group>
     <group>
       <name>Include</name>
@@ -3430,7 +3400,13 @@
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_defs.h</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_drivers.h</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_flash.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_key.h</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_lcd.h</name>
@@ -3454,6 +3430,9 @@
         <name>CC2530EB</name>
         <group>
           <name>Config</name>
+          <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_board_cfg.h</name>
+          </file>
         </group>
         <group>
           <name>Drivers</name>
@@ -3465,6 +3444,9 @@
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_flash.c</name>
+          </file>
+          <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_key.c</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_lcd.c</name>
@@ -3999,6 +3981,12 @@
     <name>ZMain</name>
     <file>
       <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\chipcon_cstartup.s51</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\OnBoard.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\OnBoard.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\ZMain.c</name>
