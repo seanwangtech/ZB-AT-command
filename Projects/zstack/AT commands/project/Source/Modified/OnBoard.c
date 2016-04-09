@@ -247,8 +247,8 @@ void OnBoard_KeyCallback ( uint8 keys, uint8 state )
   shift = (keys & HAL_KEY_SW_6) ? true : false;
   //ninglvfeihong //modified
   
-  PICTL |= 0x01; //set to falling edge//anti-shake of the button
-  if(hal_key_pre_faliing_time!=0 && keys ==HAL_KEY_SW_1){//valid check
+  PICTL |= (0x01<<3); //set to falling edge//anti-shake of the button
+  if(hal_key_pre_faliing_time!=0){//valid check
     
     //printf("%d\r\n",hal_key_pre_interval_time);
     if(hal_key_pre_interval_time<60) return;//check the period which users presses
@@ -259,8 +259,6 @@ void OnBoard_KeyCallback ( uint8 keys, uint8 state )
       else if(hal_key_pre_interval_time <15000) shift =2;
       else return;
     }
-  }else{
-    shift =0;
   }
 
   if ( OnBoard_SendKeys( keys, shift ) != ZSuccess )

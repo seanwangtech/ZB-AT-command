@@ -2,7 +2,7 @@
 #include"OnBoard.h"
 #include "AT_ds18b20.h" 
 
-#define Ds18b20IO P0_7       //define the temperature sensor IO
+#define Ds18b20IO P0_5       //define the temperature sensor IO
 
 
 
@@ -13,6 +13,15 @@ unsigned char Ds18b20Initial(void);
 void Ds18b20Write(unsigned char infor);
 unsigned char Ds18b20Read(void);
 
+void Ds18b20InputInitial(void) //set the port to input
+{
+    P0DIR &= ~(0x01<<5);
+}
+
+void Ds18b20OutputInitial(void)//set the port to output
+{
+    P0DIR |= (0x01<<5);
+}
 
 //Clock is 32M, should be adjusted according to different MCU
 void Ds18b20Delay(unsigned int k)
@@ -31,15 +40,7 @@ void Ds18b20Delay(unsigned int k)
   }
 }
 
-void Ds18b20InputInitial(void) //set the port to input
-{
-    P0DIR &= 0x7f;
-}
 
-void Ds18b20OutputInitial(void)//set the port to output
-{
-    P0DIR |= 0x80;
-}
 
 //initilize ds18b20  return: succeed 0x00£¬fail 0x01
 unsigned char Ds18b20Initial(void)

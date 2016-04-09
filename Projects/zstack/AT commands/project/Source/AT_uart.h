@@ -34,7 +34,7 @@
 #define AT_CMD_HELP_DESC_OMIT        3     //omit displaying last several command which is keep for interal use.
 #define AT_CMD_HELP_DESC_OFFSET     14      //define the offset characters of the help command when display.
 
-#define AT_CMD_EPs                  {0x01,0x04,0x05,0x06,0x07}    //whitch will display when perform print the end point command, sorted end point
+#define AT_CMD_EPs                  {0x04}    //whitch will display when perform print the end point command, sorted end point
 extern const uint8 AT_CMD_EPs_Num;
 
 /********************************************************

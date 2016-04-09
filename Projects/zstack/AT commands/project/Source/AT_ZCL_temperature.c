@@ -33,7 +33,10 @@ byte AT_ZCL_TEMP_TaskID;
 static void AT_ZCL_TEMP_IdentifyCB( zclIdentify_t *pCmd );
 static void AT_ZCL_TEMP_BasicResetCB( void );
 static void AT_ZCL_TEMP_ProcessIdentifyTimeChange( void );
-static void AT_ZCL_TEMP_OnOffCB( uint8 cmd );
+
+
+//ninglvfeihong Modified for TEMP
+void AT_ZCL_TEMP_OnOffCB( uint8 cmd );
 static void AT_ZCL_TEMP_update(void);
 static void AT_ZCL_TEMP_MS_PlaceHolder( void );
 static void AT_ZCL_TEMP_EP_ENABLE( bool isEnable);
@@ -200,14 +203,14 @@ static void AT_ZCL_TEMP_ProcessIdentifyTimeChange( void )
   if ( AT_ZCL_TEMP_IdentifyTime > 0 )
   {
     osal_start_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_IDENTIFY_TIMEOUT_EVT, 1000 );
-    HalLedBlink ( HAL_LED_3, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
+    HalLedBlink ( HAL_LED_1, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
   }
   else
   {
     if ( AT_ZCL_TEMP_OnOff )
-      HalLedSet ( HAL_LED_3, HAL_LED_MODE_ON );
+      HalLedSet ( HAL_LED_1, HAL_LED_MODE_ON );
     else
-      HalLedSet ( HAL_LED_3, HAL_LED_MODE_OFF );
+      HalLedSet ( HAL_LED_1, HAL_LED_MODE_OFF );
     osal_stop_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_IDENTIFY_TIMEOUT_EVT );
   }
 }
@@ -240,7 +243,8 @@ static void AT_ZCL_TEMP_update(void){
  *
  * @return  none
  */
-static void AT_ZCL_TEMP_OnOffCB( uint8 cmd )
+//ninglvfeihong Modified for Temperature end point
+void AT_ZCL_TEMP_OnOffCB( uint8 cmd )
 {
   // Turn on the light
   if ( cmd == COMMAND_ON )
@@ -261,10 +265,10 @@ static void AT_ZCL_TEMP_OnOffCB( uint8 cmd )
 
   // In this sample app, we use LED3 to simulate the Light
   if (AT_ZCL_TEMP_OnOff == TEMP_ON ){
-    HalLedSet( HAL_LED_3, HAL_LED_MODE_ON );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
     osal_start_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_TEMP_MEASURE_EVT, 10 );
   }else{
-    HalLedSet( HAL_LED_3, HAL_LED_MODE_OFF );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
     osal_stop_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_TEMP_MEASURE_EVT );
     AT_ZCL_TEMP_current=0x8000;   //0x8000 indicates that the temperature measurement is invalid.
   }
