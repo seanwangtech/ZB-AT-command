@@ -1,5 +1,6 @@
 Projects/zstack/AT commands/*/CC2530DB/*.dep
 Projects/zstack/AT commands/*/CC2530DB/*.ewd
+Projects/zstack/AT commands/*/CC2530DB/*.tmp
 Projects/zstack/AT commands/*/CC2530DB/CoordinatorEB/
 Projects/zstack/AT commands/*/CC2530DB/RouterEB/
 Projects/zstack/AT commands/*/CC2530DB/EndDeviceEB/

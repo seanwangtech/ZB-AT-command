@@ -1,4 +1,3 @@
-
 /*********************************************************************
  * INCLUDES
  */
@@ -13,8 +12,8 @@
 #include "zcl_ha.h"
 #include "AT_ZCL.h"
 #include "AT_uart.h"
-#include "AT_ZCL_ONOFF.h"
-#include "AT_relay.h" 
+#include "AT_ZCL_ONOFFL.h"
+#include "AT_relayL.h" 
 
 #include "onboard.h"
 
@@ -22,32 +21,31 @@
 #include "hal_led.h"
 #include "hal_key.h"
 
-#define WDG_PIN P1_5
 /*********************************************************************
  * GLOBAL VARIABLES
  */
-byte AT_ZCL_ONOFF_TaskID;
+byte AT_ZCL_ONOFFL_TaskID;
 
 /*********************************************************************
  * LOCAL FUNCTION
  */
-static void AT_ZCL_ONOFF_IdentifyCB( zclIdentify_t *pCmd );
-static void AT_ZCL_ONOFF_BasicResetCB( void );
-static void AT_ZCL_ONOFF_ProcessIdentifyTimeChange( void );
+static void AT_ZCL_ONOFFL_IdentifyCB( zclIdentify_t *pCmd );
+static void AT_ZCL_ONOFFL_BasicResetCB( void );
+static void AT_ZCL_ONOFFL_ProcessIdentifyTimeChange( void );
 
 //ninglvfeihong Modified for Socket
-void AT_ZCL_ONOFF_OnOffCB( uint8 cmd );
-static void AT_ZCL_ONOFF_EP_ENABLE( bool isEnable);
+void AT_ZCL_ONOFFL_OnOffCB( uint8 cmd );
+static void AT_ZCL_ONOFFL_EP_ENABLE( bool isEnable);
 
 /*********************************************************************
  * ZCL General Profile Callback table
  */
-static zclGeneral_AppCallbacks_t AT_ZCL_ONOFF_GEN_CmdCallbacks =
+static zclGeneral_AppCallbacks_t AT_ZCL_ONOFFL_GEN_CmdCallbacks =
 { 
-  AT_ZCL_ONOFF_BasicResetCB,                 // Basic Cluster Reset command
-  AT_ZCL_ONOFF_IdentifyCB,                   // Identify command   
+  AT_ZCL_ONOFFL_BasicResetCB,                 // Basic Cluster Reset command
+  AT_ZCL_ONOFFL_IdentifyCB,                   // Identify command   
   NULL,                                      // Identify Query Response command
-  AT_ZCL_ONOFF_OnOffCB,                      // On/Off cluster command
+  AT_ZCL_ONOFFL_OnOffCB,                      // On/Off cluster command
   NULL,                                     // Level Control Move to Level command
   NULL,                                     // Level Control Move command
   NULL,                                     // Level Control Step command
@@ -62,29 +60,24 @@ static zclGeneral_AppCallbacks_t AT_ZCL_ONOFF_GEN_CmdCallbacks =
 
 
 
-void AT_ZCL_ONOFF_Init( byte task_id )
+void AT_ZCL_ONOFFL_Init( byte task_id )
 {
-  AT_ZCL_ONOFF_TaskID = task_id;
+  AT_ZCL_ONOFFL_TaskID = task_id;
 
   // This app is part of the Home Automation Profile
-  zclHA_Init( &AT_ZCL_ONOFF_SimpleDesc );
+  zclHA_Init( &AT_ZCL_ONOFFL_SimpleDesc );
 
   // Register the ZCL General Cluster Library callback functions
-  zclGeneral_RegisterCmdCallbacks( AT_ZCL_ONOFF_ENDPOINT, &AT_ZCL_ONOFF_GEN_CmdCallbacks );
+  zclGeneral_RegisterCmdCallbacks( AT_ZCL_ONOFFL_ENDPOINT, &AT_ZCL_ONOFFL_GEN_CmdCallbacks );
   
   // Register the application's attribute list
-  zcl_registerAttrList( AT_ZCL_ONOFF_ENDPOINT, AT_ZCL_ONOFF_MAX_ATTRIBUTES, AT_ZCL_ONOFF_Attrs );
+  zcl_registerAttrList( AT_ZCL_ONOFFL_ENDPOINT, AT_ZCL_ONOFFL_MAX_ATTRIBUTES, AT_ZCL_ONOFFL_Attrs );
   
   //register for AT command system enable/disable call back function
-  AT_ZCL_EP_ENABLE_Register(  AT_ZCL_ONOFF_ENDPOINT,AT_ZCL_ONOFF_EP_ENABLE);
+  AT_ZCL_EP_ENABLE_Register(  AT_ZCL_ONOFFL_ENDPOINT,AT_ZCL_ONOFFL_EP_ENABLE);
   
   //initialize the ONOFF device such as: a relay
-  relay_init();
-  
-  //set WDG pin to OUTPUT P1_5 and initilized volatage is high
-  WDG_PIN =1;
-  P1DIR |= BV(5);
-  osal_start_reload_timer( AT_ZCL_ONOFF_TaskID, AT_ZCL_ONOFF_WDG_TIMEOUT_EVT, 150 );
+  relayL_init();
 }
 
 
@@ -98,7 +91,7 @@ void AT_ZCL_ONOFF_Init( byte task_id )
  *
  * @return      none
  */
-uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
+uint16 AT_ZCL_ONOFFL_event_loop( uint8 task_id, uint16 events )
 {
   afIncomingMSGPacket_t *MSGpkt;
   
@@ -106,7 +99,7 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
 
   if ( events & SYS_EVENT_MSG )
   {
-    while ( (MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive( AT_ZCL_ONOFF_TaskID )) )
+    while ( (MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive( AT_ZCL_ONOFFL_TaskID )) )
     {
       switch ( MSGpkt->hdr.event )
       { 
@@ -121,38 +114,15 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
     return (events ^ SYS_EVENT_MSG);
   }
 
-  if ( events & AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT )
+  if ( events & AT_ZCL_ONOFFL_IDENTIFY_TIMEOUT_EVT )
   {
-    if (AT_ZCL_ONOFF_IdentifyTime > 0 )
-      AT_ZCL_ONOFF_IdentifyTime--;
-    AT_ZCL_ONOFF_ProcessIdentifyTimeChange();
+    if (AT_ZCL_ONOFFL_IdentifyTime > 0 )
+      AT_ZCL_ONOFFL_IdentifyTime--;
+    AT_ZCL_ONOFFL_ProcessIdentifyTimeChange();
 
-    return ( events ^ AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT );
+    return ( events ^ AT_ZCL_ONOFFL_IDENTIFY_TIMEOUT_EVT );
   }
 
-  if ( events & AT_ZCL_ONOFF_WDG_TIMEOUT_EVT )
-  {
-    //feed WDG
-    WDG_PIN=1;
-    //delay more than 1 us for watch dog chip
-    uint8 k = 4;
-    while (k--)
-    {
-      asm("NOP");
-      asm("NOP");
-      asm("NOP");
-      asm("NOP");
-      asm("NOP");
-      asm("NOP");
-      asm("NOP");
-      asm("NOP"); 
-      asm("NOP");  
-    }
-    //finish feed WDG
-    WDG_PIN=0;
-    
-    return ( events ^ AT_ZCL_ONOFF_WDG_TIMEOUT_EVT );
-  }
   
   // Discard unknown events
   return 0;
@@ -167,7 +137,7 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
 
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_BasicResetCB
+ * @fn      AT_ZCL_ONOFFL_BasicResetCB
  *
  * @brief   Callback from the ZCL General Cluster Library
  *          to set all the Basic Cluster attributes to default values.
@@ -176,19 +146,19 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
  *
  * @return  none
  */
-static void AT_ZCL_ONOFF_BasicResetCB( void )
+static void AT_ZCL_ONOFFL_BasicResetCB( void )
 {
   // Reset all attributes to default values
-  AT_ZCL_ONOFF_OnOffCB( COMMAND_OFF );
+  AT_ZCL_ONOFFL_OnOffCB( COMMAND_OFF );
   
   
   zclIdentify_t identifyCmd={NULL,0};
-  AT_ZCL_ONOFF_IdentifyCB( &identifyCmd );
+  AT_ZCL_ONOFFL_IdentifyCB( &identifyCmd );
 }
 
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_IdentifyCB
+ * @fn      AT_ZCL_ONOFFL_IdentifyCB
  *
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Command for this application.
@@ -198,14 +168,14 @@ static void AT_ZCL_ONOFF_BasicResetCB( void )
  *
  * @return  none
  */
-static void AT_ZCL_ONOFF_IdentifyCB( zclIdentify_t *pCmd )
+static void AT_ZCL_ONOFFL_IdentifyCB( zclIdentify_t *pCmd )
 {
-  AT_ZCL_ONOFF_IdentifyTime = pCmd->identifyTime;
-  AT_ZCL_ONOFF_ProcessIdentifyTimeChange();
+  AT_ZCL_ONOFFL_IdentifyTime = pCmd->identifyTime;
+  AT_ZCL_ONOFFL_ProcessIdentifyTimeChange();
 }
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_ProcessIdentifyTimeChange
+ * @fn      AT_ZCL_ONOFFL_ProcessIdentifyTimeChange
  *
  * @brief   Called to process any change to the IdentifyTime attribute.
  *
@@ -213,27 +183,27 @@ static void AT_ZCL_ONOFF_IdentifyCB( zclIdentify_t *pCmd )
  *
  * @return  none
  */
-static void AT_ZCL_ONOFF_ProcessIdentifyTimeChange( void )
+static void AT_ZCL_ONOFFL_ProcessIdentifyTimeChange( void )
 {
-  if ( AT_ZCL_ONOFF_IdentifyTime > 0 )
+  if ( AT_ZCL_ONOFFL_IdentifyTime > 0 )
   {
-    osal_start_timerEx( AT_ZCL_ONOFF_TaskID, AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT, 1000 );
-    HalLedBlink ( HAL_LED_1, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
+    osal_start_timerEx( AT_ZCL_ONOFFL_TaskID, AT_ZCL_ONOFFL_IDENTIFY_TIMEOUT_EVT, 1000 );
+    HalLedBlink ( HAL_LEDL, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
   }
   else
   {
-    if ( AT_ZCL_ONOFF_OnOff )
-      HalLedSet ( HAL_LED_1, HAL_LED_MODE_ON );
+    if ( AT_ZCL_ONOFFL_OnOff )
+      HalLedSet ( HAL_LEDL, HAL_LED_MODE_ON );
     else
-      HalLedSet ( HAL_LED_1, HAL_LED_MODE_OFF );
-    osal_stop_timerEx( AT_ZCL_ONOFF_TaskID, AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT );
+      HalLedSet ( HAL_LEDL, HAL_LED_MODE_OFF );
+    osal_stop_timerEx( AT_ZCL_ONOFFL_TaskID, AT_ZCL_ONOFFL_IDENTIFY_TIMEOUT_EVT );
   }
 }
 
 
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_OnOffCB
+ * @fn      AT_ZCL_ONOFFL_OnOffCB
  *
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an On/Off Command for this application.
@@ -244,33 +214,33 @@ static void AT_ZCL_ONOFF_ProcessIdentifyTimeChange( void )
  */
 
 //ninglvfeihong Modified for Socket
-void AT_ZCL_ONOFF_OnOffCB( uint8 cmd )
+void AT_ZCL_ONOFFL_OnOffCB( uint8 cmd )
 {
   // Turn on the light
   if ( cmd == COMMAND_ON )
-    AT_ZCL_ONOFF_OnOff = AT_ZCL_GEN_ON;
+    AT_ZCL_ONOFFL_OnOff = AT_ZCL_GEN_ON;
 
   // Turn off the light
   else if ( cmd == COMMAND_OFF )
-    AT_ZCL_ONOFF_OnOff = AT_ZCL_GEN_OFF;
+    AT_ZCL_ONOFFL_OnOff = AT_ZCL_GEN_OFF;
 
   // Toggle the light
   else
   {
-    if ( AT_ZCL_ONOFF_OnOff == AT_ZCL_GEN_OFF )
-      AT_ZCL_ONOFF_OnOff = AT_ZCL_GEN_ON;
+    if ( AT_ZCL_ONOFFL_OnOff == AT_ZCL_GEN_OFF )
+      AT_ZCL_ONOFFL_OnOff = AT_ZCL_GEN_ON;
     else
-      AT_ZCL_ONOFF_OnOff = AT_ZCL_GEN_OFF;
+      AT_ZCL_ONOFFL_OnOff = AT_ZCL_GEN_OFF;
   }
 
   // In this sample app, we use LED4 to simulate the Light
-  if ( AT_ZCL_ONOFF_OnOff == AT_ZCL_GEN_ON ){
-    HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
-    relay_on();
+  if ( AT_ZCL_ONOFFL_OnOff == AT_ZCL_GEN_ON ){
+    HalLedSet( HAL_LEDL, HAL_LED_MODE_ON );
+    relayL_on();
   }
   else{
-    HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
-    relay_off();
+    HalLedSet( HAL_LEDL, HAL_LED_MODE_OFF );
+    relayL_off();
   }
   
       //sound the speaker
@@ -279,17 +249,17 @@ void AT_ZCL_ONOFF_OnOffCB( uint8 cmd )
 
 
 /******************************************************
- * @fn      AT_ZCL_ONOFF_EP_ENABLE
+ * @fn      AT_ZCL_ONOFFL_EP_ENABLE
  *
  * @brief   Process  Measurement and Sensing profile call Callback function
 ********************************************************/
-static void AT_ZCL_ONOFF_EP_ENABLE( bool isEnable){
+static void AT_ZCL_ONOFFL_EP_ENABLE( bool isEnable){
   if(isEnable) {
-    relay_enable();
-    AT_ZCL_ONOFF_OnOffCB(COMMAND_OFF);
+    relayL_enable();
+    AT_ZCL_ONOFFL_OnOffCB(COMMAND_OFF);
   }
   else {
-    relay_disable();
-    AT_ZCL_ONOFF_BasicResetCB( );
+    relayL_disable();
+    AT_ZCL_ONOFFL_BasicResetCB( );
   }
 }

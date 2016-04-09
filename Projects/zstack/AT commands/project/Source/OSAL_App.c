@@ -66,6 +66,8 @@
 #include "zcl.h"
 #include "AT_ZCL_temperature.h"
 #include "AT_ZCL_ONOFF.h"
+#include "AT_ZCL_ONOFFL.h"
+#include "AT_ZCL_ONOFFR.h"
 #include "AT_ZCL_ONOFF_SWITCH.h"
 #include "AT_ZCL_ONOFF_SWITCH2.h"
 #include "AT_ZCL_DHT.h"
@@ -92,11 +94,9 @@ const pTaskEventHandlerFn tasksArr[] = {
 #endif
   zcl_event_loop,
   AT_App_ProcessEvent,
-  AT_ZCL_TEMP_event_loop,
   AT_ZCL_ONOFF_event_loop,
-  AT_ZCL_ONOFF_SWITCH_event_loop,
-  AT_ZCL_ONOFF_SWITCH2_event_loop,
-  AT_ZCL_DHT_event_loop
+  AT_ZCL_ONOFFL_event_loop,
+  AT_ZCL_ONOFFR_event_loop,
 };
 
 const uint8 tasksCnt = sizeof( tasksArr ) / sizeof( tasksArr[0] );
@@ -138,11 +138,9 @@ void osalInitTasks( void )
 #endif
   zcl_Init( taskID++ );
   AT_App_Init(taskID++ );
-  AT_ZCL_TEMP_Init( taskID++ );
   AT_ZCL_ONOFF_Init( taskID++ );
-  AT_ZCL_ONOFF_SWITCH_Init( taskID++ );
-  AT_ZCL_ONOFF_SWITCH2_Init( taskID++ );
-  AT_ZCL_DHT_Init( taskID++ );
+  AT_ZCL_ONOFFL_Init( taskID++ );
+  AT_ZCL_ONOFFR_Init( taskID++ );
 }
 
 /*********************************************************************

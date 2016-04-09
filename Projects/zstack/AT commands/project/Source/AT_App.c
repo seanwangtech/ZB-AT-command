@@ -78,6 +78,7 @@ void AT_App_Init(uint8 task_id ){
   //ninglvfeihong very inmportant for Switch. because the device have to enter power saving mode once power on
   osal_pwrmgr_device( PWRMGR_BATTERY );
   
+
 }
 
 
@@ -195,7 +196,9 @@ void AT_handleZCL_EP(void){
   }
   
   //ninglvfeihong
-  AT_Cmd_EPENABLE(0, ":1,1\r");//force to enable switch endpoint,because this is socket endpoint
+  AT_Cmd_EPENABLE(0, ":1,1\r");//force to enable switch endpoint,because this is middle switch endpoint
+  AT_Cmd_EPENABLE(0, ":1,11\r");//force to enable switch endpoint,because this is left switch endpoint
+  AT_Cmd_EPENABLE(0, ":1,21\r");//force to enable switch endpoint,because this is righ switch endpoint
 }
 
 uint8 AT_handleEntryEvt(void){
@@ -233,6 +236,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
     if ( keys & HAL_KEY_SW_1 )
     {
       
+      
       afAddrType_t dstAddr;
       dstAddr.endPoint = 1;
       //dstAddr.panId =2016;//0;
@@ -248,12 +252,51 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
         AT_ZCL_ONOFF_OnOffCB(2);//toggle switch when the network isn't connected
        
       }
+    }
+    if( keys & HAL_KEY_SWL )
+    {
       
+      
+      afAddrType_t dstAddr;
+      dstAddr.endPoint = 0x11;
+      //dstAddr.panId =2016;//0;
+      dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
+      dstAddr.addr.shortAddr=NLME_GetShortAddr();     
+      uint8 status;
+      //this is allow the socket is locked by parent to prevent child from playing it
+      status=zclGeneral_SendOnOff_CmdToggle(AT_ZCL_ENDPOINT,&dstAddr,0,1); //stand for without onoff parameter, toggle
+      if(status==ZSUCCESS){
+      }else{
+        //execute when the node isn't in the PAN
+        extern void AT_ZCL_ONOFFL_OnOffCB( uint8 cmd );
+        AT_ZCL_ONOFFL_OnOffCB(2);//toggle switch when the network isn't connected
+       
+      }
+    }
+    if( keys & HAL_KEY_SWR )
+    {
+      
+      
+      afAddrType_t dstAddr;
+      dstAddr.endPoint = 0x21;
+      //dstAddr.panId =2016;//0;
+      dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
+      dstAddr.addr.shortAddr=NLME_GetShortAddr();     
+      uint8 status;
+      //this is allow the socket is locked by parent to prevent child from playing it
+      status=zclGeneral_SendOnOff_CmdToggle(AT_ZCL_ENDPOINT,&dstAddr,0,1); //stand for without onoff parameter, toggle
+      if(status==ZSUCCESS){
+      }else{
+        //execute when the node isn't in the PAN
+        extern void AT_ZCL_ONOFFR_OnOffCB( uint8 cmd );
+        AT_ZCL_ONOFFR_OnOffCB(2);//toggle switch when the network isn't connected
+       
+      }
     }
     break;
   case 1: //pressing time during 5 to 10 seconds
     
-    if ( keys & HAL_KEY_SW_1 )
+   if ( keys & HAL_KEY_SW_1 )
     {
       AT_Cmd_ANNCE(0,"\r");//announce in the network
       NLME_PermitJoiningRequest(30);//allow join in 30 seconds
@@ -275,7 +318,10 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
     }
     break;
   case 2: //pressing time during 10 to 15 
-    AT_Cmd_AT_F(0, "\r");//recover factory setting, so it will search PAN which has the strongest singal and join that PAN
+    if ( keys & HAL_KEY_SW_1 )
+    {
+      AT_Cmd_AT_F(0, "\r");//recover factory setting, so it will search PAN which has the strongest singal and join that PAN
+    }
     break;
   default:
     break;

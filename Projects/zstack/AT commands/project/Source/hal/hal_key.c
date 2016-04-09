@@ -102,7 +102,7 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback)
   {
     HAL_KEY_CLR_INT();             // Clear spurious ints.
     PICTL &= (~0x02);                 // P1ICONL: Rising edge ints on P1.
-    P1IEN |= PUSH1_BV;                // Enable specific P1 bits for ints by bit mask.
+    P1IEN |= PUSH1_BV|PUSH2_BV|PUSH3_BV;                // Enable specific P1 bits for ints by bit mask.
     IEN2 |=(0x01<<4);               // Enable general P1 interrupts.
     
   }
@@ -237,6 +237,7 @@ HAL_ISR_FUNCTION( usbKeyISR, P1INT_VECTOR )
   HAL_ENTER_ISR();
   if(PICTL&0x02){//previous seting is flling edge
     hal_key_pre_interval_time =osal_GetSystemClock()-hal_key_pre_faliing_time;
+    osal_stop_timerEx( Hal_TaskID, HAL_KEY_TIME_EVT);
   }else{
     hal_key_pre_faliing_time = osal_GetSystemClock();
     osal_start_timerEx( Hal_TaskID, HAL_KEY_TIME_EVT, 5000);
@@ -247,17 +248,24 @@ HAL_ISR_FUNCTION( usbKeyISR, P1INT_VECTOR )
     isrKeys |= HAL_KEY_SW_1;
   }
 
- /* if (P0IFG & PUSH2_BV)
+ if (P1IFG & PUSH2_BV)
   {
     isrKeys |= HAL_KEY_SW_2;
-  }*/
+  }
+  
+ if (P1IFG & PUSH3_BV)
+  {
+    isrKeys |= HAL_KEY_SW_3;
+  }
   //execute when a rising edge iterrupt comes
   if( PICTL&0x02) {
-    if(hal_key_pre_interval_time>10)//ensure the time slot which is less than 10 ms to be filtered
+    if(hal_key_pre_interval_time>1)//ensure the time slot which is less than 10 ms to be filtered
       osal_set_event(Hal_TaskID, HAL_KEY_EVENT);
   }
-  if(PUSH1_SBIT) PICTL |= 0x02; //set to falling edge//anti-shake of the button
-  else PICTL &= ~0x02; //set to rising edge
+  if(PUSH1_SBIT || PUSH2_SBIT || PUSH3_SBIT) PICTL |= 0x02; //set to falling edge//anti-shake of the button
+  else {
+    PICTL &= ~0x02; //set to rising edge
+  }
   HAL_KEY_CLR_INT();
 
   HAL_EXIT_ISR();

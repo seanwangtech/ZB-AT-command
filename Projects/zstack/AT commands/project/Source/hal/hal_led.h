@@ -25,7 +25,14 @@ extern "C"
 #define HAL_LED_2     0x02
 #define HAL_LED_3     0x04
 #define HAL_LED_4     0x08
-#define HAL_LED_ALL   (HAL_LED_1 | HAL_LED_2 | HAL_LED_3 | HAL_LED_4)
+//ninglvfeihong modified and added
+#define HAL_LED_5     0x10
+#define HAL_LED_ALL   (HAL_LED_1 | HAL_LED_2 | HAL_LED_3 | HAL_LED_4| HAL_LED_5)
+//ninglvfeihong defined for switch
+#define HAL_LEDM HAL_LED_1
+#define HAL_LEDL HAL_LED_4
+#define HAL_LEDR HAL_LED_5
+  
 
 /* Modes */
 #define HAL_LED_MODE_OFF     0x00
@@ -35,7 +42,7 @@ extern "C"
 #define HAL_LED_MODE_TOGGLE  0x08
 
 /* Defaults */
-#define HAL_LED_DEFAULT_MAX_LEDS      4
+#define HAL_LED_DEFAULT_MAX_LEDS      5
 #define HAL_LED_DEFAULT_DUTY_CYCLE    5
 #define HAL_LED_DEFAULT_FLASH_COUNT   50
 #define HAL_LED_DEFAULT_FLASH_TIME    1000

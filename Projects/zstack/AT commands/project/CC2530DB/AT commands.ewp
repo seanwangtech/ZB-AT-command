@@ -3260,6 +3260,18 @@
         <name>$PROJ_DIR$\..\Source\AT_relay.h</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\Source\AT_relayL.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_relayL.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_relayR.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_relayR.h</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\Source\AT_switch.c</name>
       </file>
       <file>
@@ -3309,6 +3321,24 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH_data.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFFL.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFFL.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFFL_data.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFFR.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFFR.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFFR_data.c</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature.c</name>

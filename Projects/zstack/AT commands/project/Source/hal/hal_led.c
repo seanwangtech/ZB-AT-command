@@ -77,6 +77,7 @@ void HalLedOnOff (uint8 leds, uint8 mode);
  ***************************************************************************************************/
 void HalLedInit (void)
 {
+  
 #if (HAL_LED == TRUE)
   /* Initialize all LEDs to OFF */
   HalLedSet (HAL_LED_ALL, HAL_LED_MODE_OFF);
@@ -384,6 +385,18 @@ void HalLedOnOff (uint8 leds, uint8 mode)
     else
     {
       HAL_TURN_OFF_LED4();
+    }
+  }
+  //ninglvfeihong added
+  if (leds & HAL_LED_5)
+  {
+    if (mode == HAL_LED_MODE_ON)
+    {
+      HAL_TURN_ON_LED5();
+    }
+    else
+    {
+      HAL_TURN_OFF_LED5();
     }
   }
 
