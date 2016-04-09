@@ -134,10 +134,9 @@ void AT_AF_Cmd_REPPRINT_req(afIncomingMSGPacket_t *pkt ){
   uint8 pbuf_temp[sizeof(AT_CMD_EP_ARRAY)+sizeof(AT_AF_hdr)];
   AT_AF_Cmd_REPPRINT_rsp_t* pbuf = (AT_AF_Cmd_REPPRINT_rsp_t*)pbuf_temp;
   pbuf->hdr.cmd=AT_AF_Cmd_rsp;
-  pbuf->hdr.numItem=AT_CMD_EPs_Num;
   
   int i,j;
-  for(i=0,j=0;j<AT_CMD_EPs_Num;j++){
+  for(i=0,j=0;j<sizeof(AT_CMD_EP_ARRAY);j++){
     if(epBuf[i]==AT_CMD_EP_ARRAY[j]){
       pbuf->status[j] = AT_AF_enable;
       i++;
@@ -163,8 +162,9 @@ void AT_AF_Cmd_REPPRINT_rsp(afIncomingMSGPacket_t *pkt ){
   AT_RESP_START();
   AT_RESP("<nodeID>,<EndPoint>:<Status>",
           sizeof("<nodeID>,<EndPoint>:<Status>")-1);
-  for(i=0;i<((AT_AF_Cmd_REPPRINT_rsp_t*) pkt->cmd.Data)->hdr.numItem;i++){
+  for(i=0;i<sizeof(AT_CMD_EP_ARRAY);i++){
     AT_NEXT_LINE();
+    
     //display nodeID
     if(pkt->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
       AT_Int16toChar(pkt->srcAddr.addr.shortAddr,str);

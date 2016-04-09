@@ -2,7 +2,7 @@
 
 <workspace>
   <project>
-    <path>$WS_DIR$\AT commands.ewp</path>
+    <path>$WS_DIR$\SampleApp.ewp</path>
   </project>
   <batchBuild>
     <batchDefinition>

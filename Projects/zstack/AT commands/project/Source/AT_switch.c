@@ -2,6 +2,10 @@
 #include"OnBoard.h"
 #include "AT_switch.h" 
 
+
+void relay_on(void);
+void relay_off(void);
+
 void switch_init(void){
   SWITCH_SET_PIN_INPUT();
 }

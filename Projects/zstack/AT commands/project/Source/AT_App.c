@@ -65,7 +65,6 @@ void AT_App_Init(uint8 task_id ){
 #endif
   
   // Register for all key events - This app will handle all key events
-  HalKeyConfig (1, NULL);//enable interrupt
   RegisterForKeys( task_id );
   
   //NLME_PermitJoiningRequest(10);      //permit joining in 16 seconds 
@@ -203,7 +202,7 @@ uint8 AT_handleEntryEvt(void){
 Handles all key events for this device.
 *******************************************************/
 void AT_App_HandleKeys( uint8 shift, uint8 keys ){
-  if ( (~keys) & HAL_KEY_SW_1 )
+  if ( keys & HAL_KEY_SW_1 )
   {
     
     //build broadcast address

@@ -21,10 +21,9 @@
 
 #include "At_include.h"
 
-const char* Revision = "Private Revision:3.1 \n\rThe New Stack";
+const char* Revision = "Private Revision:3.0 \n\rThe New Stack";
 byte AT_Uart_TaskID;
 const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
-const uint8 AT_CMD_EPs_Num = sizeof(AT_CMD_EP_ARRAY);
 extern uint8 continueJoining;
 extern uint8 zdoDiscCounter;
 uint8 AT_state =0;
@@ -354,7 +353,7 @@ if the endpoint is a cmd endpoint defined in AT_CMD_EPs. return ture, otherwise,
 *********************************************************************/
 uint8 AT_is_CMD_EPs(uint8 value){
   uint8 index;
-  for(index=0;index<AT_CMD_EPs_Num;index++){
+  for(index=0;index<sizeof(AT_CMD_EP_ARRAY);index++){
     if(AT_CMD_EP_ARRAY[index]==value)return true;
   }
   return false;
@@ -364,7 +363,7 @@ save the endpoint status to NV
 *********************************************************************/
 uint8 AT_NV_ZCL_saveEPStatus(uint8 offset, uint8* value){
   uint8 state;
-  state=osal_nv_item_init( AT_NV_ZCL_EP_STATUS_ID, AT_CMD_EPs_Num, NULL );
+  state=osal_nv_item_init( AT_NV_ZCL_EP_STATUS_ID, sizeof(AT_CMD_EP_ARRAY), NULL );
   if(state==SUCCESS || state==NV_ITEM_UNINIT  );
   else return state;
   
@@ -1684,9 +1683,6 @@ AT+PJOIN:<sec> or AT+PJOIN
               <sec> - 16 bit hexadecimal number which represents the length 
                       of time in seconds during which the ZigBee coordinator 
                       or router will allow associations.
-
-in my: 0xff for permitting all the time
-0x00 for disable the permitting
 *****************************************************************/
 void AT_Cmd_PJOIN(uint8 start_point, uint8* msg){
    AT_CmdUnit cmdUnitArr[2];
@@ -3205,6 +3201,7 @@ void AT_Cmd_TEST(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[1];
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
   AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
+  
   
   
   afAddrType_t dstAddr;
