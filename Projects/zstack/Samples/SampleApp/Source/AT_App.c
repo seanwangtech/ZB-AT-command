@@ -25,8 +25,6 @@
 #include "AT_ZCL_ONOFF_SWITCH.h"
 
 #include "AT_App.h"
-#include "AT_ZDO.h"
-#include "AT_printf.h"
 
 
 uint8 AT_App_TaskID;   // Task ID for internal task/event processing
@@ -37,8 +35,9 @@ epList_t *removedEPList = NULL;
 /*********************************************************************
  * LOCAL FUNCTIONS
  *******************************************************************/
-
+void AT_ProcessMsgCBs( zdoIncomingMsg_t *inMsg );
 uint8 AT_handleEntryEvt(void);
+void AT_ProcessNoderDescReq(zdoIncomingMsg_t *inMsg );
 void AT_handleZCL_EP(void);
 
 
@@ -52,8 +51,9 @@ static uint8 AT_ZCL_ProcessInDefaultRspCmd( zclIncomingMsg_t *pInMsg );
 void AT_App_Init(uint8 task_id ){
   AT_App_TaskID=task_id;
   //ZDO_RegisterForZDOMsg( task_id, Device_annce );
-  AT_ZDO_Register(&AT_App_TaskID);
-  
+  ZDO_RegisterForZDOMsg( task_id, IEEE_addr_rsp );
+  ZDO_RegisterForZDOMsg( task_id, NWK_addr_rsp );
+  ZDO_RegisterForZDOMsg( task_id,  Node_Desc_rsp );  
   AT_ONOFF_OUTPUT_Register(&AT_App_TaskID);
   
   //register AT command AF layer application
@@ -129,7 +129,7 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
          break;
 #endif
         case ZDO_CB_MSG:
-            AT_ZDO_ProcessMsgCBs( (zdoIncomingMsg_t *)MSGpkt );
+            AT_ProcessMsgCBs( (zdoIncomingMsg_t *)MSGpkt );
           break;
       }
 
@@ -157,6 +157,97 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
   return 0;
 }
 
+
+
+/*********************************************************************
+ * @fn          ZDO_ProcessPowerDescReq
+ *
+ * @brief       This function processes and responds to the
+ *              Node_Power_req message.
+ *
+ * @param       inMsg  - incoming request
+ *
+ * @return      none
+ */
+
+
+void AT_ProcessPowerDescReq( zdoIncomingMsg_t *inMsg );
+void AT_ProcessPowerDescReq( zdoIncomingMsg_t *inMsg )
+{
+ /* uint16 aoi = BUILD_UINT16( inMsg->asdu[0], inMsg->asdu[1] );
+  NodePowerDescriptorFormat_t *desc = NULL;
+
+  if ( aoi == ZDAppNwkAddr.addr.shortAddr )
+  {
+    desc = &ZDO_Config_Power_Descriptor;
+  }
+
+  if ( desc != NULL )
+  {
+    ZDP_PowerDescMsg( inMsg, aoi, desc );
+  }
+  else
+  {
+    ZDP_GenericRsp( inMsg->TransSeq, &(inMsg->srcAddr),
+              ZDP_INVALID_REQTYPE, aoi, Power_Desc_rsp, inMsg->SecurityUse );
+  }*/
+}
+void AT_ProcessPowerDescRsp( zdoIncomingMsg_t *inMsg );
+void AT_ProcessPowerDescRsp( zdoIncomingMsg_t *inMsg )
+{
+  ZDO_PowerRsp_t NPRsp;
+  ZDO_ParsePowerDescRsp(inMsg,&NPRsp);
+  uint8 powerlevel = (uint8) NPRsp.pwrDesc.CurrentPowerSourceLevel;
+  AT_ERROR(powerlevel);
+ 
+}
+
+
+void AT_ProcessMsgCBs( zdoIncomingMsg_t *inMsg ){
+  switch ( inMsg->clusterID )
+  {
+    case NWK_addr_rsp:
+    case IEEE_addr_rsp:
+      {
+        ZDO_NwkIEEEAddrResp_t *pAddrRsp;
+        pAddrRsp = ZDO_ParseAddrRsp( inMsg );
+        if ( pAddrRsp )
+        {
+          if ( pAddrRsp->status == ZSuccess )
+          {
+            uint8 i;
+            char str[16];
+            AT_RESP_START();
+            
+            AT_Int16toChar(pAddrRsp->nwkAddr,str);
+            AT_RESP(str,4);
+            AT_RESP(",",1);
+            AT_EUI64toChar(pAddrRsp->extAddr,str);
+            AT_RESP(str,16);
+            for( i=0;i<pAddrRsp->numAssocDevs;i++){
+              AT_NEXT_LINE();
+              AT_Int16toChar(pAddrRsp->devList[i],str);
+              AT_RESP(str,4);
+            }
+            AT_RESP_END();
+          }
+          osal_mem_free( pAddrRsp );
+        }
+      }
+      break;
+    case Node_Desc_rsp:
+      AT_ProcessNoderDescReq(inMsg );
+      break;
+    case Power_Desc_req:
+      AT_ProcessPowerDescReq(inMsg );
+      break;
+    case Power_Desc_rsp:
+      AT_ProcessPowerDescRsp(inMsg );
+      break;
+    default:
+      break;
+  }
+}
 
 void AT_handleZCL_EP(void){
   const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
@@ -206,7 +297,9 @@ uint8 AT_handleEntryEvt(void){
 }
 
 
-
+void AT_ProcessNoderDescReq(zdoIncomingMsg_t *inMsg ){
+  
+}
 
 /*******************************************************
 the reverse proces of afRegister() function
@@ -290,7 +383,7 @@ afStatus_t AT_af_register_ep(uint8 EndPoint){
   return ( afStatus_INVALID_PARAMETER);
 }
 
-epList_t* AT_af_get_ep(uint8 EndPoint){
+bool AT_af_exist_ep(uint8 EndPoint){
   
   epList_t *epSearch;
   // Start at the beginning
@@ -301,7 +394,7 @@ epList_t* AT_af_get_ep(uint8 EndPoint){
     // Is there a match?
     if ( epSearch->epDesc->endPoint == EndPoint )
     {
-      return epSearch;
+      return true;
     }
     else
       epSearch = epSearch->nextDesc;  // Next entry
@@ -313,60 +406,13 @@ epList_t* AT_af_get_ep(uint8 EndPoint){
     // Is there a match?
     if ( epSearch->epDesc->endPoint == EndPoint )
     {
-      return epSearch;
+      return true;
     }
     else
       epSearch = epSearch->nextDesc;  // Next entry
   }
 
   return false;
-}
-
-
-
-uint8 AT_af_ep_num( void ){
-  epList_t *epSearch;
-  uint8 cnt=0;
-  // Start at the beginning
-  epSearch = removedEPList;
-  // Look through the list until the end
-  while ( epSearch )
-  {
-      epSearch = epSearch->nextDesc;  // Next entry
-      cnt++;
-  }
-  epSearch = epList;
-  // Look through the list until the end
-  while ( epSearch )
-  {
-      epSearch = epSearch->nextDesc;  // Next entry
-      cnt++;
-  }
-
-  return cnt;
-  
-}
-
-void AT_af_ep_list( uint8 len, uint8 *list ){
-  epList_t *epSearch;
-  uint8 cnt=0;
-  // Start at the beginning
-  epSearch = removedEPList;
-  // Look through the list until the end
-  while ( epSearch )
-  {
-      epSearch = epSearch->nextDesc;  // Next entry
-      list[cnt] = epSearch->epDesc->endPoint;
-      cnt++;
-  }
-  epSearch = epList;
-  // Look through the list until the end
-  while ( epSearch )
-  {
-      epSearch = epSearch->nextDesc;  // Next entry
-      list[cnt] = epSearch->epDesc->endPoint;
-      cnt++;
-  }
 }
 /*********************************************************************
  * @fn      AT_ZCL_ProcessIncomingMsg

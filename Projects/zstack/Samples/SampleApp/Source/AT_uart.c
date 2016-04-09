@@ -22,9 +22,8 @@
 #include "zcl.h"
 #include "zcl_general.h"
 #include "AT_ZCL.h"
-#include "AT_printf.h"
-const char* Revision = "Private Revision:2.2 \n\rwith ZCL layer";
-const uint8 Revision_len = sizeof("Private Revision:2.2 \n\rwith ZCL layer");
+const char* Revision = "Private Revision:2.1 \n\rwith ZCL layer";
+const uint8 Revision_len = sizeof("Private Revision:2.1 \n\rwith ZCL layer");
 byte AT_Uart_TaskID;
 const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
 extern uint8 continueJoining;
@@ -50,13 +49,10 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"EN" ,     AT_Cmd_EN,      "Establish Network EN:<channel>,<POWER>,<PANID>"},
   {"DASSL",   AT_Cmd_DASSL,   "Disassociate Local Device From PAN cmmmand"},
   {"PJOIN",   AT_Cmd_PJOIN,   "Permit joining cmmmand PJOIN:<sec>"},
-  {"JPAN",    AT_Cmd_JPAN,    "Join Specific JPAN:[<channel>],[<PANID>],[<EPANID>]"},
+  {"JPAN",    AT_Cmd_JPAN,    "Join Specific JPAN:<channel>,<PANID>,<EPANID>"},
   {"JN",      AT_Cmd_JN,      "Join Network"},
-  {"NTABLE",  AT_Cmd_NTABLE,  "Display Neighbour Table NTABLE:XX,<address>"},
-  {"RTABLE",  AT_Cmd_RTABLE,  "Display Routing Table   RTABLE:XX,<address>"},
   {"READATR", AT_Cmd_READATR, "READATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,...,< AttrID >"},
   {"WRITEATR",AT_Cmd_WRITEATR,"WRITEATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,<DataType>,<Data>"},
-  {"DISCOVER",AT_Cmd_DISCOVER,"Discover HA Devices On The HAN DISCOVER:<Cluster ID>[,<option>]"},
   {"RONOFF",  AT_Cmd_RONOFF,  "RONOFF:<Address>,<EP>,<SendMode>[,<ON/OFF>]"},
   {"LONOFF",  AT_Cmd_LONOFF,  "Switch Local Device On/Off LONOFF:[ON/OFF]"},
   {"ESCAN",   AT_Cmd_ESCAN,   "Scan The Energy Of All Channels"},
@@ -70,7 +66,6 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"IDENTIFY",AT_Cmd_IDENTIFY,"Identify Claster IDENTIFY:<Address>,<EP>,<SendMode>,<Time>"},
   {"HELP",    AT_Cmd_HELP,    "all the AT commands:"}, 
   {"RONOFF1", AT_Cmd_RONOFF1, "RONOFF1:<Address>,<EP>,<SendMode>[,<ON/OFF>]"},
-  {"ESCAN1",   AT_Cmd_ESCAN1,   "Scan The Energy Of All Channels"},
   {"TEST",    AT_Cmd_TEST,    "JUST for test and development"}
 };
   
@@ -594,7 +589,7 @@ void AT_HandleCMD(uint8 *msg){
   }
   else if(cmdUnit.symbol =='&'){
     if(AT_CmpCmd(&cmdUnit,"F")==0){
-      AT_DEBUG("\r\nRestore Local Device's Factory Defaults\r\n", sizeof("\r\nRestore Local Device's Factory Defaults\r\n"));
+      AT_DEBUG("\r\nRestore Local Device¡¯s Factory Defaults\r\n", sizeof("\r\nRestore Local Device¡¯s Factory Defaults\r\n"));
       AT_Cmd_AT_F(start_point,msg);
     }
     else AT_ERROR(AT_LACK_OPERATOR);
@@ -815,7 +810,7 @@ void AT_Cmd_EPENABLE(uint8 start_point, uint8* msg){
   if(enable!=0) enable=1;
   
   if(enable){
-    if( AT_af_get_ep(ep)){
+    if( AT_af_exist_ep(ep)){
       if(AT_af_register_ep(ep)==afStatus_SUCCESS){ 
         //enable the end point in ZCL layer
         AT_ZCL_EP_ENABLE( enable,ep);
@@ -835,7 +830,7 @@ void AT_Cmd_EPENABLE(uint8 start_point, uint8* msg){
     }
   }
   else{
-    if(AT_af_get_ep(ep)){
+    if(AT_af_exist_ep(ep)){
       if(AT_af_remove_ep(ep)==afStatus_SUCCESS){
         //disable the end point in ZCL layer
         AT_ZCL_EP_ENABLE( enable,ep);
@@ -1167,49 +1162,6 @@ void AT_Cmd_LONOFF(uint8 start_point, uint8* msg){
 /*****************************************************
 AT+ESCAN
 
-Response +ESCAN1:  11:XX
-                   ¡­
-                  26:XX 
-                  OK or ERROR:<errorcode> .
-                  XX represents the average energy on the respective channel
-*********************************************************/
-void AT_Cmd_ESCAN1(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
-/*
-  zAddrType_t dstAddr; 
-  osal_memcpy(dstAddr.addr.extAddr,NLME_GetExtAddr(),16);
-  dstAddr.addrMode = (afAddrMode_t)Addr64Bit;
-  uint8 state;
-  */
-  /*
-  msg = inMsg->asdu;
-  scan.channels = osal_build_uint32( msg, 4 );
-  msg += 4;
-  scan.duration = *msg++;
-  index         = *msg;
-  scan.scanType = ZMAC_ACTIVE_SCAN;
-  scan.scanApp  = NLME_DISC_SCAN;
-  */
-  zAddrType_t dstAddr; 
-  dstAddr.addr.shortAddr=NLME_GetShortAddr();
-  dstAddr.addrMode = (afAddrMode_t)Addr16Bit;
-  uint8 state;
-  
-  state = ZDP_MgmtNwkDiscReq( &dstAddr,
-                            0x07FFF800,
-                            BEACON_ORDER_120_MSEC,
-                            0,
-                            0 );
-  
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-}
-/*****************************************************
-AT+ESCAN
-
 Response +ESCAN:  11:XX
                    ¡­
                   26:XX 
@@ -1221,26 +1173,20 @@ void AT_Cmd_ESCAN(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[1];
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
   AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr);  
-
-#if ZG_BUILD_RTR_TYPE|ZG_BUILD_COORDINATOR_TYPE  
+  
+  AT_DEBUG("\n\rPlease waitting...",sizeof("\n\rPlease waitting...")-1);
   NLME_ScanFields_t fields;
   fields.channels = 0x07FFF800;
   fields.duration = BEACON_ORDER_1_SECOND;
   fields.scanType = ZMAC_ED_SCAN;
-  fields.scanApp =NLME_ED_SCAN;
+  fields.scanApp = NLME_ED_SCAN;
   uint8 status;
-  
-  if((status=NLME_NwkDiscReq2(&fields))==ZSuccess){
-    AT_Cmd_SCAN_signal=1; 
-    AT_OK();
-    AT_DEBUG("\n\rPlease waitting...\n\r",sizeof("\n\rPlease waitting...\n\r")-1);
+  if(status=NLME_NwkDiscReq2(&fields)==ZSuccess){
+    AT_Cmd_SCAN_signal=1;
+    HalUARTSuspend();
   }else{
-    NLME_NwkDiscTerm();
     AT_ERROR(status);
   }
-#else
-  AT_ERROR(AT_WRONG_DEV_ERROR );
-#endif
 }
 
 
@@ -1261,24 +1207,23 @@ void AT_Cmd_PANSCAN(uint8 start_point, uint8* msg){
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
   AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
   
+  AT_DEBUG("\n\rPlease waitting...",sizeof("\n\rPlease waitting...")-1);
   NLME_ScanFields_t fields;
   fields.channels = 0x07FFF800;
   fields.duration = BEACON_ORDER_480_MSEC;
   fields.scanType = ZMAC_ACTIVE_SCAN;
   fields.scanApp = NLME_DISC_SCAN;
   uint8 status;
-  if((status=NLME_NwkDiscReq2(&fields))==ZSuccess){
+  if(status=NLME_NwkDiscReq2(&fields)==ZSuccess){
     AT_Cmd_SCAN_signal=1;
-    AT_OK();
-    AT_DEBUG("\n\rPlease waitting...\n\r",sizeof("\n\rPlease waitting...\n\r")-1);
+    HalUARTSuspend();
   } else{
     AT_ERROR(status);
-    NLME_NwkDiscTerm();
   }
 }
-
 void AT_Cmd_ESCANCB( ZDNwkMgr_EDScanConfirm_t *pEDScanConfirm);
 void AT_Cmd_ESCANCB( ZDNwkMgr_EDScanConfirm_t *pEDScanConfirm){
+  HalUARTResume();
   
   AT_RESP_START();
   char str[20];
@@ -1297,112 +1242,38 @@ void AT_Cmd_ESCANCB( ZDNwkMgr_EDScanConfirm_t *pEDScanConfirm){
   }
   AT_RESP_END();
   
+  AT_OK();
   NLME_NwkDiscTerm();
   AT_Cmd_SCAN_signal=0;
 }
 
 void AT_Cmd_PANSCANCB(uint8 ResultCount,networkDesc_t *NetworkList );
 void AT_Cmd_PANSCANCB(uint8 ResultCount,networkDesc_t *NetworkList ){
+  HalUARTResume();
   networkDesc_t *pNwkDesc = NetworkList;
   
-
+  AT_RESP_START();
+  char str[20];
   uint8 i;
-  networkDesc_t *newDesc = NULL, *pList = NetworkList;
-  uint8 count=0; //record the lik quality >0 networks
   for ( i = 0; i < ResultCount && pNwkDesc->chosenRouterLinkQuality>0; i++, pNwkDesc = pNwkDesc->nextDesc ){
-    count++;
-  }
-  pNwkDesc = NetworkList;
-  
-  if ( ZSTACK_ROUTER_BUILD )
-  {
-    // Look for my PanID.
-    while ( pList )
-    {
-      if ( pList->panId == _NIB.nwkPanId )
-      {
-        break;
-      }
-
-
-      if ( !pList->nextDesc )
-      {
-        break;
-      }
-      pList = pList->nextDesc;
-    }
-
-    // If my Pan not present (query to a star network ZC or an isolated ZR?),
-    // prepend it.
-    if ( !pList || (pList->panId != _NIB.nwkPanId) )
-    {
-      newDesc = (networkDesc_t *)osal_mem_alloc( sizeof( networkDesc_t ) );
-      if ( newDesc )
-      {
-        byte pJoin;
-
-        newDesc->panId = _NIB.nwkPanId;
-        newDesc->logicalChannel = _NIB.nwkLogicalChannel;
-        newDesc->beaconOrder = _NIB.beaconOrder;
-        newDesc->superFrameOrder = _NIB.superFrameOrder;
-        newDesc->version = NLME_GetProtocolVersion();
-        newDesc->stackProfile = zgStackProfile;
-        //Extended PanID
-        osal_cpyExtAddr( newDesc->extendedPANID, _NIB.extendedPANID);
-
-        ZMacGetReq( ZMacAssociationPermit, &pJoin );
-        newDesc->chosenRouter = ((pJoin) ? ZDAppNwkAddr.addr.shortAddr :
-                                           INVALID_NODE_ADDR);
-
-        newDesc->nextDesc = NetworkList;
-        NetworkList = newDesc;
-        ResultCount++;
-        count++;
-      }
-    }
-  }
-
-  
-  
- 
-    AT_RESP_START();
-    printf("%d result(s)\n\r",count);
-    pNwkDesc = NetworkList;
-    if(count>0){
-      //print:Channel | PANID | EPANID | StackProfile | LQI | perimit
-      printf("channel | PANID | EPANID | StackProfile | LQI | perimit");
-    }
-    for ( i = 0; i < ResultCount && pNwkDesc->chosenRouterLinkQuality>0; i++, pNwkDesc = pNwkDesc->nextDesc ){
-
-    uint16 *ext = (uint16*)pNwkDesc->extendedPANID;
-    uint8 permit;
-    if ( pNwkDesc->chosenRouter != INVALID_NODE_ADDR )
-    {
-      permit = 1;//TRUE;                         // Permit Joining
-    }
-    else
-    {
-      permit = 0;//FALSE;
-    }
-    AT_NEXT_LINE();
-    printf("%02X,%04X,%04X%04X%04X%04X,%02X,%02X,%X",
-           pNwkDesc->logicalChannel,
-           pNwkDesc->panId,
-           ext[3],ext[2],ext[1],ext[0],
-           pNwkDesc->stackProfile,
-           pNwkDesc->chosenRouterLinkQuality,
-           permit);
+      AT_Int8toChar(pNwkDesc->logicalChannel,str);
+      AT_RESP(str,2);
+      AT_RESP(",",1);
+      AT_Int16toChar(pNwkDesc->panId,str);
+      AT_RESP(str,4);
+      AT_RESP(",",1);
+      AT_EUI64toChar(pNwkDesc->extendedPANID,str);
+      AT_RESP(str,16);
+      AT_RESP(",",1);
+      AT_Int8toChar(pNwkDesc->stackProfile,str);
+      AT_RESP(str,2);
+      AT_RESP(",",1);
+      AT_NEXT_LINE();
   }    
   AT_RESP_END();
-  if ( ZSTACK_ROUTER_BUILD )
-  {
-    if ( newDesc != NULL )
-    {
-      osal_mem_free( newDesc );
-    }
-  }
-  NLME_NwkDiscTerm();
   
+  AT_OK();
+  NLME_NwkDiscTerm();
   AT_Cmd_SCAN_signal=0;
 }
 
@@ -1770,85 +1641,6 @@ void AT_Cmd_JN(uint8 start_point, uint8* msg){
     AT_OK();
   }else AT_ERROR(state);
 }
-
-/*****************************************************************************
-+NTABLE ¨C Display Neighbour Table
-     AT+NTABLE:XX,<address> 
-        Where XX is the start index of the remote LQI table and 
-        <address> can be the remote node¡¯s EUI64, Node ID or address table entry.
-
-    This command requests the target node to respond by listing its neighbour table 
-    starting from the requested index. Can be used to find the identity of all ZigBee 
-    devices in the network including non-Telegesis devices. 
-    Prompt (example) 
-          NTable:<NodeID>,<errorcode> 
-          Length:03 
-          No.| Type | EUI | ID | LQI 
-          0. | FFD | 000D6F000015896B | BC04 | FF 
-          1. | FFD | 000D6F00000B3E77 | 739D | FF 
-          2. | FFD | 000D6F00000AAD11 | 75E3 | FF
-******************************************************************************/
-
-void AT_Cmd_NTABLE(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
-
-  zAddrType_t dstAddr;
-  uint8 startIndex = AT_ChartoInt16(&cmdUnitArr[0]);
-  if(cmdUnitArr[1].unitLen==16){               
-    AT_ChartoIntx(&cmdUnitArr[1],dstAddr.addr.extAddr, 64);  
-    dstAddr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[1]);            
-    dstAddr.addrMode = (afAddrMode_t)Addr16Bit;       
-  }
-  uint8 state;
-  state = ZDP_MgmtLqiReq( &dstAddr, startIndex, 0 );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-}
-
-
-/*****************************************************************************
-+RTABLE ¨C Display Routing Table
-     AT+NTABLE:XX,<address> 
-        Where XX is the start index of the remote LQI table and 
-        <address> can be the remote node¡¯s EUI64, Node ID or address table entry.
-
-    This command requests the target node to respond by listing its routing table 
-    starting from the requested index. 
-    Prompt (example) 
-        RTable:<NodeID>,<errorcode> 
-        Length:03 
-        No.| Dest | Next | Status 
-        0. | 1234 | ABCD | 00 
-        1. | 4321 | 739D | 00 
-        2. | 0000 | 0000 | 03
-******************************************************************************/
-
-void AT_Cmd_RTABLE(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
-
-  zAddrType_t dstAddr;
-  uint8 startIndex = AT_ChartoInt16(&cmdUnitArr[0]);
-  if(cmdUnitArr[1].unitLen==16){               
-    AT_ChartoIntx(&cmdUnitArr[1],dstAddr.addr.extAddr, 64);  
-    dstAddr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[1]);            
-    dstAddr.addrMode = (afAddrMode_t)Addr16Bit;       
-  }
-  uint8 state;
-  state = ZDP_MgmtRtgReq( &dstAddr, startIndex, 0 );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-}
-
 /*****************************************************
 AT+READATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,¡­< AttrID >
           <Address> - 16 bit hexadecimal number.
@@ -2025,96 +1817,6 @@ void AT_Cmd_WRITEATR(uint8 start_point, uint8* msg){
   if(state!=afStatus_SUCCESS) AT_ERROR(state);
   else AT_OK();
 }
-/******************************************************************************
-+DISCOVER ¨C Discover HA Devices On The HAN
-    AT+DISCOVER:<Cluster ID>[,<option>] 
-            <Cluster ID> - 16 bit hexadecimal cluster ID (please see section 2.2).
-            The Five-In-One device can search for HA devices based on a specified cluster ID.
-            <option> 1- display enabled device and disabled device
-                     0- dispaly only enabled device
-
-Prompt: 
-    DEV:<NodeID>,<EndPoint> 
-    Carry out the ZigBee Service Discovery to 
-    find ZigBee HA devices that support the given match criteria.
-*****************************************************************************/
-
-void AT_Cmd_DISCOVER(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  
-  AT_AF_Cmd_HA_DISC_req_t buff;
-  uint8 state; 
-  buff.hdr.cmd = AT_AF_Cmd_req;
-  buff.CID = AT_ChartoInt16(&cmdUnitArr[0]);
-  
-  if(cmdUnitArr[1].symbol == ','){
-    AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
-    if(AT_ChartoInt8(&cmdUnitArr[1])) buff.option=1;
-    else buff.option=0;
-  }else{
-    
-    AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr); 
-    buff.option=0;
-  } 
-  
- /* 
-  //there is a problem that the end devices can't receive the group cast msg. 
-  //the snifer indicate the broadcast address is 0xfffd which will not broadcast
-  //to RxonIdle device. So some end device can't receive the msg. 
-  //but the broad cast can do this. becsue the broad cast address is 0xffff 
-  //which means to all device.
-  //So, I will think about this after a period of time.
-  
-  //build group address  
-  afAddrType_t AT_AF_group_addr={
-    {AT_AF_GROUP_ID},                       //addr
-    (afAddrMode_t)afAddrGroup,              //addr mode
-    AT_AF_ENDPOINT,                         //end point
-    NULL                                    //PAN ID
-  };*/
-  //build broadcast address
-  afAddrType_t AT_AF_broad_addr={
-    {0xffff},                       //addr
-    (afAddrMode_t)AddrBroadcast,              //addr mode
-    AT_AF_ENDPOINT,                         //end point
-    NULL                                    //PAN ID
-  };
-  
-  //build self address
-  afAddrType_t AT_AF_self_addr={
-    {NLME_GetShortAddr()},                       //addr
-    (afAddrMode_t) Addr16Bit,              //addr mode
-    AT_AF_ENDPOINT,                         //end point
-    NULL                                    //PAN ID
-  };
-  
-  
-  //send data over air
-  state = AF_DataRequest( &AT_AF_broad_addr, &AT_AF_epDesc,
-                       AT_AF_Cmd_HA_DISC_CLUSTERID,
-                       sizeof(buff),
-                       (uint8*)&buff,
-                       &AT_AF_TransID,
-                       AF_DISCV_ROUTE,
-                       AF_DEFAULT_RADIUS );
-  if(state!=afStatus_SUCCESS) {
-    AT_ERROR(state);
-    return;
-  } 
-  
-  //send data to self
-  state = AF_DataRequest( &AT_AF_self_addr, &AT_AF_epDesc,
-                       AT_AF_Cmd_HA_DISC_CLUSTERID,
-                       sizeof(buff),
-                       (uint8*)&buff,
-                       &AT_AF_TransID,
-                       AF_DISCV_ROUTE,
-                       AF_DEFAULT_RADIUS );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK(); 
-}
 
 /*******************************************************
 Disable the AT commands
@@ -2193,7 +1895,6 @@ void AT_Cmd_IDENTIFY(uint8 start_point, uint8* msg){
   else AT_OK();
   
 }
-
 /**************************************************************************
 AT+HELP
            display the available commands
@@ -2233,7 +1934,8 @@ void AT_Cmd_HELP(uint8 start_point, uint8* msg){
     AT_RESP(AT_Cmd_Arr[i].description_str,AT_strLen(AT_Cmd_Arr[i].description_str));
   }
   AT_RESP_END();
-  AT_OK(); 
+  AT_OK();
+  
   
 }
 

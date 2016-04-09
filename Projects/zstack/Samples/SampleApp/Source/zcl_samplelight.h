@@ -54,7 +54,7 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
-#define SAMPLELIGHT_ENDPOINT            205
+#define SAMPLELIGHT_ENDPOINT            13
 
 #define SAMPLELIGHT_MAX_ATTRIBUTES      12
 

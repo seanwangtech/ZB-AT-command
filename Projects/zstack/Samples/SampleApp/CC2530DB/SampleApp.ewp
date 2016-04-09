@@ -5587,9 +5587,7 @@
           <state>HOLD_AUTO_START</state>
           <state>NV_RESTORE</state>
           <state>ZCL_IDENTIFY</state>
-          <state>ZCL_ON_OFF</state>
           <state>ZCL_READ</state>
-          <state>ZCL_WRITE</state>
           <state>xHAL_DMA=FALSE</state>
           <state>xHAL_UART_DMA=FALSE</state>
           <state>xZTOOL_P1</state>
@@ -8524,12 +8522,6 @@
         <name>$PROJ_DIR$\..\Source\AT_ds18b20.h</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\Source\AT_printf.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_printf.h</name>
-      </file>
-      <file>
         <name>$PROJ_DIR$\..\Source\AT_relay.c</name>
       </file>
       <file>
@@ -8567,7 +8559,7 @@
       </file>
     </group>
     <group>
-      <name>AT_ZCL specification</name>
+      <name>ZCL specification</name>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_ZCL.c</name>
       </file>
@@ -8619,12 +8611,6 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\AT_uart.h</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\Source\AT_ZDO.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\Source\AT_ZDO.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
@@ -9195,7 +9181,7 @@
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.c</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.h</name>
+      <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\stack\zdo\ZDObject.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDProfile.c</name>

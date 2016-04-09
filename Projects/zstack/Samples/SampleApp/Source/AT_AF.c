@@ -1,5 +1,5 @@
 /**************************************************************************************************
-  Filename:       AT_AF.c
+  Filename:       AT_ONOFF_output.c
 
   Description:    AT command module
   Author:         Xiao Wang
@@ -14,21 +14,18 @@
 
 #include "AT_AF.h"
 #include "AT_App.h"
-#include "AT_printf.h"
+
 #include "AT_uart.h"
 #include "hal_led.h"
-#include "zcl.h"
-/*************************************global variable*****************
-*
-*/
 
 
-aps_Group_t AT_AF_Group={
-  AT_AF_GROUP_ID,                               //group id
-  {'A','T','_','A','F','_','g','r','o','u','p','\0'}    //group name "AT_AF_group"
+
+
+const cId_t AT_AF_ClusterList[AT_AF_MAX_CLUSTERS] =
+{
+  AT_AF_Cmd_REPPRINT_CLUSTERID,
+  AT_AF_Cmd_REPENABLE_CLUSTERID
 };
-
-const cId_t AT_AF_ClusterList[AT_AF_MAX_CLUSTERS] = AT_AF_ClusterList_ ;
 
 const SimpleDescriptionFormat_t AT_AF_SimpleDesc =
 {
@@ -54,9 +51,6 @@ void AT_AF_Cmd_REPENABLE_CB(afIncomingMSGPacket_t *pkt );
 void AT_AF_Cmd_REPENABLE_req(afIncomingMSGPacket_t *pkt  );
 void AT_AF_Cmd_REPENABLE_rsp(afIncomingMSGPacket_t *pkt );
 
-void AT_AF_Cmd_HA_DISC_CB(afIncomingMSGPacket_t *pkt );
-void AT_AF_Cmd_HA_DISC_req(afIncomingMSGPacket_t *pkt  );
-void AT_AF_Cmd_HA_DISC_rsp(afIncomingMSGPacket_t *pkt );
 
 void AT_AF_Register(uint8 *task_id){
  // Fill out the endpoint description.
@@ -68,8 +62,6 @@ void AT_AF_Register(uint8 *task_id){
   
   // Register the endpoint description with the AF
   afRegister( &AT_AF_epDesc );
-  
-  AT_ERROR(aps_AddGroup( AT_AF_ENDPOINT, &AT_AF_Group ));
 }
 
 
@@ -83,9 +75,6 @@ void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt )
       break;
     case AT_AF_Cmd_REPENABLE_CLUSTERID:
       AT_AF_Cmd_REPENABLE_CB(pkt);
-      break;
-    case  AT_AF_Cmd_HA_DISC_CLUSTERID:
-      AT_AF_Cmd_HA_DISC_CB(pkt);
       break;
   }
 }
@@ -202,7 +191,7 @@ void AT_AF_Cmd_REPENABLE_req(afIncomingMSGPacket_t *pkt  ){
   rsp.item.ep=req->ep;
   
   if(enable){
-    if( AT_af_get_ep(ep)){
+    if( AT_af_exist_ep(ep)){
       if(AT_af_register_ep(ep)==afStatus_SUCCESS){ 
         //enable the end point in ZCL layer
         AT_ZCL_EP_ENABLE( enable,ep);
@@ -214,8 +203,7 @@ void AT_AF_Cmd_REPENABLE_req(afIncomingMSGPacket_t *pkt  ){
     }
   }
   else{
-
-    if(AT_af_get_ep(ep)){
+    if(AT_af_exist_ep(ep)){
       if(AT_af_remove_ep(ep)==afStatus_SUCCESS){
         //disable the end point in ZCL layer
         AT_ZCL_EP_ENABLE( enable,ep);
@@ -295,96 +283,4 @@ void AT_AF_Cmd_REPENABLE_CB(afIncomingMSGPacket_t *pkt ){
   }else{
     AT_AF_Cmd_REPENABLE_rsp(pkt);
   }
-}
-
-
-
-void AT_AF_Cmd_HA_DISC_CB(afIncomingMSGPacket_t *pkt ){
-  AT_AF_hdr *req = (AT_AF_hdr *)pkt->cmd.Data;
-  if(req->cmd==AT_AF_Cmd_req){
-    AT_AF_Cmd_HA_DISC_req(pkt);
-  }else{
-    AT_AF_Cmd_HA_DISC_rsp(pkt);
-  }
-}
-
-
-void AT_AF_Cmd_HA_DISC_req(afIncomingMSGPacket_t *pkt  ){
-  AT_AF_Cmd_HA_DISC_req_t *req = (AT_AF_Cmd_HA_DISC_req_t *)pkt->cmd.Data;
-  AT_AF_Cmd_HA_DISC_rsp_t *rsp;
-  uint8 zcl_epCount =0;
-  
-  uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
-  uint8 i;
-  uint8 buf_temp[sizeof(AT_AF_Cmd_HA_DISC_rsp_t)+sizeof(AT_CMD_EP_ARRAY)*sizeof(AT_AF_Cmd_HA_DISC_item_t)];
-  rsp = (AT_AF_Cmd_HA_DISC_rsp_t *) buf_temp;
-  
-  for(i=0;i<sizeof(AT_CMD_EP_ARRAY);i++){
-    epList_t* epList = AT_af_get_ep(AT_CMD_EP_ARRAY[i]);
-    SimpleDescriptionFormat_t* simDesc=epList->epDesc->simpleDesc;
-    
-    //find the CID
-    bool found=false;
-    uint8 j;
-    for(j=0;j<simDesc->AppNumOutClusters;j++){
-      if(simDesc->pAppOutClusterList[j]==req->CID) {
-        if(req->option==0){
-          if(afFindEndPointDesc(AT_CMD_EP_ARRAY[i])) found=true;
-        }else{
-          found=true;
-        }
-        break;
-      }
-    }
-    if(!found){
-      for(j=0;j<simDesc->AppNumInClusters;j++){
-        if(simDesc->pAppInClusterList[j]==req->CID) {
-          if(req->option==0){
-            if(afFindEndPointDesc(AT_CMD_EP_ARRAY[i])) found=true;
-          }else{
-            found=true;
-          }
-          break;
-        }
-      }
-    }
-    
-    //if found the CID
-    if(found){
-      rsp->item[zcl_epCount].ep = AT_CMD_EP_ARRAY[i];
-      rsp->item[zcl_epCount].status = afFindEndPointDesc(AT_CMD_EP_ARRAY[i]) ? AT_AF_enable : AT_AF_disable;
-      zcl_epCount++;
-    }
-  }
-  if(zcl_epCount!=0){
-    rsp->hdr.numItem=zcl_epCount;
-    rsp->hdr.cmd=AT_AF_Cmd_rsp;
-    AF_DataRequest( & (pkt->srcAddr), & AT_AF_epDesc,
-                         AT_AF_Cmd_HA_DISC_CLUSTERID,
-                         sizeof(AT_AF_Cmd_HA_DISC_rsp_t)+zcl_epCount*sizeof(AT_AF_Cmd_HA_DISC_item_t),
-                         (uint8*)rsp,
-                         &AT_AF_TransID,
-                         AF_DISCV_ROUTE,
-                         AF_DEFAULT_RADIUS );
-      
-  }
-}
-void AT_AF_Cmd_HA_DISC_rsp(afIncomingMSGPacket_t *pkt ){
-  AT_AF_Cmd_HA_DISC_rsp_t *rsp = (AT_AF_Cmd_HA_DISC_rsp_t *)pkt->cmd.Data;
-  AT_RESP_START();
-  uint8 i;
-  for(i=0;i<rsp->hdr.numItem;i++){
-    if(pkt->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
-      printf("DEV:%04X,",pkt->srcAddr.addr.shortAddr);
-    }else {
-      printf("UNKNOWN");
-    }
-    printf("%02X,",rsp->item[i].ep);       
-    if(rsp->item[i].status==AT_AF_enable){
-      printf("ENABLED");
-    }
-    else printf("DISABLED");
-    AT_NEXT_LINE();
-  }
-  AT_RESP_START();
 }

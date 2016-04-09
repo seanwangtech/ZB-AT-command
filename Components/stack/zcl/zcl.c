@@ -22,7 +22,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -3361,46 +3361,3 @@ static uint8 zclSendMsg( zclIncoming_t *pInMsg )
 
 /*********************************************************************
 *********************************************************************/
-
-
-
-/************************************************************************
-**************************************************************************
-
-AT_EXTERN functions start
-
-************************************************************************
-*************************************************************************/
-
-/********************************************************
-label: AT_EXTERN
-
-uint8 AT_EXTERN_CID_list(uint8 endPoint, uint16 *list);
-
-@zcl.c in ZCL profile layer.
-********************************************************/
-uint8 AT_EXTERN_CID_list(uint8 endPoint, uint16 *list);
-uint8 AT_EXTERN_CID_list(uint8 endpoint, uint16 *list){
-  /*uint8 x;
-  zclAttrRecsList *pLoop;
-
-  pLoop = attrList;
-
-  while ( pLoop != NULL )
-  {
-    if ( pLoop->endpoint == endpoint )
-    {
-      for ( x = 0; x < pLoop->numAttributes; x++ )
-      {
-        if ( pLoop->attrs[x].clusterID == clusterID && pLoop->attrs[x].attr.attrId == attrId )
-        {
-          *pAttr = pLoop->attrs[x];
-          return ( TRUE ); // EMBEDDED RETURN
-        }
-      }
-    }
-    pLoop = pLoop->next;
-  }
-*/
-  return ( FALSE );
-}

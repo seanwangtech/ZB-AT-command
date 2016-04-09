@@ -232,7 +232,7 @@ void SampleApp_Init( uint8 task_id )
   // By default, all devices start out in Group 1
   SampleApp_Group.ID = 0x0001;
   osal_memcpy( SampleApp_Group.name, "Group 1", 7  );
-  AT_ERROR(aps_AddGroup( SAMPLEAPP_ENDPOINT, &SampleApp_Group ));
+  aps_AddGroup( SAMPLEAPP_ENDPOINT, &SampleApp_Group );
 
 #if defined ( LCD_SUPPORTED )
   HalLcdWriteString( "SampleApp", HAL_LCD_LINE_1 );

@@ -31,10 +31,10 @@
 #define AT_UART_ECHO()             AT_RESP( "", 1)
 #define AT_re_input_key            '\r'       //if defiene this as '\0', the reinput function will be removied. otherwise, press corresponding key will reinput the last command
 
-#define AT_CMD_HELP_DESC_OMIT        3     //omit displaying last several command which is keep for interal use.
+#define AT_CMD_HELP_DESC_OMIT        2     //omit displaying last several command which is keep for interal use.
 #define AT_CMD_HELP_DESC_OFFSET     14      //define the offset characters of the help command when display.
 
-#define AT_CMD_EPs                  {0x01,0x02,0x04}    //whitch will display when perform print the end point command, sorted end point
+#define AT_CMD_EPs                  {0x01,0x02,0x03,0x04,0x05}
 
 
 /********************************************************
@@ -79,7 +79,6 @@
 #else
 #define AT_PARSE_CMD_PATTERN_ERROR(x,y)
 #endif
-
 
 
 /*******************************************************
@@ -208,11 +207,8 @@ void AT_Cmd_DASSL(uint8 start_point, uint8* msg);
 void AT_Cmd_PJOIN(uint8 start_point, uint8* msg);
 void AT_Cmd_JPAN(uint8 start_point, uint8* msg);
 void AT_Cmd_JN(uint8 start_point, uint8* msg);
-void AT_Cmd_NTABLE(uint8 start_point, uint8* msg);
-void AT_Cmd_RTABLE(uint8 start_point, uint8* msg);
 void AT_Cmd_READATR(uint8 start_point, uint8* msg);
 void AT_Cmd_WRITEATR(uint8 start_point, uint8* msg);
-void AT_Cmd_DISCOVER(uint8 start_point, uint8* msg);
 void AT_Cmd_RONOFF(uint8 start_point, uint8* msg);
 void AT_Cmd_RONOFF1(uint8 start_point, uint8* msg);
 void AT_Cmd_LONOFF(uint8 start_point, uint8* msg);
@@ -221,7 +217,6 @@ void AT_Cmd_AT_F(uint8 start_point, uint8* msg);
 void AT_Cmd_ATS(uint8 start_point, uint8* msg);
 void AT_Cmd_ESCAN(uint8 start_point, uint8* msg);
 void AT_Cmd_PANSCAN(uint8 start_point, uint8* msg);
-void AT_Cmd_ESCAN1(uint8 start_point, uint8* msg);
 void AT_Cmd_N(uint8 start_point, uint8* msg);
 void AT_Cmd_READNV(uint8 start_point, uint8* msg);
 void AT_Cmd_WRITENV(uint8 start_point, uint8* msg);
