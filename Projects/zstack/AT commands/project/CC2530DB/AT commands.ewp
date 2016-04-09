@@ -1813,11 +1813,11 @@
         </option>
         <option>
           <name>XOutOverride</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>OutputFile</name>
-          <state>AT commands.d51</state>
+          <state>AT commands.hex</state>
         </option>
         <option>
           <name>OutputFormat</name>
@@ -1991,7 +1991,7 @@
         </option>
         <option>
           <name>DebugInformation</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RuntimeControl</name>
