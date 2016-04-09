@@ -113,7 +113,6 @@ extern "C"
 // Status Query and Reset always return No Error
 
 #define EC_NO_ERROR        ((uint8) 0x00)
-#define EC_BAD_VDD         ((uint8) 0xDD)  // Not enough Vdd to write NV/XNV.
 
 // Begin Session
 #define EC_BS_NOT_IDLE     ((uint8) 0x21)

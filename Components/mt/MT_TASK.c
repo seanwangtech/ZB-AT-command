@@ -1,11 +1,11 @@
 /***************************************************************************************************
   Filename:       MT_TASK.c
-  Revised:        $Date: 2011-06-07 15:36:01 -0700 (Tue, 07 Jun 2011) $
-  Revision:       $Revision: 26245 $
+  Revised:        $Date: 2009-11-09 20:03:17 -0800 (Mon, 09 Nov 2009) $
+  Revision:       $Revision: 21106 $
 
   Description:    MonitorTest Task handling routines
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -47,26 +47,20 @@
 #include "MT_UART.h"
 #include "MT_UTIL.h"
 #include "MT_SYS.h"
-
-#if !defined( NONWK )
 #include "MT_ZDO.h"
-#include "MT_AF.h"
-#endif  /* NONWK */
 
 #include "hal_uart.h"
+
 #include "OSAL_Memory.h"
 
 /***************************************************************************************************
  * LOCAL FUNCTIONS
  ***************************************************************************************************/
-
-static void MT_ProcessIncomingCommand( mtOSALSerialData_t *msg );
+void MT_ProcessIncomingCommand( mtOSALSerialData_t *msg );
 
 /***************************************************************************************************
  * GLOBALS
  ***************************************************************************************************/
-
-uint8 MT_TaskID;
 
 /***************************************************************************************************
  * @fn      MT_TaskInit
@@ -74,56 +68,48 @@ uint8 MT_TaskID;
  * @brief  MonitorTest Task Initialization.  This function is put into the
  *         task table.
  *
- * @param   task_id - task ID of the MT Task
+ * @param   byte task_id - task ID of the MT Task
  *
  * @return  void
  ***************************************************************************************************/
 void MT_TaskInit(uint8 task_id)
 {
-  MT_TaskID = task_id;
-
   /* Initialize the Serial port */
   MT_UartInit();
 
   /* Register taskID - Do this after UartInit() because it will reset the taskID */
   MT_UartRegisterTaskID(task_id);
 
-  osal_set_event(task_id, MT_SECONDARY_INIT_EVENT);
+  /* Initialize MT */
+  MT_Init(task_id);
 }
 
-/**************************************************************************************************
+/***************************************************************************************************
  * @fn      MT_ProcessEvent
  *
- * @brief   MonitorTest Task Event Processor.  This task is put into the task table.
+ * @brief MonitorTest Task Event Processor.  This task is put into the task table.
  *
- * @param   task_id - task ID of the MT Task
- * @param   events - event(s) for the MT Task
+ * @param   byte task_id - task ID of the MT Task
+ * @param   UINT16 events - event(s) for the MT Task
  *
- * @return  Bit mask of the unprocessed MT Task events.
- **************************************************************************************************/
+ * @return  void
+ ***************************************************************************************************/
 UINT16 MT_ProcessEvent(uint8 task_id, uint16 events)
 {
+  uint8 *msg_ptr;
+  
+  (void)task_id;  // Intentionally unreferenced parameter
+
   /* Could be multiple events, so switch won't work */
   if ( events & SYS_EVENT_MSG )
   {
-    uint8 *msg_ptr = osal_msg_receive(task_id);
-
-    if (msg_ptr != NULL)
+    while ( (msg_ptr = osal_msg_receive( MT_TaskID )) )
     {
       MT_ProcessIncomingCommand((mtOSALSerialData_t *)msg_ptr);
-
-      osal_msg_deallocate(msg_ptr);
     }
 
     /* Return unproccessed events */
     return (events ^ SYS_EVENT_MSG);
-  }
-
-  if ( events & MT_SECONDARY_INIT_EVENT )
-  {
-    MT_Init();
-    /* Return unproccessed events */
-    return (events ^ MT_SECONDARY_INIT_EVENT);
   }
 
   if ( events & MT_ZTOOL_SERIAL_RCV_BUFFER_FULL )
@@ -131,14 +117,6 @@ UINT16 MT_ProcessEvent(uint8 task_id, uint16 events)
     /* Return unproccessed events */
     return (events ^ MT_ZTOOL_SERIAL_RCV_BUFFER_FULL);
   }
-
-#if !defined( NONWK )
-  if ( events & MT_AF_EXEC_EVT )
-  {
-    MT_AfExec();
-    return (events ^ MT_AF_EXEC_EVT);
-  }
-#endif  /* NONWK */
 
   /* Handle MT_SYS_OSAL_START_TIMER callbacks */
 #if defined MT_SYS_FUNC
@@ -184,19 +162,26 @@ UINT16 MT_ProcessEvent(uint8 task_id, uint16 events)
  *
  *   Process Event Messages.
  *
- * @param   *msg - pointer to event message
+ * @param   byte *msg - pointer to event message
  *
  * @return
  ***************************************************************************************************/
-static void MT_ProcessIncomingCommand( mtOSALSerialData_t *msg )
+void MT_ProcessIncomingCommand( mtOSALSerialData_t *msg )
 {
-  uint8 len, *msg_ptr = msg->msg;
+  byte deallocate;
+  byte *msg_ptr;
+  byte len;
+
+  /* A little setup for AF, CB_FUNC and MT_SYS_APP_RSP_MSG */
+  msg_ptr = msg->msg;
+
+  deallocate = true;
 
   /* Use the first byte of the message as the command ID */
   switch ( msg->hdr.event )
   {
     case CMD_SERIAL_MSG:
-      MT_ProcessIncoming(msg_ptr);
+      MT_ProcessIncoming(msg->msg);
       break;
 
     case CMD_DEBUG_MSG:
@@ -216,7 +201,7 @@ static void MT_ProcessIncomingCommand( mtOSALSerialData_t *msg )
         FCS goes to the last byte in the message and is calculated over all
         the bytes except FCS and SOP
       */
-      msg_ptr[len-1] = MT_UartCalcFCS(msg_ptr + 1, (uint8)(len-2));
+      msg_ptr[len-1] = MT_UartCalcFCS(msg_ptr + 1, (byte)(len-2));
 
 #ifdef MT_UART_DEFAULT_PORT
       HalUARTWrite ( MT_UART_DEFAULT_PORT, msg_ptr, len );
@@ -239,8 +224,8 @@ static void MT_ProcessIncomingCommand( mtOSALSerialData_t *msg )
     case ZCL_KEY_ESTABLISH_IND:
       MT_UtilKeyEstablishInd((keyEstablishmentInd_t *)msg);
       break;
-#endif
-#endif
+#endif        
+#endif        
 #ifdef MT_ZDO_CB_FUNC
     case ZDO_STATE_CHANGE:
       MT_ZdoStateChangeCB((osal_event_hdr_t *)msg);
@@ -249,6 +234,11 @@ static void MT_ProcessIncomingCommand( mtOSALSerialData_t *msg )
 
     default:
       break;
+  }
+
+  if ( deallocate )
+  {
+    osal_msg_deallocate( (uint8 *)msg );
   }
 }
 
@@ -268,8 +258,8 @@ uint8 *MT_TransportAlloc(uint8 cmd0, uint8 len)
   uint8 *p;
 
   (void)cmd0;  // Intentionally unreferenced parameter
-
-  /* Allocate a buffer of data length + SOP+CMD+FCS (5 bytes) */
+  
+  /* Allocate a buffer of data length + SOP+CMD+FCS (5bytes) */
   p = osal_msg_allocate(len + SPI_0DATA_MSG_LEN);
 
   if (p)

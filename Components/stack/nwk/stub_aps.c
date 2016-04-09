@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       stub_aps.c
-  Revised:        $Date: 2011-04-20 10:16:44 -0700 (Wed, 20 Apr 2011) $
-  Revision:       $Revision: 25771 $
+  Revised:        $Date: 2008-1-04 13:13:13 -0700 (Fri, 04 Jan 2008) $
+  Revision:       $Revision: 1 $
 
   Description:    Stub APS processing functions
 
 
-  Copyright 2008 - 2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2008 - 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -593,14 +593,30 @@ ZStatus_t StubAPS_SetIntraPanChannel( void )
  */
 uint8 StubAPS_InterPan( uint16 panId, uint8 endPoint )
 {
-  (void)panId; // Intentionally unreferenced parameter
-
-  // No need to check the MAC/NIB Channels or Source/Destination PAN IDs
-  // since it's possible to send Inter-PAN messages within the same network.
-  if ( endPoint == STUBAPS_INTER_PAN_EP )
+  uint8 currChannel;
+  
+  if ( panId != 0 )
   {
-    // Inter-PAN endpoint
-    return ( TRUE );
+    ZMacGetReq( ZMacChannel, &currChannel );
+    if ( currChannel != _NIB.nwkLogicalChannel )
+    {
+      // different Channels
+      return ( TRUE );
+    }
+  
+    // same Channels
+    if ( panId != _NIB.nwkPanId )
+    {
+      // different PAN IDs
+      return ( TRUE );
+    }
+  
+    // same Channels and same PAN IDs
+    if ( endPoint == STUBAPS_INTER_PAN_EP )
+    {
+      // Inter-PAN endpoint
+      return ( TRUE );
+    }
   }
   
   return ( FALSE );
@@ -896,7 +912,7 @@ void INTERP_DataIndication( macMcpsDataInd_t *dataInd )
   sig.rssi = dataInd->mac.rssi;
   
   APSDE_DataIndication( &saff, &srcAddr, dataInd->mac.srcPanId, 
-                        &sig, snff.broadcastId, FALSE, dataInd->mac.timestamp );
+                        &sig, FALSE, dataInd->mac.timestamp );
 
 } /* INTERP_DataIndication */
 

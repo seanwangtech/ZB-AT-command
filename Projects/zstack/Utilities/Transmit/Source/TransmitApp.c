@@ -1,22 +1,22 @@
 /**************************************************************************************************
   Filename:       TransmitApp.c
-  Revised:        $Date: 2012-03-05 09:54:49 -0800 (Mon, 05 Mar 2012) $
-  Revision:       $Revision: 29619 $
+  Revised:        $Date: 2009-03-12 10:06:30 -0700 (Thu, 12 Mar 2009) $
+  Revision:       $Revision: 19395 $
 
   Description:    Transmit Application (no Profile).
 
 
-  Copyright 2004-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -111,7 +111,7 @@
 /*********************************************************************
  * CONSTANTS
  */
-//#define TRANSMITAPP_RANDOM_LEN
+//#define TRANSMITAPP_RANDOM_LEN 
 
 #define TRANSMITAPP_STATE_WAITING 0
 #define TRANSMITAPP_STATE_SENDING 1
@@ -583,7 +583,7 @@ void TransmitApp_HandleKeys( byte shift, byte keys )
  */
 void TransmitApp_MessageMSGCB( afIncomingMSGPacket_t *pkt )
 {
-  uint16 i;
+  int16 i;
   uint8 error = FALSE;
 
   switch ( pkt->clusterId )
@@ -648,9 +648,9 @@ void TransmitApp_SendTheMessage( void )
     tmp = LO_UINT8( TransmitApp_TransID );
     tmp += (tmp <= 9) ? ('0') : ('A' - 0x0A);
     TransmitApp_Msg[3] = tmp;
-
+  
     len = TransmitApp_MaxDataLength;
-
+  
 #if defined ( TRANSMITAPP_RANDOM_LEN )
     len = (uint8)(osal_rand() & 0x7F);
     if( len > TransmitApp_MaxDataLength || len == 0 )
@@ -665,7 +665,7 @@ void TransmitApp_SendTheMessage( void )
                           &TransmitApp_TransID,
                            TRANSMITAPP_TX_OPTIONS,
                            AF_DEFAULT_RADIUS );
-
+    
 #if defined ( TRANSMITAPP_RANDOM_LEN )
     if ( tmp == afStatus_SUCCESS )
     {
@@ -751,7 +751,6 @@ void TransmitApp_DisplayResults( void )
   byte lcd_buf[LCD_W+1];
   byte idx;
 #endif
-
   // The OSAL timers are not real-time, so calculate the actual time expired.
   uint32 msecs = osal_GetSystemClock() - clkShdw;
   clkShdw = osal_GetSystemClock();
@@ -802,12 +801,9 @@ void TransmitApp_DisplayResults( void )
   } while ( tmp );
 
   HalLcdWriteString( (char*)lcd_buf, HAL_LCD_LINE_2 );
-
-#elif defined( MT_TASK )
-  DEBUG_INFO( COMPID_APP, SEVERITY_INFORMATION, 3,
-              rxAccum, (uint16)msecs, (uint16)rxTotal );
 #else
-  (void)msecs;  // Not used when no output
+  DEBUG_INFO( COMPID_APP, SEVERITY_INFORMATION, 3, rxAccum,
+                                              (uint16)msecs, (uint16)rxTotal );
 #endif
 
   if ( (rxAccum == 0) && (txAccum == 0) )

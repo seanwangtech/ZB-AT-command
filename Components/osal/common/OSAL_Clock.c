@@ -1,21 +1,21 @@
-/******************************************************************************
+/**************************************************************************************************
   Filename:       OSAL_Clock.c
-  Revised:        $Date: 2012-03-02 15:52:01 -0800 (Fri, 02 Mar 2012) $
-  Revision:       $Revision: 29608 $
+  Revised:        $Date: 2008-12-15 15:42:47 -0800 (Mon, 15 Dec 2008) $
+  Revision:       $Revision: 18616 $
 
   Description:    OSAL Clock definition and manipulation functions.
 
-  Copyright 2008-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2008 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -34,7 +34,7 @@
 
   Should you have any questions regarding your right to use this Software,
   contact Texas Instruments Incorporated at www.TI.com.
-******************************************************************************/
+**************************************************************************************************/
 
 /*********************************************************************
  * INCLUDES
@@ -49,15 +49,19 @@
  * MACROS
  */
 
-#define	YearLength(yr)	((uint16)(IsLeapYear(yr) ? 366 : 365))
-
 /*********************************************************************
  * CONSTANTS
  */
 
-#define	BEGYEAR  2000     //  UTC started at 00:00:00 January 1, 2000
+// (MAXCALCTICKS * 8) + (max remainder) must be <= (uint16 max), 
+// so: (8188 * 8) + 24 <= 65535
+#define MAXCALCTICKS  ((uint16)(8188))
 
-#define	DAY      86400UL  // 24 hours * 60 minutes * 60 seconds
+#define	BEGYEAR	        2000    //  00:00:00 January 1, 2000
+#define	DAY             86400UL // 24 hours * 60 minutes * 60 seconds
+#define	IsLeapYear(yr)	(!((yr) % 4) && (((yr) % 100) || !((yr) % 400)))
+#define	YearLength(yr)	(IsLeapYear(yr) ? 366 : 365)
+
 
 /*********************************************************************
  * TYPEDEFS
@@ -67,6 +71,7 @@
  * GLOBAL VARIABLES
  */
 
+
 /*********************************************************************
  * EXTERNAL VARIABLES
  */
@@ -74,50 +79,12 @@
 /*********************************************************************
  * EXTERNAL FUNCTIONS
  */
-extern uint32 macMcuPrecisionCount(void);
-
-#if (defined HAL_MCU_CC2430) || (defined HAL_MCU_CC2530) || (defined HAL_MCU_CC2533)
-
-  /*  This function is used to divide a 31 bit dividend by a 16 bit
-   *  divisor and return a packed 16 bit quotient and 16 bit
-   *  remainder.
-   *
-   *  Note: This routine takes ~25.6us @32MHz. With C overhead, the
-   *        time is ~32us.
-   *
-   *  dividend - 31 bit dividend.
-   *  divisor - 16 bit divisor.
-   *
-   *  return - MSW divisor; LSW quotient
-   */
-  extern __near_func uint32 osalMcuDivide31By16To16( uint32 dividend, uint16 divisor );
-
-  #define CONVERT_320US_TO_MS_ELAPSED_REMAINDER( x, y, z ) st( \
-                                                               \
-    /* The 16 bit quotient is in MSW and */                    \
-    /* the 16 bit remainder is in LSW. */                      \
-    x = osalMcuDivide31By16To16( x, 25 );                      \
-                                                               \
-    /* Add quotient to y */                                    \
-    y += (x >> 16);                                            \
-                                                               \
-    /* Copy remainder to z */                                  \
-    z = (uint16)(x & 0x0FFFF);                                 \
-  )
-
-#else /* (defined HAL_MCU_CC2430) || (defined HAL_MCU_CC2530) || (defined HAL_MCU_CC2533) */
-
-  #define CONVERT_320US_TO_MS_ELAPSED_REMAINDER( x, y, z ) st( \
-    y += x / 25;                                               \
-    z = x % 25;                                                \
-  )
-
-#endif /* (defined HAL_MCU_CC2430) || (defined HAL_MCU_CC2530) || (defined HAL_MCU_CC2533) */
+extern uint16 macMcuPrecisionCount(void);
 
 /*********************************************************************
  * LOCAL VARIABLES
  */
-static uint32 previousMacTimerTick = 0;
+static uint16 previousMacTimerTick = 0;
 static uint16 remUsTicks = 0;
 static uint16 timeMSec = 0;
 
@@ -143,7 +110,7 @@ static void osalClockUpdate( uint16 elapsedMSec );
  *          this timer runs freely with a constant 320 usec interval.  The
  *          count of 320-usec ticks is converted to msecs and used to update
  *          the OSAL clock and Timers by invoking osalClockUpdate() and
- *          osalTimerUpdate().  This function is intended to be invoked
+ *          osalTimerUpdate().  This function is intended to be invoked 
  *          from the background, not interrupt level.
  *
  * @param   None.
@@ -152,31 +119,39 @@ static void osalClockUpdate( uint16 elapsedMSec );
  */
 void osalTimeUpdate( void )
 {
-  halIntState_t intState;
-  uint32 tmp;
-  uint32 ticks320us;
+  uint16 tmp;
+  uint16 ticks320us;
   uint16 elapsedMSec = 0;
 
-  HAL_ENTER_CRITICAL_SECTION(intState);
   // Get the free-running count of 320us timer ticks
   tmp = macMcuPrecisionCount();
-  HAL_EXIT_CRITICAL_SECTION(intState);
   
   if ( tmp != previousMacTimerTick )
   {
     // Calculate the elapsed ticks of the free-running timer.
-    ticks320us = (tmp - previousMacTimerTick) & 0xffffffffu;
-
+    ticks320us = tmp - previousMacTimerTick;
+  
     // Store the MAC Timer tick count for the next time through this function.
     previousMacTimerTick = tmp;
-    
-    // update converted number with remaining ticks from loop and the
+  
+    /* It is necessary to loop to convert the usecs to msecs in increments so as 
+     * not to overflow the 16-bit variables.
+     */
+    while ( ticks320us > MAXCALCTICKS )
+    {
+      ticks320us -= MAXCALCTICKS;
+      elapsedMSec += MAXCALCTICKS * 8 / 25;
+      remUsTicks += MAXCALCTICKS * 8 % 25;
+    }
+  
+    // update converted number with remaining ticks from loop and the 
     // accumulated remainder from loop
     tmp = (ticks320us * 8) + remUsTicks;
-
+      
     // Convert the 320 us ticks into milliseconds and a remainder
-    CONVERT_320US_TO_MS_ELAPSED_REMAINDER( tmp, elapsedMSec, remUsTicks );
-
+    elapsedMSec += tmp / 25;
+    remUsTicks = tmp % 25;
+        
     // Update OSAL Clock and Timers
     if ( elapsedMSec )
     {
@@ -201,7 +176,7 @@ static void osalClockUpdate( uint16 elapsedMSec )
   timeMSec += elapsedMSec;
 
   // Roll up milliseconds to the number of seconds
-  if ( timeMSec >= 1000 )
+  if ( timeMSec > 1000 )
   {
     OSAL_timeSeconds += timeMSec / 1000;
     timeMSec = timeMSec % 1000;
@@ -259,7 +234,7 @@ void osal_ConvertUTCTime( UTCTimeStruct *tm, UTCTime secTime )
   {
     uint32 day = secTime % DAY;
     tm->seconds = day % 60UL;
-    tm->minutes = (day % 3600UL) / 60UL;
+    tm->minutes = (day % 3600UL) / 60;
     tm->hour = day / 3600UL;
   }
 
@@ -291,74 +266,22 @@ void osal_ConvertUTCTime( UTCTimeStruct *tm, UTCTime secTime )
  *
  * @param   mon - 0 - 11 (jan - dec)
  *
- * @return  number of days in specified month
+ * @return  returns the number of days in a month
  */
 static uint8 monthLength( uint8 lpyr, uint8 mon )
 {
   uint8 days = 31;
 
 	if ( mon == 1 ) // feb
-  {
 		days = ( 28 + lpyr );
-  }
   else
   {
-    if ( mon > 6 ) // aug-dec
-    {
+    if ( mon > 6 )
       mon--;
-    }
 
-    if ( mon & 1 )
-    {
+    if ( (mon % 2) == 1 )
       days = 30;
-    }
   }
 
 	return ( days );
-}
-
-/*********************************************************************
- * @fn      osal_ConvertUTCSecs
- *
- * @brief   Converts a UTCTimeStruct to UTCTime
- *
- * @param   tm - pointer to provided struct
- *
- * @return  number of seconds since 00:00:00 on 01/01/2000 (UTC)
- */
-UTCTime osal_ConvertUTCSecs( UTCTimeStruct *tm )
-{
-  uint32 seconds;
-
-  /* Seconds for the partial day */
-  seconds = (((tm->hour * 60UL) + tm->minutes) * 60UL) + tm->seconds;
-
-  /* Account for previous complete days */
-  {
-    /* Start with complete days in current month */
-    uint16 days = tm->day;
-
-    /* Next, complete months in current year */
-    {
-      int8 month = tm->month;
-      while ( --month >= 0 )
-      {
-        days += monthLength( IsLeapYear( tm->year ), month );
-      }
-    }
-
-    /* Next, complete years before current year */
-    {
-      uint16 year = tm->year;
-      while ( --year >= BEGYEAR )
-      {
-        days += YearLength( year );
-      }
-    }
-
-    /* Add total seconds before partial day */
-    seconds += (days * DAY);
-  }
-
-  return ( seconds );
 }

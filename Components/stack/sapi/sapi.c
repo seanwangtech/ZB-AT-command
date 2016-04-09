@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       sapi.c
-  Revised:        $Date: 2010-05-03 17:46:57 -0700 (Mon, 03 May 2010) $
-  Revision:       $Revision: 22364 $
+  Revised:        $Date: 2010-01-06 16:39:32 -0800 (Wed, 06 Jan 2010) $
+  Revision:       $Revision: 21446 $
 
   Description:    Z-Stack Simple Application Interface.
 
@@ -149,7 +149,7 @@ static void SAPI_AllowBindConfirm( uint16 source );
  */
 void zb_SystemReset ( void )
 {
-  SystemResetSoft();  // Especially useful for CC2531 to not break comm with USB Host.
+  SystemReset();
 }
 
 /******************************************************************************

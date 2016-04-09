@@ -1,22 +1,22 @@
 /**************************************************************************************************
   Filename:       hal_led.c
-  Revised:        $Date: 2012-02-14 12:43:32 -0800 (Tue, 14 Feb 2012) $
-  Revision:       $Revision: 29281 $
+  Revised:        $Date: 2009-03-13 05:45:44 -0700 (Fri, 13 Mar 2009) $
+  Revision:       $Revision: 19408 $
 
   Description:    This file contains the interface to the HAL LED Service.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -228,9 +228,8 @@ void HalLedBlink (uint8 leds, uint8 numBlinks, uint8 percent, uint16 period)
       {
         if (leds & led)
         {
-          /* Store the current state of the led before going to blinking if not already blinking */
-          if(sts->mode < HAL_LED_MODE_BLINK )
-          	preBlinkState |= (led & HalLedState);
+          /* Store the current state of the led before going to blinking */
+          preBlinkState |= (led & HalLedState);
 
           sts->mode  = HAL_LED_MODE_OFF;                    /* Stop previous blink */
           sts->time  = period;                              /* Time for one on/off cycle */
@@ -244,8 +243,6 @@ void HalLedBlink (uint8 leds, uint8 numBlinks, uint8 percent, uint16 period)
         led <<= 1;
         sts++;
       }
-      // Cancel any overlapping timer for blink events
-      osal_stop_timerEx(Hal_TaskID, HAL_LED_BLINK_EVENT);
       osal_set_event (Hal_TaskID, HAL_LED_BLINK_EVENT);
     }
     else
@@ -315,18 +312,19 @@ void HalLedUpdate (void)
               if (!(sts->mode & HAL_LED_MODE_FLASH))
               {
                 sts->todo--;                        /* Not continuous, reduce count */
+                if (!sts->todo)
+                {
+                  sts->mode ^= HAL_LED_MODE_BLINK;  /* No more blinks */
+                }
               }
-            }            
-            else if ( (!sts->todo) && !(sts->mode & HAL_LED_MODE_FLASH) )
-            {
-              sts->mode ^= HAL_LED_MODE_BLINK;      /* No more blinks */  
-            }            
+            }
             else
             {
               pct = sts->onPct;                     /* Percentage of cycle for on */
               sts->mode |= HAL_LED_MODE_ON;         /* Say it's on */
               HalLedOnOff (led, HAL_LED_MODE_ON);   /* Turn it on */
             }
+
             if (sts->mode & HAL_LED_MODE_BLINK)
             {
               wait = (((uint32)pct * (uint32)sts->time) / 100);

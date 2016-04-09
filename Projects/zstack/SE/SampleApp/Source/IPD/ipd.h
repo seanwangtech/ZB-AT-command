@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       ipd.h
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2009-12-16 11:21:45 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21339 $
 
   Description:    Header file for the IPD functionality
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -57,9 +57,9 @@ extern "C"
 
 #define IPD_MAX_ATTRIBUTES           13
 
-#define IPD_MAX_OPTIONS              5
+#define IPD_MAX_OPTIONS              3
 
-#define IPD_UPDATE_TIME_PERIOD       1000   // Update time event in msec
+#define IPD_UPDATE_TIME_PERIOD       1000   // Update time event in seconds
 #define IPD_GET_PRICING_INFO_PERIOD  5000   // Interval for get pricing info command
 #define SE_DEVICE_POLL_RATE          8000   // Poll rate for SE end device
 

@@ -6,7 +6,7 @@
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -46,15 +46,9 @@
 #include "hal_defs.h"
 #include "hal_types.h"
 
-/* OSAL */
-#include "OSAL.h"
-
 /* high-level */
 #include "mac_high_level.h"
 #include "mac_spec.h"
-
-/* MAC security */
-#include "mac_security.h"
 
 /* exported low-level */
 #include "mac_low_level.h"
@@ -139,12 +133,6 @@
 #define PROPRIETARY_FCS_CRC_OK(p)               ((p)[1] & PROPRIETARY_FCS_CRC_OK_BIT)
 #define PROPRIETARY_FCS_CORRELATION_VALUE(p)    ((p)[1] & ~PROPRIETARY_FCS_CRC_OK_BIT)
 
-/*
- *  Macros for security control field.
- */
-#define SECURITY_LEVEL(s)                       (s & 0x07)
-#define KEY_IDENTIFIER_MODE(s)                  ((s & 0x18) >> 3)
-#define SECURITY_CONTROL_RESERVED(s)            ((s & 0xE0) >> 5)
 
 /* ------------------------------------------------------------------------------------------------
  *                                       Global Variables
@@ -176,11 +164,6 @@ static void rxHaltCleanupFinalStep(void);
 
 static void rxStartIsr(void);
 static void rxAddrIsr(void);
-
-#ifdef MAC_SECURITY
-  static void rxSecurityHdrIsr(void);
-#endif
-  
 static void rxPayloadIsr(void);
 static void rxDiscardIsr(void);
 static void rxFcsIsr(void);
@@ -208,14 +191,6 @@ static uint8  rxIsrActiveFlag;
 static uint8  rxResetFlag;
 static uint8  rxFifoOverflowCount;
 
-#ifdef PACKET_FILTER_STATS
-  uint32      rxCrcFailure = 0;
-  uint32      rxCrcSuccess = 0;
-#endif /* PACKET_FILTER_STATS */
-
-#ifdef CC2591_COMPRESSION_WORKAROUND
-  void macRxResetRssi(void);
-#endif
 
 /**************************************************************************************************
  * @fn          macRxInit
@@ -342,7 +317,7 @@ static void rxHaltCleanupFinalStep(void)
   {
     MEM_FREE((uint8 **)&pRxBuf);
   }
-  /* MEM_FREE() sets parameter to NULL. */
+  pRxBuf = NULL; /* needed to indicate buffer is no longer allocated */
 
   pFuncRxState = &rxStartIsr;
 
@@ -414,7 +389,6 @@ static void rxStartIsr(void)
   uint8  ackWithPending;
   uint8  dstAddrMode;
   uint8  srcAddrMode;
-  uint8  mhrLen = 0;
 
   MAC_ASSERT(!macRxActive); /* receive on top of receive */
 
@@ -543,7 +517,7 @@ static void rxStartIsr(void)
 
     /*
      *  This critical section ensures that the ACK timeout won't be triggered in the
-     *  middle of receiving the ACK frame.
+     *  millde of receiving the ACK frame.
      */
     HAL_ENTER_CRITICAL_SECTION(s);
 
@@ -673,21 +647,13 @@ static void rxStartIsr(void)
     return;
   }
 
-  /* aux security header plus payload length is equal to unread bytes minus
-   * address length, minus the FCS
-   */
+  /* payload length is equal to unread bytes minus address length, minus the FCS */
   rxPayloadLen = rxUnreadLen - addrLen - MAC_FCS_FIELD_LEN;
 
   /*-------------------------------------------------------------------------------
    *  Allocate memory for the incoming frame.
    */
-  if (MAC_SEC_ENABLED(&rxBuf[1]))
-  {
-    /* increase the allocation size of MAC header for security */
-    mhrLen = MAC_MHR_LEN;
-  }
-
-  pRxBuf = (macRx_t *) MEM_ALLOC(sizeof(macRx_t) + mhrLen + rxPayloadLen);
+  pRxBuf = (macRx_t *) MEM_ALLOC(sizeof(macRx_t) + rxPayloadLen);
   if (pRxBuf == NULL)
   {
     /* Cancel the outgoing TX ACK */
@@ -768,19 +734,9 @@ static void rxStartIsr(void)
   *  Populate the receive buffer going up to high-level.
   */
 
-  /* configure the payload buffer
-   * save MAC header pointer regardless of security status.
-   */
-  pRxBuf->mhr.p   = pRxBuf->msdu.p   = (uint8 *) (pRxBuf + 1);
-  pRxBuf->mhr.len = pRxBuf->msdu.len =  rxPayloadLen;
-
-  if (MAC_SEC_ENABLED(&rxBuf[1]))
-  {
-    /* Copy FCF and sequence number to RX buffer */
-    pRxBuf->mhr.len = MAC_FCF_FIELD_LEN + MAC_SEQ_NUM_FIELD_LEN;
-    osal_memcpy(pRxBuf->mhr.p, &rxBuf[1], pRxBuf->mhr.len);
-    pRxBuf->mhr.p += pRxBuf->mhr.len;
-  }
+  /* configure the payload buffer */
+  pRxBuf->msdu.p = (uint8 *) (pRxBuf + 1);
+  pRxBuf->msdu.len = rxPayloadLen;
 
   /* set internal values */
   pRxBuf->mac.srcAddr.addrMode  = srcAddrMode;
@@ -790,6 +746,7 @@ static void rxStartIsr(void)
   pRxBuf->internal.frameType    = MAC_FRAME_TYPE(&rxBuf[1]);
   pRxBuf->mac.dsn               = MAC_SEQ_NUMBER(&rxBuf[1]);
   pRxBuf->internal.flags        = INTERNAL_FCF_FLAGS(&rxBuf[1]) | ackWithPending;
+  pRxBuf->sec.securityLevel     = MAC_SEC_LEVEL_NONE;
 
   /*-------------------------------------------------------------------------------
    *  If the processing the addressing fields does not require more bytes from
@@ -806,15 +763,7 @@ static void rxStartIsr(void)
   {
     /* need to read and process addressing fields, prepare for address interrupt */
     rxNextLen = addrLen;
-    if (MAC_SEC_ENABLED(&rxBuf[1]))
-    {
-      /* When security is enabled, read off security control field as well */
-      MAC_RADIO_SET_RX_THRESHOLD(rxNextLen + MAC_SEC_CONTROL_FIELD_LEN);
-    }
-    else
-    {
-      MAC_RADIO_SET_RX_THRESHOLD(rxNextLen);
-    }
+    MAC_RADIO_SET_RX_THRESHOLD(rxNextLen);
     pFuncRxState = &rxAddrIsr;
   }
 }
@@ -836,9 +785,6 @@ static void rxAddrIsr(void)
   uint8 buf[MAX_ADDR_FIELDS_LEN];
   uint8 dstAddrMode;
   uint8 srcAddrMode;
-#ifdef MAC_SECURITY  
-  uint8 securityControl;
-#endif /* MAC_SECURITY */  
   uint8  * p;
 
   MAC_ASSERT(rxNextLen != 0); /* logic assumes at least one address byte in buffer */
@@ -886,131 +832,12 @@ static void rxAddrIsr(void)
     }
   }
 
-#ifdef MAC_SECURITY
-  if (MAC_SEC_ENABLED(&rxBuf[1]))
-  {
-    uint8 keyIdMode;
-
-    if (MAC_FRAME_VERSION(&rxBuf[1]) == 0)
-    {
-      /* MAC_UNSUPPORTED_LEGACY - Cancel the outgoing TX ACK.
-       * It may be too late but we have to try.
-       */
-      MAC_RADIO_CANCEL_TX_ACK();
-
-      /* clean up after unsupported security legacy */
-      macRxHaltCleanup();
-      return;
-    }
-
-    /* Copy addressing fields to RX buffer */
-    osal_memcpy(pRxBuf->mhr.p, buf, rxNextLen);
-    pRxBuf->mhr.p   += rxNextLen;
-    pRxBuf->mhr.len += rxNextLen;
-
-    /*-------------------------------------------------------------------------------
-     *  Prepare for auxiliary security header interrupts.
-     */
-
-    /* read out security control field from FIFO (threshold set so bytes are guaranteed to be there) */
-    MAC_RADIO_READ_RX_FIFO(&securityControl, MAC_SEC_CONTROL_FIELD_LEN);
-
-    /* Copy security fields to MHR buffer */
-    *pRxBuf->mhr.p   = securityControl;
-    pRxBuf->mhr.p   += MAC_SEC_CONTROL_FIELD_LEN;
-    pRxBuf->mhr.len += MAC_SEC_CONTROL_FIELD_LEN;
-
-    /* store security level and key ID mode */
-    pRxBuf->sec.securityLevel = SECURITY_LEVEL(securityControl);
-    pRxBuf->sec.keyIdMode = keyIdMode = KEY_IDENTIFIER_MODE(securityControl);
-
-    /* Corrupted RX frame, should never occur. */
-    if ((keyIdMode > MAC_KEY_ID_MODE_8)
-    /* Get the next RX length according to AuxLen table minus security control field.
-     * The security control length is counted already.
-     */
-    || ((macKeySourceLen[keyIdMode] + MAC_FRAME_COUNTER_LEN) >= rxPayloadLen)
-    /* Security Enabled subfield is one, but the Security Level in the header is zero:
-     * MAC_UNSUPPORTED_SECURITY - Cancel the outgoing TX ACK.
-     */
-    || (pRxBuf->sec.securityLevel == MAC_SEC_LEVEL_NONE))
-    {
-      /* It may be too late but we have to try. */
-      MAC_RADIO_CANCEL_TX_ACK();
-
-      /* clean up after unsupported security or corrupted RX frame. */
-      macRxHaltCleanup();
-      return;
-    }
-
-    /* get the next RX length according to AuxLen table minus security control field.
-     * The sceurity control length is counted already.
-     */
-    rxNextLen = macKeySourceLen[keyIdMode] + MAC_FRAME_COUNTER_LEN;
-    MAC_RADIO_SET_RX_THRESHOLD(rxNextLen);
-    pFuncRxState = &rxSecurityHdrIsr;
-  }
-  else
-#endif /* MAC_SECURITY */
-  {
-    /* clear security level */
-    pRxBuf->sec.securityLevel = MAC_SEC_LEVEL_NONE;
-
-    /*-------------------------------------------------------------------------------
-     *  Prepare for payload interrupts.
-     */
-    pFuncRxState = &rxPayloadIsr;
-    rxPrepPayload();
-  }
-}
-
-
-#ifdef MAC_SECURITY
-/*=================================================================================================
- * @fn          rxSecurityHdrIsr
- *
- * @brief       Receive ISR state for reading out and storing the auxiliary security header.
- *
- * @param       none
- *
- * @return      none
- *=================================================================================================
- */
-static void rxSecurityHdrIsr(void)
-{
-  uint8 buf[MAC_FRAME_COUNTER_LEN + MAC_KEY_ID_8_LEN];
-
-  /* read out frame counter and key ID */
-  MAC_RADIO_READ_RX_FIFO(buf, rxNextLen);
-
-  /* Incoming frame counter */
-  macFrameCounter = BUILD_UINT32(buf[0], buf[1], buf[2], buf[3]);
-  if (rxNextLen - MAC_FRAME_COUNTER_LEN > 0)
-  {
-    /* Explicit mode */
-    osal_memcpy(pRxBuf->sec.keySource, &buf[MAC_FRAME_COUNTER_LEN], rxNextLen - MAC_FRAME_COUNTER_LEN - 1);
-    pRxBuf->sec.keyIndex = buf[rxNextLen - MAC_KEY_INDEX_LEN];
-  }
-
-  /* Copy security fields to RX buffer */
-  osal_memcpy(pRxBuf->mhr.p, buf, rxNextLen);
-  pRxBuf->mhr.p   += rxNextLen;
-  pRxBuf->mhr.len += rxNextLen;
-
-  /* Update payload pointer and payload length. The rxPayloadLen includes security header length
-   * and SCF byte. The security header and SCF length must be deducted from the rxPayloadLen.
-   */
-  rxPayloadLen    -= (rxNextLen + MAC_SEC_CONTROL_FIELD_LEN);
-  pRxBuf->msdu.len = rxPayloadLen;
-  pRxBuf->mhr.len += rxPayloadLen;
-
   /*-------------------------------------------------------------------------------
    *  Prepare for payload interrupts.
    */
   pFuncRxState = &rxPayloadIsr;
   rxPrepPayload();
 }
-#endif /* MAC_SECURITY */
 
 
 /*=================================================================================================
@@ -1050,9 +877,8 @@ static void rxPrepPayload(void)
  */
 static void rxPayloadIsr(void)
 {
-  MAC_RADIO_READ_RX_FIFO(pRxBuf->mhr.p, rxNextLen);
-  pRxBuf->mhr.p += rxNextLen;
-
+  MAC_RADIO_READ_RX_FIFO(pRxBuf->msdu.p, rxNextLen);
+  pRxBuf->msdu.p += rxNextLen;
   rxPayloadLen -= rxNextLen;
 
   rxPrepPayload();
@@ -1098,10 +924,6 @@ static void rxFcsIsr(void)
     int8 rssiDbm;
     uint8 corr;
 
-#ifdef PACKET_FILTER_STATS
-    rxCrcSuccess++;
-#endif /* PACKET_FILTER_STATS */
-
     /*
      *  As power saving optimization, set state variable to indicate physical receive
      *  has completed and then request turning of the receiver.  This means the receiver
@@ -1132,8 +954,7 @@ static void rxFcsIsr(void)
     pRxBuf->mac.correlation = corr;
 
     /* set the MSDU pointer to point at start of data */
-    pRxBuf->mhr.p   = (uint8 *) (pRxBuf + 1);
-    pRxBuf->msdu.p += (pRxBuf->mhr.len - pRxBuf->msdu.len);
+    pRxBuf->msdu.p = (uint8 *) (pRxBuf + 1);
 
     /* finally... execute callback function */
     macRxCompleteCallback(pRxBuf);
@@ -1141,10 +962,6 @@ static void rxFcsIsr(void)
   }
   else
   {
-#ifdef PACKET_FILTER_STATS
-    rxCrcFailure++;
-#endif /* PACKET_FILTER_STATS */
-
     /*
      *  The CRC is bad so no ACK was sent.  Cancel any callback and clear the flag.
      *  (It's OK to cancel the outgoing ACK even if an ACK was not requested.  It's
@@ -1177,9 +994,6 @@ static void rxFcsIsr(void)
  */
 static void rxDone(void)
 {
-  /* Make sure the peak RSSI is reset */
-  COMPRESSION_WORKAROUND_RESET_RSSI();
-  
   /* if the receive FIFO has overflowed, flush it here */
   if (MAC_RADIO_RX_FIFO_HAS_OVERFLOWED())
   {
@@ -1317,7 +1131,7 @@ static void rxDiscardIsr(void)
 
 
 /**************************************************************************************************
- * @fn          macRxFifoOverflowIsr
+ * @fn          maxRxRifoOverflowIsr
  *
  * @brief       This interrupt service routine is called when RX FIFO overflow. Note that this
  *              exception does not retrieve the good frames that are trapped in the RX FIFO.
@@ -1351,7 +1165,7 @@ MAC_INTERNAL_API void macRxPromiscuousMode(uint8 mode)
 
   if (rxPromiscuousMode == MAC_PROMISCUOUS_MODE_OFF)
   {
-    MAC_RADIO_TURN_ON_RX_FRAME_FILTERING();
+      MAC_RADIO_TURN_ON_RX_FRAME_FILTERING();
   }
   else
   {
@@ -1362,25 +1176,7 @@ MAC_INTERNAL_API void macRxPromiscuousMode(uint8 mode)
   }
 }
 
-#ifdef CC2591_COMPRESSION_WORKAROUND
-/**************************************************************************************************
- * @fn          macRxResetRssi
- *
- * @brief       This function reset RSSI peak if the device is not actively in TX or RX.
- *
- * @param       none
- *
- * @return      none
- **************************************************************************************************
- */
-void macRxResetRssi(void)
-{
-  if ( !(macRxActive || macRxOutgoingAckFlag || macTxActive) )
-  {
-    COMPRESSION_WORKAROUND_RESET_RSSI();
-  }
-}
-#endif /* CC2591_COMPRESSION_WORKAROUND */
+
 
 /**************************************************************************************************
  *                                  Compile Time Integrity Checks

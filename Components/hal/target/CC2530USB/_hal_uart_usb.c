@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       _hal_uart_usb.c
-  Revised:        $Date: 2012-03-27 14:53:26 -0700 (Tue, 27 Mar 2012) $
-  Revision:       $Revision: 29910 $
+  Revised:        $Date:$
+  Revision:       $Revision:$
 
   Description: This file contains the interface to the H/W UART driver by USB.
 
 
-  Copyright 2009-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -42,9 +42,6 @@
  */
 
 #include "hal_uart.h"
-#if defined MT_TASK
-#include "MT_UART.h"
-#endif
 
 #include "usb_board_cfg.h"
 #include "usb_cdc.h"
@@ -99,7 +96,7 @@
 static uint8 halUartRxH, halUartRxT, halUartRxQ[256];
 static uint8 halUartTxH, halUartTxT, halUartTxQ[256];
 
-#if !defined HAL_SB_BOOT_CODE
+#if !defined HAL_USB_BOOT_CODE
 static uint8 rxTick;
 static uint8 rxShdw;
 static uint8 txMT;
@@ -145,31 +142,14 @@ void HalUARTInitUSB(void)
   // Initialize the USB interrupt handler with bit mask containing all processed USBIRQ events
   usbirqInit(0xFFFF);
 
-#if defined HAL_SB_BOOT_CODE
-  HAL_USB_PULLUP_ENABLE();  // Enable pullup on D+.
-#else
+  // Enable pullup on D+
+  HAL_USB_PULLUP_ENABLE();
+
+#if !defined HAL_USB_BOOT_CODE
   txMT = TRUE;
 #endif
 }
 
-/******************************************************************************
- * @fn      HalUARTUnInitUSB
- *
- * @brief   UnInitialize the USB.
- *
- * @param   none
- *
- * @return  none
- *****************************************************************************/
-static void HalUARTUnInitUSB(void)
-{
-  P2IEN = 0;
-  IEN2 = 0;
-  HAL_USB_PULLUP_DISABLE();
-  HAL_USB_DISABLE;
-}
-
-#if !defined HAL_SB_BOOT_CODE
 /******************************************************************************
  * @fn      HalUARTOpenUSB
  *
@@ -183,13 +163,12 @@ static void HalUARTOpenUSB(halUARTCfg_t *config)
 {
   // Synchronize initial value to any value between 0 and 255
   halUartRxH = halUartRxT;
-
+#if !defined HAL_USB_BOOT_CODE
   uartCB = config->callBackFunc;
+#else
   (void)config;
-
-  HAL_USB_PULLUP_ENABLE();  // Enable pullup on D+.
-}
 #endif
+}
 
 /***********************************************************************************
 * @fn           HalUartPollUSB
@@ -202,9 +181,6 @@ static void HalUARTOpenUSB(halUARTCfg_t *config)
 */
 void HalUARTPollUSB(void)
 {
-#if defined HAL_SB_BOOT_CODE
-  while (USBIF)  usbirqHandler();
-#endif
   halUartPollEvt();
   halUartPollRx();
   halUartPollTx();
@@ -231,7 +207,7 @@ void HalUARTTx(uint8 *buf, uint8 cnt)
   {
     halUartTxQ[halUartTxT++] = *buf++;
   }
-#if !defined HAL_SB_BOOT_CODE
+#if !defined HAL_USB_BOOT_CODE
   txMT = FALSE;
 #endif
 }
@@ -324,7 +300,7 @@ static void halUartPollRx(void)
     }
     USBFW_ARM_OUT_ENDPOINT();
 
-#if !defined HAL_SB_BOOT_CODE
+#if !defined HAL_USB_BOOT_CODE
     // If the USB has transferred in more Rx bytes, reset the Rx idle timer.
 
     // Re-sync the shadow on any 1st byte(s) received.
@@ -335,7 +311,7 @@ static void halUartPollRx(void)
     rxTick = HAL_UART_USB_IDLE;
 #endif
   }
-#if !defined HAL_SB_BOOT_CODE
+#if !defined HAL_USB_BOOT_CODE
   else if (rxTick)
   {
     // Use the LSB of the sleep timer (ST0 must be read first anyway).
@@ -394,7 +370,7 @@ static void halUartPollTx(void)
   {
     if (halUartTxT == halUartTxH)
     {
-#if !defined HAL_SB_BOOT_CODE
+#if !defined HAL_USB_BOOT_CODE
       if (!txMT)
       {
         txMT = TRUE;

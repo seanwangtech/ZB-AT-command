@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       _hal_uart_isr.c
-  Revised:        $Date: 2012-03-27 14:53:26 -0700 (Tue, 27 Mar 2012) $
-  Revision:       $Revision: 29910 $
+  Revised:        $Date: 2009-12-10 14:22:39 -0800 (Thu, 10 Dec 2009) $
+  Revision:       $Revision: 21313 $
 
   Description: This file contains the interface to the H/W UART driver by ISR.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -48,8 +48,9 @@
 #include "hal_mcu.h"
 #include "hal_uart.h"
 #if defined MT_TASK
-#include "MT_UART.h"
+#include "mt_uart.h"
 #endif
+#include "osal.h"
 
 /*********************************************************************
  * MACROS
@@ -97,9 +98,7 @@
 
 #define P2DIR_PRIPO                0xC0
 
-// Incompatible redefinitions result with more than one UART driver sub-module.
-#undef PxOUT
-#undef PxDIR
+// Incompatible redefinitions between the 2 UART driver sub-modules:
 #undef PxSEL
 #undef UxCSR
 #undef UxUCR
@@ -107,13 +106,8 @@
 #undef UxBAUD
 #undef UxGCR
 #undef URXxIE
-#undef URXxIF
 #undef UTXxIE
 #undef UTXxIF
-#undef HAL_UART_PERCFG_BIT
-#undef HAL_UART_Px_RTS
-#undef HAL_UART_Px_CTS
-#undef HAL_UART_Px_RX_TX
 #if (HAL_UART_ISR == 1)
 #define PxOUT                      P0
 #define PxDIR                      P0DIR
@@ -124,7 +118,6 @@
 #define UxBAUD                     U0BAUD
 #define UxGCR                      U0GCR
 #define URXxIE                     URX0IE
-#define URXxIF                     URX0IF
 #define UTXxIE                     UTX0IE
 #define UTXxIF                     UTX0IF
 #else
@@ -137,7 +130,6 @@
 #define UxBAUD                     U1BAUD
 #define UxGCR                      U1GCR
 #define URXxIE                     URX1IE
-#define URXxIF                     URX1IF
 #define UTXxIE                     UTX1IE
 #define UTXxIF                     UTX1IF
 #endif
@@ -227,8 +219,8 @@ static uartISRCfg_t isrCfg;
 
 static void HalUARTInitISR(void);
 static void HalUARTOpenISR(halUARTCfg_t *config);
-uint16 HalUARTReadISR(uint8 *buf, uint16 len);
-uint16 HalUARTWriteISR(uint8 *buf, uint16 len);
+static uint16 HalUARTReadISR(uint8 *buf, uint16 len);
+static uint16 HalUARTWriteISR(uint8 *buf, uint16 len);
 static void HalUARTPollISR(void);
 static uint16 HalUARTRxAvailISR(void);
 static void HalUARTSuspendISR(void);
@@ -258,24 +250,6 @@ static void HalUARTInitISR(void)
   ADCCFG &= ~HAL_UART_Px_RX_TX;      // Make sure ADC doesnt use this.
   UxCSR = CSR_MODE;                  // Mode is UART Mode.
   UxUCR = UCR_FLUSH;                 // Flush it.
-}
-
-/******************************************************************************
- * @fn      HalUARTUnInitISR
- *
- * @brief   UnInitialize the UART.
- *
- * @param   none
- *
- * @return  none
- *****************************************************************************/
-static void HalUARTUnInitISR(void)
-{
-  UxCSR = 0;
-  URXxIE = 0;
-  URXxIF = 0;
-  IEN2 &= ~UTXxIE;  
-  UTXxIF = 0;
 }
 
 /******************************************************************************
@@ -350,7 +324,7 @@ static void HalUARTOpenISR(halUARTCfg_t *config)
  *
  * @return  length of buffer that was read
  *****************************************************************************/
-uint16 HalUARTReadISR(uint8 *buf, uint16 len)
+static uint16 HalUARTReadISR(uint8 *buf, uint16 len)
 {
   uint16 cnt = 0;
 
@@ -377,7 +351,7 @@ uint16 HalUARTReadISR(uint8 *buf, uint16 len)
  *
  * @return  length of the buffer that was sent
  *****************************************************************************/
-uint16 HalUARTWriteISR(uint8 *buf, uint16 len)
+static uint16 HalUARTWriteISR(uint8 *buf, uint16 len)
 {
   uint16 cnt;
 
@@ -523,7 +497,6 @@ HAL_ISR_FUNCTION( halUart0RxIsr, URX0_VECTOR )
 #else
 HAL_ISR_FUNCTION( halUart1RxIsr, URX1_VECTOR )
 #endif
-
 {
   uint8 tmp = UxDBUF;
   isrCfg.rxBuf[isrCfg.rxTail] = tmp;

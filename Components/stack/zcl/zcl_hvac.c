@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       zcl_hvac.c
-  Revised:        $Date: 2011-05-19 11:53:12 -0700 (Thu, 19 May 2011) $
-  Revision:       $Revision: 26031 $
+  Revised:        $Date: 2007-07-31 09:16:11 -0700 (Tue, 31 Jul 2007) $
+  Revision:       $Revision: 14985 $
 
   Description:    Zigbee Cluster Library - HVAC
 
 
-  Copyright 2006-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -153,14 +153,13 @@ ZStatus_t zclHVAC_RegisterCmdCallbacks( uint8 endpoint, zclHVAC_AppCallbacks_t *
  * @param   srcEP - Sending application's endpoint
  * @param   dstAddr - where you want the message to go
  * @param   mode - which setpoint is to be configured
- * @param   amount - amount setpoint(s) are to be increased (or decreased) by,
- *                   in steps of 0.1°C
+ * @param   amount - amount setpoint(s) are to be increased (or decreased) by
  * @param   seqNum - transaction sequence number
  *
  * @return  ZStatus_t
  */
 ZStatus_t zclHVAC_SendSetpointRaiseLower( uint8 srcEP, afAddrType_t *dstAddr,
-                                          uint8 mode, int8 amount, 
+                                          uint8 mode, uint8 amount, 
                                           uint8 disableDefaultRsp, uint8 seqNum )
 {
   uint8 buf[2];

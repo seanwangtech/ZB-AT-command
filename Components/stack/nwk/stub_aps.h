@@ -6,7 +6,7 @@
   Description:    Primitives of the Stub Application Support Sub Layer Task functions.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2008 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -58,7 +58,6 @@ extern "C" {
 
 // Inter-PAN frame doesn't include endpoints. Use this endpoint to distinguish the
 // Inter-PAN frames passed between the Stub APS and Application.
-// Note: Endpoints 0xF1 - 0xFE are currently reserved.
 #define STUBAPS_INTER_PAN_EP        0xFE
 
 /*********************************************************************

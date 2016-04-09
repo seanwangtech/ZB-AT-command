@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       MT_AF.h
-  Revised:        $Date: 2010-03-18 11:11:36 -0700 (Thu, 18 Mar 2010) $
-  Revision:       $Revision: 21931 $
+  Revised:        $Date: 2010-01-05 18:37:09 -0800 (Tue, 05 Jan 2010) $
+  Revision:       $Revision: 21436 $
 
   Description:    MonitorTest functions for AF.
 
@@ -72,11 +72,6 @@ typedef enum {
  * GLOBAL VARIABLES
  ***************************************************************************************************/
 extern uint16 _afCallbackSub;
-
-/*
- * AF housekeeping executive.
- */
-extern void MT_AfExec(void);
 
 /*
  * Process AF commands

@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       esp.h
-  Revised:        $Date: 2011-12-20 15:56:52 -0800 (Tue, 20 Dec 2011) $
-  Revision:       $Revision: 28724 $
+  Revised:        $Date: 2009-12-16 11:19:23 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21337 $
 
   Description:    Header file for the ESP functionality
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -55,12 +55,11 @@ extern "C"
  */
 #define ESP_ENDPOINT                 0x09
 
-#define ESP_MAX_ATTRIBUTES           89
+#define ESP_MAX_ATTRIBUTES           53
 
-#define ESP_MAX_OPTIONS              7
+#define ESP_MAX_OPTIONS              8
 
-#define ESP_UPDATE_TIME_PERIOD       1000     // Update time event in msec
-#define ESP_FAST_POLL_TIMER_PERIOD   1000     // Fast poll mode timer period in msec
+#define ESP_UPDATE_TIME_PERIOD       1000     // Update time event in seconds
 
 #define HVAC_DEVICE_CLASS            0x000001 // HVAC compressor or furnace - bit 0 is set
 #define ONOFF_LOAD_DEVICE_CLASS      0x000080 // simple misc residential on/off loads - bit 7 is set
@@ -69,7 +68,6 @@ extern "C"
 #define ESP_IDENTIFY_TIMEOUT_EVT     0x0001
 #define ESP_UPDATE_TIME_EVT          0x0002
 #define SIMPLE_DESC_QUERY_EVT        0x0004
-#define ESP_FAST_POLL_MODE_EVT       0x0008
 
 /*********************************************************************
  * MACROS
@@ -92,10 +90,6 @@ extern uint16 espTransitionTime;
 extern uint16 espIdentifyTime;
 extern uint32 espTime;
 extern uint8 espSignature[];
-extern uint8 espFastPollUpdatePeriod;
-
-extern uint8 espPhysicalEnvironment;
-
 /*********************************************************************
  * FUNCTIONS
  */

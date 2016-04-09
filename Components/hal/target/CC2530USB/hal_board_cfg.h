@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_board_cfg.h
-  Revised:        $Date: 2012-03-29 12:09:02 -0700 (Thu, 29 Mar 2012) $
-  Revision:       $Revision: 29943 $
+  Revised:        $Date: 2009-09-17 20:35:33 -0700 (Thu, 17 Sep 2009) $
+  Revision:       $Revision: 20782 $
 
-  Description:    Declarations for the CC2531 USB dongle.
+  Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -36,9 +36,18 @@
   Should you have any questions regarding your right to use this Software,
   contact Texas Instruments Incorporated at www.TI.com.
 **************************************************************************************************/
-
 #ifndef HAL_BOARD_CFG_H
 #define HAL_BOARD_CFG_H
+
+/*
+ *     =============================================================
+ *     |        Chipcon USB Evaluation Board, plus                 |
+ *     |            Texas Instruments CC2531EM Evaluation Module   |
+ *     | --------------------------------------------------------- |
+ *     |  mcu   : 8051 core                                        |
+ *     |  clock : 32MHz                                            |
+ *     =============================================================
+ */
 
 
 /* ------------------------------------------------------------------------------------------------
@@ -56,12 +65,9 @@
  *
  *                        Define HAL_PA_LNA_CC2590 if CC2530+CC2590EM is used
  *                        Define HAL_PA_LNA if CC2530+CC2591EM is used
- *                        Note that only one of them can be defined
  * ------------------------------------------------------------------------------------------------
  */
 #define xHAL_PA_LNA
-#define xHAL_PA_LNA_CC2590
-
 
 /* ------------------------------------------------------------------------------------------------
  *                                       Board Indentifier
@@ -79,13 +85,7 @@
  *                                          Clock Speed
  * ------------------------------------------------------------------------------------------------
  */
-
 #define HAL_CPU_CLOCK_MHZ     32
-
-/* This flag should be defined if the SoC uses the 32MHz crystal
- * as the main clock source (instead of DCO).
- */
-#define HAL_CLOCK_CRYSTAL
 
 #define OSC32K_CRYSTAL_INSTALLED  FALSE
 
@@ -95,8 +95,6 @@
 #else
   #define OSC_32KHZ  0x80 /* internal 32 KHz rcosc */
 #endif
-
-#define HAL_CLOCK_STABLE()    st( while (CLKCONSTA != (CLKCONCMD_32MHZ | OSC_32KHZ)); )
 
 /* ------------------------------------------------------------------------------------------------
  *                                       LED Configuration
@@ -152,15 +150,12 @@
 #define HAL_FLASH_PAGE_MAP         0x8000
 
 // The last 16 bytes of the last available page are reserved for flash lock bits.
-// NV page definitions must coincide with segment declaration in project *.xcl file.
 #if defined NON_BANKED
 #define HAL_FLASH_LOCK_BITS        16
 #define HAL_NV_PAGE_END            30
-#define HAL_NV_PAGE_CNT            2
 #else
 #define HAL_FLASH_LOCK_BITS        16
 #define HAL_NV_PAGE_END            126
-#define HAL_NV_PAGE_CNT            6
 #endif
 
 // Re-defining Z_EXTADDR_LEN here so as not to include a Z-Stack .h file.
@@ -169,10 +164,7 @@
 #define HAL_FLASH_IEEE_OSET       (HAL_FLASH_PAGE_SIZE - HAL_FLASH_LOCK_BITS - HAL_FLASH_IEEE_SIZE)
 #define HAL_INFOP_IEEE_OSET        0xC
 
-#define HAL_FLASH_DEV_PRIVATE_KEY_OSET     0x7D2
-#define HAL_FLASH_CA_PUBLIC_KEY_OSET       0x7BC
-#define HAL_FLASH_IMPLICIT_CERT_OSET       0x78C
-
+#define HAL_NV_PAGE_CNT            6
 #define HAL_NV_PAGE_BEG           (HAL_NV_PAGE_END-HAL_NV_PAGE_CNT+1)
 
 // Used by DMA macros to shift 1 to create a mask for DMA registers.
@@ -184,14 +176,14 @@
 #define HAL_NV_DMA_SET_ADDR(a)     HAL_DMA_SET_ADDR_DESC0((a))
 
 /* ------------------------------------------------------------------------------------------------
- *  Serial Boot Loader: reserving the first 4 pages of flash and other memory in cc2530-sb.xcl.
+ *                    Reserving 1st 3 pages and last page for USB boot loader.
  * ------------------------------------------------------------------------------------------------
  */
 
-#define HAL_SB_IMG_ADDR       0x2000
-#define HAL_SB_CRC_ADDR       0x2090
-// Size of internal flash less 4 pages for boot loader, 6 pages for NV, & 1 page for lock bits.
-#define HAL_SB_IMG_SIZE      (0x40000 - 0x2000 - 0x3000 - 0x0800)
+#define HAL_USB_IMG_ADDR       0x1800
+#define HAL_USB_CRC_ADDR       0x1890
+// Size of internal flash less 4 pages for boot loader and 6 pages for NV.
+#define HAL_USB_IMG_SIZE      (0x40000 - 0x2000 - 0x3000)
 
 /* ------------------------------------------------------------------------------------------------
  *                                            Macros
@@ -203,6 +195,27 @@
 #define PREFETCH_DISABLE()    st( FCTL = 0x04; )
 
 /* ----------- Board Initialization ---------- */
+#if defined HAL_USB_BOOT_CODE
+
+#define HAL_BOARD_INIT()                                         \
+{                                                                \
+  uint16 i;                                                      \
+                                                                 \
+  SLEEPCMD &= ~OSC_PD;                       /* turn on 16MHz RC and 32MHz XOSC */                \
+  while (!(SLEEPSTA & XOSC_STB));            /* wait for 32MHz XOSC stable */                     \
+  asm("NOP");                                /* chip bug workaround */                            \
+  for (i=0; i<504; i++) asm("NOP");          /* Require 63us delay for all revs */                \
+  CLKCONCMD = (CLKCONCMD_32MHZ | OSC_32KHZ); /* Select 32MHz XOSC and the source for 32K clock */ \
+  while (CLKCONSTA != (CLKCONCMD_32MHZ | OSC_32KHZ)); /* Wait for the change to be effective */   \
+  SLEEPCMD |= OSC_PD;                        /* turn off 16MHz RC */                              \
+  HAL_USB_PULLUP_DISABLE();                  /* Disconnect D+ signal to host. */                  \
+                                                                 \
+  /* Turn on cache prefetch mode */                              \
+  PREFETCH_ENABLE();                                            \
+}
+
+#else
+
 #define HAL_BOARD_INIT()                                         \
 {                                                                \
   uint16 i;                                                      \
@@ -216,13 +229,15 @@
   SLEEPCMD |= OSC_PD;                        /* turn off 16MHz RC */                              \
                                                                  \
   /* Turn on cache prefetch mode */                              \
-  PREFETCH_ENABLE();                                             \
+  PREFETCH_ENABLE();                                            \
                                                                  \
   HAL_TURN_OFF_LED1();                                           \
   LED1_DDR |= LED1_BV;                                           \
   HAL_TURN_OFF_LED2();                                           \
   LED2_DDR |= LED2_BV;                                           \
 }
+
+#endif
 
 /* ----------- Debounce ---------- */
 #define HAL_DEBOUNCE(expr)    { int i; for (i=0; i<500; i++) { if (!(expr)) i = 0; } }
@@ -255,14 +270,6 @@
 #define HAL_STATE_LED2()          (LED2_POLARITY (LED2_SBIT))
 #define HAL_STATE_LED3()          HAL_STATE_LED1()
 #define HAL_STATE_LED4()          HAL_STATE_LED2()
-
-/* ----------- Minimum safe bus voltage ---------- */
-
-// Vdd/3 / Internal Reference X ENOB --> (Vdd / 3) / 1.15 X 127
-#define VDD_2_0  74   // 2.0 V required to safely read/write internal flash.
-
-#define VDD_MIN_RUN   VDD_2_0
-#define VDD_MIN_NV   (VDD_2_0+4)  // 5% margin over minimum to survive a page erase and compaction.
 
 /* ------------------------------------------------------------------------------------------------
  *                                     Driver Configuration

@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       ZDProfile.c
-  Revised:        $Date: 2010-10-13 10:54:13 -0700 (Wed, 13 Oct 2010) $
-  Revision:       $Revision: 24112 $
+  Revised:        $Date: 2010-01-17 08:58:03 -0800 (Sun, 17 Jan 2010) $
+  Revision:       $Revision: 21533 $
 
   Description:    This is the Zigbee Device Profile.
 
 
-  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,7 +22,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -150,8 +150,8 @@ void zdpProcessAddrReq( zdoIncomingMsg_t *inMsg );
 
 static uint8  ZDP_Buf[ ZDP_BUF_SZ ];
 static uint8 *ZDP_TmpBuf = ZDP_Buf+1;
+static byte ZDP_TxOptions = AF_TX_OPTIONS_NONE;
 
-byte ZDP_TxOptions = AF_TX_OPTIONS_NONE;
 ZDO_MsgCB_t *zdoMsgCBs = (ZDO_MsgCB_t *)NULL;
 
 /*********************************************************************
@@ -262,7 +262,8 @@ afStatus_t ZDP_SendData( uint8 *TransSeq, zAddrType_t *dstAddr, uint16 cmd,
     *pBuf++ = *buf++;
   }
 
-  FillAndSendTxOptions( TransSeq, dstAddr, cmd, len, ((SecurityEnable) ? AF_EN_SECURITY : 0) );
+  FillAndSendTxOptions( TransSeq, dstAddr, cmd, len,
+               (AF_DEFAULT_RADIUS | ((SecurityEnable) ? AF_EN_SECURITY : 0)) );
 }
 
 /*********************************************************************
@@ -1420,8 +1421,8 @@ afStatus_t ZDP_MgmtNwkDiscRsp( byte TransSeq, zAddrType_t *dstAddr,
     *pBuf++  = NetworkList->logicalChannel;                // LogicalChannel
     *pBuf    = NetworkList->stackProfile;                  // Stack profile
     *pBuf++ |= (byte)(NetworkList->version << 4);          // ZigBee Version
-    *pBuf    = BEACON_ORDER_NO_BEACONS;                    // Beacon Order
-    *pBuf++ |= (uint8)(BEACON_ORDER_NO_BEACONS << 4);      // Superframe Order
+    *pBuf    = NetworkList->beaconOrder;                   // Beacon Order
+    *pBuf++ |= (byte)(NetworkList->superFrameOrder << 4);  // Superframe Order
 
     if ( NetworkList->chosenRouter != INVALID_NODE_ADDR )
     {

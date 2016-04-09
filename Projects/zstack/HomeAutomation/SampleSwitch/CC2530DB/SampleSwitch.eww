@@ -6,7 +6,7 @@
   </project>
   <batchBuild>
     <batchDefinition>
-      <name>ALL</name>
+      <name>Build All</name>
       <member>
         <project>SampleSwitch</project>
         <configuration>CoordinatorEB</configuration>
@@ -18,6 +18,18 @@
       <member>
         <project>SampleSwitch</project>
         <configuration>EndDeviceEB</configuration>
+      </member>
+      <member>
+        <project>SampleSwitch</project>
+        <configuration>CoordinatorEB-Pro</configuration>
+      </member>
+      <member>
+        <project>SampleSwitch</project>
+        <configuration>EndDeviceEB-Pro</configuration>
+      </member>
+      <member>
+        <project>SampleSwitch</project>
+        <configuration>RouterEB-Pro</configuration>
       </member>
     </batchDefinition>
   </batchBuild>

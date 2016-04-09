@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       aps_frag.h
-  Revised:        $Date: 2011-05-27 16:00:27 -0700 (Fri, 27 May 2011) $
-  Revision:       $Revision: 26145 $
+  Revised:        $Date: 2009-03-12 16:25:22 -0700 (Thu, 12 Mar 2009) $
+  Revision:       $Revision: 19404 $
 
-  Description:    Implements APS Application Data Unit Fragmentation
+  Description:    Implements APS Application Data Unit Fragmentation 
 
 
-  Copyright 2006-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,49 +34,42 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
+
 #ifndef APSF_H
 #define APSF_H
+
+#include "AF.h"
+#include "ZDApp.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-/* ------------------------------------------------------------------------------------------------
- *                                          Includes
- * ------------------------------------------------------------------------------------------------
+/*********************************************************************
+ * INCLUDES
  */
-
 #include "ZComDef.h"
-#include "AF.h"
 
-/* ------------------------------------------------------------------------------------------------
- *                                          Constants
- * ------------------------------------------------------------------------------------------------
+/*********************************************************************
+ * CONSTANTS
  */
-
 #define APSF_SCHED_EVT             0x0001
-#define APSF_MAX_WINDOW_SIZE       8  // Maximum allowable fragmentation window size.
 
-/* ------------------------------------------------------------------------------------------------
- *                                            Macros
- * ------------------------------------------------------------------------------------------------
+/*********************************************************************
+ * MACROS
  */
+#define APSF_Enabled            (APSF_taskID != 0xff)    
 
-#define APSF_Enabled              (APSF_taskID != 0xff)
-
-/* ------------------------------------------------------------------------------------------------
- *                                           Global Variables
- * ------------------------------------------------------------------------------------------------
+/*********************************************************************
+ * GLOBAL VARIABLES
  */
-
 extern uint8 APSF_taskID;
 
-/* ------------------------------------------------------------------------------------------------
- *                                          Functions
- * ------------------------------------------------------------------------------------------------
+/*********************************************************************
+ * FUNCTIONS
  */
 
 /*
@@ -101,9 +94,12 @@ extern APSF_SendFragmented_t *apsfSendFragmented;
 extern APSF_ProcessAck_t *apsfProcessAck;
 extern APSF_SendOsalMsg_t *apsfSendOsalMsg;
 
+/*********************************************************************
+*********************************************************************/
+
 #ifdef __cplusplus
 }
 #endif
-#endif
-/**************************************************************************************************
-*/
+
+
+#endif // APSF_H

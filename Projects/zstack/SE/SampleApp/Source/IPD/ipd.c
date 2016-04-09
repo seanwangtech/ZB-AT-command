@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       ipd.c
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2009-12-22 12:53:18 -0800 (Tue, 22 Dec 2009) $
+  Revision:       $Revision: 21388 $
 
   Description:    This module implements the IPD functionality and contains the
                   init and event loop functions
 
 
-  Copyright 2009-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -65,7 +65,6 @@
 #include "OSAL.h"
 #include "OSAL_Clock.h"
 #include "ZDApp.h"
-#include "ZDObject.h"
 #include "AddrMgr.h"
 
 #include "se.h"
@@ -97,10 +96,6 @@
  */
 
 #define ipdNwkState  devState
-
-// Request Fast Poll Mode parameters
-#define IPD_FAST_POLL_UPDATE_PERIOD   2   // in seconds
-#define IPD_FAST_POLL_DURATION        5   // in minutes
 
 /*********************************************************************
  * TYPEDEFS
@@ -138,7 +133,6 @@ static endPointDesc_t ipdEp =
   (afNetworkLatencyReq_t)0
 };
 #endif
-
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
@@ -147,6 +141,11 @@ static void ipd_HandleKeys( uint8 shift, uint8 keys );
 #if SECURE
 static uint8 ipd_KeyEstablish_ReturnLinkKey( uint16 shortAddr );
 #endif
+
+#if defined ( ZCL_ALARMS )
+static void ipd_ProcessAlarmCmd( uint8 srcEP, afAddrType_t *dstAddr,
+                        uint16 clusterID, zclFrameHdr_t *hdr, uint8 len, uint8 *data );
+#endif // ZCL_ALARMS
 
 static void ipd_ProcessIdentifyTimeChange( void );
 
@@ -162,80 +161,22 @@ static void ipd_BasicResetCB( void );
 static void ipd_IdentifyCB( zclIdentify_t *pCmd );
 static void ipd_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp );
 static void ipd_AlarmCB( zclAlarm_t *pAlarm );
-#ifdef SE_UK_EXT
-static void ipd_GetEventLogCB( uint8 srcEP, afAddrType_t *srcAddr,
-                                   zclGetEventLog_t *pEventLog, uint8 seqNum );
-static void ipd_PublishEventLogCB( afAddrType_t *srcAddr,
-                                             zclPublishEventLog_t *pEventLog );
-#endif // SE_UK_EXT
-
-// Function to process ZDO callback messages
-static void ipd_ProcessZDOMsgs( zdoIncomingMsg_t *pMsg );
 
 // SE Callback functions
 static void ipd_GetCurrentPriceCB( zclCCGetCurrentPrice_t *pCmd,
                                          afAddrType_t *srcAddr, uint8 seqNum );
 static void ipd_GetScheduledPriceCB( zclCCGetScheduledPrice_t *pCmd,
                                          afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PriceAcknowledgementCB( zclCCPriceAcknowledgement_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_GetBlockPeriodCB( zclCCGetBlockPeriod_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
 static void ipd_PublishPriceCB( zclCCPublishPrice_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishBlockPeriodCB( zclCCPublishBlockPeriod_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
+                                      afAddrType_t *srcAddr, uint8 seqNum );
 static void ipd_DisplayMessageCB( zclCCDisplayMessage_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
+                                        afAddrType_t *srcAddr, uint8 seqNum );
 static void ipd_CancelMessageCB( zclCCCancelMessage_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
+                                       afAddrType_t *srcAddr, uint8 seqNum );
 static void ipd_GetLastMessageCB( afAddrType_t *srcAddr, uint8 seqNum );
 static void ipd_MessageConfirmationCB( zclCCMessageConfirmation_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_ReqFastPollModeCmdCB( zclCCReqFastPollModeCmd_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_ReqFastPollModeRspCB( zclCCReqFastPollModeRsp_t *pRsp,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_SelAvailEmergencyCreditCmdCB( zclCCSelAvailEmergencyCredit_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_ChangeSupplyCmdCB( zclCCChangeSupply_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_SupplyStatusRspCB( zclCCSupplyStatusResponse_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-#if defined ( SE_UK_EXT )
-static void ipd_PublishTariffInformationCB( zclCCPublishTariffInformation_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishPriceMatrixCB( zclCCPublishPriceMatrix_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishBlockThresholdsCB( zclCCPublishBlockThresholds_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishConversionFactorCB( zclCCPublishConversionFactor_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishCalorificValueCB( zclCCPublishCalorificValue_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishCO2ValueCB( zclCCPublishCO2Value_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishCPPEventCB( zclCCPublishCPPEvent_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishBillingPeriodCB( zclCCPublishBillingPeriod_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishConsolidatedBillCB( zclCCPublishConsolidatedBill_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishCreditPaymentInfoCB( zclCCPublishCreditPaymentInfo_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_GetPrepaySnapshotResponseCB( zclCCGetPrepaySnapshotResponse_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_ChangePaymentModeResponseCB( zclCCChangePaymentModeResponse_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_ConsumerTopupResponseCB( zclCCConsumerTopupResponse_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_GetCommandsCB( uint8 prepayNotificationFlags,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishTopupLogCB( zclCCPublishTopupLog_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void ipd_PublishDebtLogCB( zclCCPublishDebtLog_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-#endif  // SE_UK_EXT
+                                             afAddrType_t *srcAddr, uint8 seqNum );
+
 
 /************************************************************************/
 /***               Functions to process ZCL Foundation                ***/
@@ -271,129 +212,33 @@ static zclGeneral_AppCallbacks_t ipd_GenCmdCallbacks =
   NULL,                          // Scene Recall Request command
   NULL,                          // Scene Response command
   ipd_AlarmCB,                   // Alarm (Response) command
-#ifdef SE_UK_EXT
-  ipd_GetEventLogCB,             // Get Event Log command
-  ipd_PublishEventLogCB,         // Publish Event Log command
-#endif
   NULL,                          // RSSI Location command
-  NULL                           // RSSI Location Response command
+  NULL,                          // RSSI Location Response command
 };
 
 /*********************************************************************
  * ZCL SE Clusters Callback table
  */
-static zclSE_AppCallbacks_t ipd_SECmdCallbacks =
+static zclSE_AppCallbacks_t ipd_SECmdCallbacks =			
 {
-  ipd_PublishPriceCB,               // Publish Price
-  ipd_PublishBlockPeriodCB,         // Publish Block Period
-#if defined ( SE_UK_EXT )
-  ipd_PublishTariffInformationCB,   // Publish Tariff Information
-  ipd_PublishPriceMatrixCB,         // Publish Price Matrix
-  ipd_PublishBlockThresholdsCB,     // Publish Block Thresholds
-  ipd_PublishConversionFactorCB,    // Publish Conversion Factor
-  ipd_PublishCalorificValueCB,      // Publish Calorific Value
-  ipd_PublishCO2ValueCB,            // Publish CO2 Value
-  ipd_PublishCPPEventCB,            // Publish CPP Event
-  ipd_PublishBillingPeriodCB,       // Publish Billing Period
-  ipd_PublishConsolidatedBillCB,    // Publish Consolidated Bill
-  ipd_PublishCreditPaymentInfoCB,   // Publish Credit Payment Info
-#endif  // SE_UK_EXT
+  NULL,                             // Get Profile Command
+  NULL,                             // Get Profile Response
+  NULL,                             // Request Mirror Command
+  NULL,                             // Request Mirror Response
+  NULL,                             // Mirror Remove Command
+  NULL,                             // Mirror Remove Response
   ipd_GetCurrentPriceCB,            // Get Current Price
   ipd_GetScheduledPriceCB,          // Get Scheduled Price
-  ipd_PriceAcknowledgementCB,       // Price Acknowledgement
-  ipd_GetBlockPeriodCB,             // Get Block Period
-#if defined ( SE_UK_EXT )
-  NULL,                             // Get Tariff Information
-  NULL,                             // Get Price Matrix
-  NULL,                             // Get Block Thresholds
-  NULL,                             // Get Conversion Factor
-  NULL,                             // Get Calorific Value
-  NULL,                             // Get CO2 Value
-  NULL,                             // Get Billing Period
-  NULL,                             // Get Consolidated Bill
-  NULL,                             // CPP Event Response
-#endif  // SE_UK_EXT
+  ipd_PublishPriceCB,               // Publish Price
+  ipd_DisplayMessageCB,             // Display Message Command
+  ipd_CancelMessageCB,              // Cancel Message Command
+  ipd_GetLastMessageCB,             // Get Last Message Command
+  ipd_MessageConfirmationCB,        // Message Confirmation
   NULL,                             // Load Control Event
   NULL,                             // Cancel Load Control Event
   NULL,                             // Cancel All Load Control Events
   NULL,                             // Report Event Status
   NULL,                             // Get Scheduled Event
-  NULL,                             // Get Profile Response
-  NULL,                             // Request Mirror Command
-  NULL,                             // Mirror Remove Command
-  ipd_ReqFastPollModeRspCB,         // Request Fast Poll Mode Response
-#if defined ( SE_UK_EXT )
-  NULL,                             // Get Snapshot Response
-#endif  // SE_UK_EXT
-  NULL,                             // Get Profile Command
-  NULL,                             // Request Mirror Response
-  NULL,                             // Mirror Remove Response
-  ipd_ReqFastPollModeCmdCB,         // Request Fast Poll Mode Command
-#if defined ( SE_UK_EXT )
-  NULL,                             // Get Snapshot Command
-  NULL,                             // Take Snapshot Command
-  NULL,                             // Mirror Report Attribute Response
-#endif  // SE_UK_EXT
-  ipd_DisplayMessageCB,             // Display Message Command
-  ipd_CancelMessageCB,              // Cancel Message Command
-  ipd_GetLastMessageCB,             // Get Last Message Command
-  ipd_MessageConfirmationCB,        // Message Confirmation
-  NULL,                             // Request Tunnel Response
-  NULL,                             // Transfer Data
-  NULL,                             // Transfer Data Error
-  NULL,                             // Ack Transfer Data
-  NULL,                             // Ready Data
-#if defined ( SE_UK_EXT )
-  NULL,                             // Supported Tunnel Protocols Response
-  NULL,                             // Tunnel Closure Notification
-#endif  // SE_UK_EXT
-  NULL,                             // Request Tunnel
-  NULL,                             // Close Tunnel
-#if defined ( SE_UK_EXT )
-  NULL,                             // Get Supported Tunnel Protocols
-#endif  // SE_UK_EXT
-  ipd_SupplyStatusRspCB,            // Supply Status Response
-#if defined ( SE_UK_EXT )
-  ipd_GetPrepaySnapshotResponseCB,  // Get Prepay Snapshot Response
-  ipd_ChangePaymentModeResponseCB,  // Change Payment Mode Response
-  ipd_ConsumerTopupResponseCB,      // Consumer Topup Response
-  ipd_GetCommandsCB,                // Get Commands
-  ipd_PublishTopupLogCB,            // Publish Topup Log
-  ipd_PublishDebtLogCB,             // Publish Debt Log
-#endif  // SE_UK_EXT
-  ipd_SelAvailEmergencyCreditCmdCB, // Select Available Emergency Credit Command
-  ipd_ChangeSupplyCmdCB,            // Change Supply Command
-#if defined ( SE_UK_EXT )
-  NULL,                             // Change Debt
-  NULL,                             // Emergency Credit Setup
-  NULL,                             // Consumer Topup
-  NULL,                             // Credit Adjustment
-  NULL,                             // Change PaymentMode
-  NULL,                             // Get Prepay Snapshot
-  NULL,                             // Get Topup Log
-  NULL,                             // Set Low Credit Warning Level
-  NULL,                             // Get Debt Repayment Log
-  NULL,                             // Publish Calendar
-  NULL,                             // Publish Day Profile
-  NULL,                             // Publish Week Profile
-  NULL,                             // Publish Seasons
-  NULL,                             // Publish Special Days
-  NULL,                             // Get Calendar
-  NULL,                             // Get Day Profiles
-  NULL,                             // Get Week Profiles
-  NULL,                             // Get Seasons
-  NULL,                             // Get Special Days
-  NULL,                             // Publish Change Tenancy
-  NULL,                             // Publish Change Supplier
-  NULL,                             // Change Supply
-  NULL,                             // Change Password
-  NULL,                             // Local Change Supply
-  NULL,                             // Get Change Tenancy
-  NULL,                             // Get Change Supplier
-  NULL,                             // Get Change Supply
-  NULL,                             // Supply Status Response
-  NULL,                             // Get Password
-#endif  // SE_UK_EXT
 };
 
 /*********************************************************************
@@ -443,9 +288,6 @@ void ipd_Init( uint8 task_id )
   // Register for all key events - This app will handle all key events
   RegisterForKeys( ipdTaskID );
 
-  // Register with the ZDO to receive Match Descriptor Responses
-  ZDO_RegisterForZDOMsg(task_id, Match_Desc_rsp);
-
 #if defined ( INTER_PAN )
   // Register with Stub APS
   StubAPS_RegisterApp( &ipdEp );
@@ -475,10 +317,6 @@ uint16 ipd_event_loop( uint8 task_id, uint16 events )
     {
       switch ( MSGpkt->hdr.event )
       {
-        case ZDO_CB_MSG:
-          ipd_ProcessZDOMsgs( (zdoIncomingMsg_t *)MSGpkt );
-          break;
-
         case ZCL_INCOMING_MSG:
           // Incoming ZCL foundation command/response messages
           ipd_ProcessZCLMsg( (zclIncomingMsg_t *)MSGpkt );
@@ -498,28 +336,18 @@ uint16 ipd_event_loop( uint8 task_id, uint16 events )
 
               if (linkKeyStatus != ZSuccess)
               {
-                cId_t cbkeCluster = ZCL_CLUSTER_ID_GEN_KEY_ESTABLISHMENT;
-                zAddrType_t dstAddr;
-
-                // Send out a match for the key establishment
-                dstAddr.addrMode = AddrBroadcast;
-                dstAddr.addr.shortAddr = NWK_BROADCAST_SHORTADDR;
-                ZDP_MatchDescReq( &dstAddr, NWK_BROADCAST_SHORTADDR, ZCL_SE_PROFILE_ID,
-                                  1, &cbkeCluster, 0, NULL, FALSE );
+                // send out key establishment request
+                osal_set_event( ipdTaskID, IPD_KEY_ESTABLISHMENT_REQUEST_EVT);
               }
               else
               {
-#if !defined ( ZCL_PREPAYMENT ) && !defined ( FAST_POLL_TEST )
                 // link key already established, resume sending reports
                 osal_start_timerEx( ipdTaskID, IPD_GET_PRICING_INFO_EVT, IPD_GET_PRICING_INFO_PERIOD );
-#endif
               }
             }
 #else
           {
-#if !defined ( ZCL_PREPAYMENT ) && !defined ( FAST_POLL_TEST )
             osal_start_timerEx( ipdTaskID, IPD_GET_PRICING_INFO_EVT, IPD_GET_PRICING_INFO_PERIOD );
-#endif
           }
 #endif
             // Per smart energy spec end device polling requirement of not to poll < 7.5 seconds.
@@ -531,11 +359,7 @@ uint16 ipd_event_loop( uint8 task_id, uint16 events )
         case ZCL_KEY_ESTABLISH_IND:
           if ((MSGpkt->hdr.status) == TermKeyStatus_Success)
           {
-            ESPAddr.endPoint = IPD_ENDPOINT; // set destination endpoint back to application endpoint
-
-#if !defined ( ZCL_PREPAYMENT ) && !defined ( FAST_POLL_TEST )
             osal_start_timerEx( ipdTaskID, IPD_GET_PRICING_INFO_EVT, IPD_GET_PRICING_INFO_PERIOD );
-#endif
           }
 
           break;
@@ -565,11 +389,6 @@ uint16 ipd_event_loop( uint8 task_id, uint16 events )
   // event to get current price
   if ( events & IPD_GET_PRICING_INFO_EVT )
   {
-#if defined( INTER_PAN )
-    uint8 x = TRUE;
-    ZMacGetReq( ZMacRxOnIdle, &rxOnIdle );
-    ZMacSetReq( ZMacRxOnIdle, &x );
-#endif
     zclSE_Pricing_Send_GetCurrentPrice( IPD_ENDPOINT, &ESPAddr, option, TRUE, 0 );
 
     osal_start_timerEx( ipdTaskID, IPD_GET_PRICING_INFO_EVT, IPD_GET_PRICING_INFO_PERIOD );
@@ -602,38 +421,7 @@ uint16 ipd_event_loop( uint8 task_id, uint16 events )
   return 0;
 }
 
-/*********************************************************************
- * @fn      ipd_ProcessZDOMsgs
- *
- * @brief   Called to process callbacks from the ZDO.
- *
- * @param   none
- *
- * @return  none
- */
-static void ipd_ProcessZDOMsgs( zdoIncomingMsg_t *pMsg )
-{
-  // make sure message comes from TC to initiate Key Establishment
-  if ((pMsg->clusterID == Match_Desc_rsp) &&
-      (pMsg->srcAddr.addr.shortAddr == zgTrustCenterAddr))
-  {
-    ZDO_ActiveEndpointRsp_t *pRsp = ZDO_ParseEPListRsp( pMsg );
 
-    if (pRsp)
-    {
-      if (pRsp->cnt)
-      {
-        // Record the trust center
-        ESPAddr.endPoint = pRsp->epList[0];
-        ESPAddr.addr.shortAddr = pMsg->srcAddr.addr.shortAddr;
-
-        // send out key establishment request
-        osal_set_event( ipdTaskID, IPD_KEY_ESTABLISHMENT_REQUEST_EVT);
-      }
-      osal_mem_free(pRsp);
-    }
-  }
-}
 
 /*********************************************************************
  * @fn      ipd_ProcessIdentifyTimeChange
@@ -670,6 +458,7 @@ static void ipd_ProcessIdentifyTimeChange( void )
  */
 static uint8 ipd_KeyEstablish_ReturnLinkKey( uint16 shortAddr )
 {
+  APSME_LinkKeyData_t* keyData;
   uint8 status = ZFailure;
   AddrMgrEntry_t entry;
 
@@ -680,8 +469,10 @@ static uint8 ipd_KeyEstablish_ReturnLinkKey( uint16 shortAddr )
 
   if ( AddrMgrEntryLookupNwk( &entry ) )
   {
-    // check if APS link key has been established
-    if ( APSME_IsLinkKeyValid( entry.extAddr ) == TRUE )
+    // check for APS link key data
+    APSME_LinkKeyDataGet( entry.extAddr, &keyData );
+
+    if ( (keyData != NULL) && (keyData->key != NULL) )
     {
       status = ZSuccess;
     }
@@ -739,7 +530,7 @@ static void ipd_HandleKeys( uint8 shift, uint8 keys )
     {
 #if defined( INTER_PAN )
 
-      uint8 x = TRUE;
+      uint8 x = true;
       ZMacGetReq( ZMacRxOnIdle, &rxOnIdle );
       ZMacSetReq( ZMacRxOnIdle, &x );
       afAddrType_t dstAddr;
@@ -763,103 +554,12 @@ static void ipd_HandleKeys( uint8 shift, uint8 keys )
 
     if ( keys & HAL_KEY_SW_3 )
     {
-#if defined ( ZCL_PREPAYMENT )
-      zclCCSelAvailEmergencyCredit_t cmd;
-      uint8 siteIdLen = 4; // adjust this value if different label is set, test label "TEST"
-      uint8 meterSerialNumLen = 6; // adjust this value if different label is set, test label "123456"
 
-      osal_memset( &cmd, 0, sizeof( zclCCSelAvailEmergencyCredit_t ) );
-
-      cmd.commandDateTime = osal_getClock();
-      cmd.originatingDevice = SE_ORIG_DEV_INPREMISES_DISPLAY_DEV;
-
-      cmd.siteId.pStr = (uint8 *)osal_mem_alloc(siteIdLen);
-      if (cmd.siteId.pStr != NULL)
-      {
-        cmd.siteId.strLen = siteIdLen;
-        osal_memcpy(cmd.siteId.pStr, "TEST", siteIdLen);
-      }
-
-      cmd.meterSerialNumber.pStr = (uint8 *)osal_mem_alloc(meterSerialNumLen);
-      if (cmd.meterSerialNumber.pStr != NULL)
-      {
-        cmd.meterSerialNumber.strLen = meterSerialNumLen;
-        osal_memcpy(cmd.meterSerialNumber.pStr, "123456", meterSerialNumLen);
-      }
-
-      zclSE_Prepayment_Send_SelAvailEmergencyCredit(IPD_ENDPOINT,
-                                                    &ESPAddr,
-                                                    &cmd, FALSE, 1 );
-      if (cmd.siteId.pStr != NULL)
-      {
-        osal_mem_free(cmd.siteId.pStr);
-      }
-
-      if (cmd.meterSerialNumber.pStr != NULL)
-      {
-        osal_mem_free(cmd.meterSerialNumber.pStr);
-      }
-
-#else // for regular IPD test
-
-#if  defined ( FAST_POLL_TEST )
-      zclCCReqFastPollModeCmd_t fastPollCmd;
-
-      fastPollCmd.fastPollUpdatePeriod = IPD_FAST_POLL_UPDATE_PERIOD;
-      fastPollCmd.duration = IPD_FAST_POLL_DURATION;
-
-      // send out fast poll mode request
-      zclSE_SimpleMetering_Send_ReqFastPollModeCmd( IPD_ENDPOINT, &ESPAddr,
-                                                    &fastPollCmd,
-                                                    TRUE, 1);
-#endif // FAST_POLL_TEST
-
-#endif  // ZCL_PREPAYMENT
     }
 
     if ( keys & HAL_KEY_SW_4 )
     {
-#if defined ( ZCL_PREPAYMENT )
-#if !defined ( SE_UK_EXT )
-      zclCCChangeSupply_t changeCmd;
-      uint8 siteIdLen = 4; // adjust this value if different label is set, test label "TEST"
-      uint8 meterSerialNumLen = 6; // adjust this value if different label is set, test label "123456"
 
-      changeCmd.providerId = 0xbabeface;
-      changeCmd.requestDateTime = osal_getClock();
-
-      changeCmd.siteId.pStr = (uint8 *)osal_mem_alloc(siteIdLen);
-      if (changeCmd.siteId.pStr != NULL)
-      {
-        changeCmd.siteId.strLen = siteIdLen;
-        osal_memcpy(changeCmd.siteId.pStr, "TEST", siteIdLen);
-      }
-
-      changeCmd.meterSerialNumber.pStr = (uint8 *)osal_mem_alloc(meterSerialNumLen);
-      if (changeCmd.meterSerialNumber.pStr != NULL)
-      {
-        changeCmd.meterSerialNumber.strLen = meterSerialNumLen;
-        osal_memcpy(changeCmd.meterSerialNumber.pStr, "123456", meterSerialNumLen);
-      }
-
-      changeCmd.implementationDateTime = 0x00000000;  // immediately
-      changeCmd.proposedSupplyStatus  = SE_SUPPLY_ON;
-      changeCmd.origIdSupplyControlBits = ((SE_ORIG_DEV_INPREMISES_DISPLAY_DEV << 4) | SE_SUPPLY_CTRL_ACK_REQUIRED);
-
-      zclSE_Prepayment_Send_ChangeSupply( IPD_ENDPOINT, &ESPAddr,
-                                          &changeCmd, TRUE, 1);
-
-      if (changeCmd.siteId.pStr != NULL)
-      {
-        osal_mem_free(changeCmd.siteId.pStr);
-      }
-
-      if (changeCmd.meterSerialNumber.pStr != NULL)
-      {
-        osal_mem_free(changeCmd.meterSerialNumber.pStr);
-      }
-#endif  // SE_UK_EXT
-#endif  // ZCL_PREPAYMENT
     }
   }
 }
@@ -914,7 +614,7 @@ static void ipd_BasicResetCB( void )
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Command for this application.
  *
- * @param   pCmd - pointer to structure for Identify command
+ * @param   pCmd - pointer to structure for identify command
  *
  * @return  none
  */
@@ -930,7 +630,7 @@ static void ipd_IdentifyCB( zclIdentify_t *pCmd )
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Query Response Command for this application.
  *
- * @param   pRsp - pointer to structure for Identity Query Response command
+ * @param   pRsp - pointer to structure for identify query response
  *
  * @return  none
  */
@@ -946,7 +646,7 @@ static void ipd_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp )
  *          it received an Alarm request or response command for
  *          this application.
  *
- * @param   pAlarm - pointer to structure for Alarm command
+ * @param   pAlarm - pointer to structure for alarm command
  *
  * @return  none
  */
@@ -954,51 +654,6 @@ static void ipd_AlarmCB( zclAlarm_t *pAlarm )
 {
   // add user code here
 }
-
-#ifdef SE_UK_EXT
-/*********************************************************************
- * @fn      ipd_GetEventLogCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a Get Event Log command for this
- *          application.
- *
- * @param   srcEP - source endpoint
- * @param   srcAddr - pointer to source address
- * @param   pEventLog - pointer to structure for Get Event Log command
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_GetEventLogCB( uint8 srcEP, afAddrType_t *srcAddr,
-                               zclGetEventLog_t *pEventLog, uint8 seqNum )
-{
-  // add user code here, which could fragment the event log payload if
-  // the entire payload doesn't fit into one Publish Event Log Command.
-  // Note: the Command Index starts at 0 and is incremented for each
-  // fragment belonging to the same command.
-
-  // There's no event log for now! The Metering Device will support
-  // logging for all events configured to do so.
-}
-
-/*********************************************************************
- * @fn      ipd_PublishEventLogCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a Publish Event Log command for this
- *          application.
- *
- * @param   srcAddr - pointer to source address
- * @param   pEventLog - pointer to structure for Publish Event Log command
- *
- * @return  none
- */
-static void ipd_PublishEventLogCB( afAddrType_t *srcAddr, zclPublishEventLog_t *pEventLog )
-{
-  // add user code here
-}
-#endif // SE_UK_EXT
 
 /*********************************************************************
  * @fn      ipd_GetCurrentPriceCB
@@ -1008,13 +663,13 @@ static void ipd_PublishEventLogCB( afAddrType_t *srcAddr, zclPublishEventLog_t *
  *          this application.
  *
  * @param   pCmd - pointer to structure for Get Current Price command
- * @param   srcAddr - pointer to source address
+ * @param   srcAddr - source address
  * @param   seqNum - sequence number for this command
  *
  * @return  none
  */
 static void ipd_GetCurrentPriceCB( zclCCGetCurrentPrice_t *pCmd,
-                                   afAddrType_t *srcAddr, uint8 seqNum )
+                                         afAddrType_t *srcAddr, uint8 seqNum )
 {
 #if defined ( ZCL_PRICING )
   // On receipt of Get Current Price command, the device shall send a
@@ -1024,9 +679,9 @@ static void ipd_GetCurrentPriceCB( zclCCGetCurrentPrice_t *pCmd,
   osal_memset( &cmd, 0, sizeof( zclCCPublishPrice_t ) );
 
   cmd.providerId = 0xbabeface;
-  cmd.numberOfPriceTiers = 0xfe;
+  cmd.priceTier = 0xfe;
 
-  zclSE_Pricing_Send_PublishPrice( IPD_ENDPOINT, srcAddr, &cmd, FALSE, seqNum );
+  zclSE_Pricing_Send_PublishPrice( IPD_ENDPOINT, srcAddr, &cmd, false, seqNum );
 #endif // ZCL_PRICING
 }
 
@@ -1038,13 +693,12 @@ static void ipd_GetCurrentPriceCB( zclCCGetCurrentPrice_t *pCmd,
  *          this application.
  *
  * @param   pCmd - pointer to structure for Get Scheduled Price command
- * @param   srcAddr - pointer to source address
+ * @param   srcAddr - source address
  * @param   seqNum - sequence number for this command
  *
  * @return  none
  */
-static void ipd_GetScheduledPriceCB( zclCCGetScheduledPrice_t *pCmd,
-                                     afAddrType_t *srcAddr, uint8 seqNum  )
+static void ipd_GetScheduledPriceCB( zclCCGetScheduledPrice_t *pCmd, afAddrType_t *srcAddr, uint8 seqNum  )
 {
   // On receipt of Get Scheduled Price command, the device shall send a
   // Publish Price command for all currently scheduled price events.
@@ -1056,47 +710,11 @@ static void ipd_GetScheduledPriceCB( zclCCGetScheduledPrice_t *pCmd,
   osal_memset( &cmd, 0, sizeof( zclCCPublishPrice_t ) );
 
   cmd.providerId = 0xbabeface;
-  cmd.numberOfPriceTiers = 0xfe;
+  cmd.priceTier = 0xfe;
 
-  zclSE_Pricing_Send_PublishPrice( IPD_ENDPOINT, srcAddr, &cmd, FALSE, seqNum );
+  zclSE_Pricing_Send_PublishPrice( IPD_ENDPOINT, srcAddr, &cmd, false, seqNum );
 
 #endif // ZCL_PRICING
-}
-
-/*********************************************************************
- * @fn      ipd_PriceAcknowledgementCB
- *
- * @brief   Callback from the ZCL SE Profile Pricing Cluster Library when
- *          it received a Price Acknowledgement for this application.
- *
- * @param   pCmd - pointer to structure for Price Acknowledgement command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number for this command
- *
- * @return  none
- */
-void ipd_PriceAcknowledgementCB( zclCCPriceAcknowledgement_t *pCmd,
-                                 afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_GetBlockPeriodCB
- *
- * @brief   Callback from the ZCL SE Profile Pricing Cluster Library when
- *          it received a Get Block Period for this application.
- *
- * @param   pCmd - pointer to structure for Get Block Period command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number for this command
- *
- * @return  none
- */
-static void ipd_GetBlockPeriodCB( zclCCGetBlockPeriod_t *pCmd,
-                                  afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
 }
 
 /*********************************************************************
@@ -1106,15 +724,14 @@ static void ipd_GetBlockPeriodCB( zclCCGetBlockPeriod_t *pCmd,
  *          it received a Publish Price for this application.
  *
  * @param   pCmd - pointer to structure for Publish Price command
- * @param   srcAddr - pointer to source address
+ * @param   srcAddr - source address
  * @param   seqNum - sequence number for this command
  *
  * @return  none
  */
 static void ipd_PublishPriceCB( zclCCPublishPrice_t *pCmd,
-                                afAddrType_t *srcAddr, uint8 seqNum )
+                                      afAddrType_t *srcAddr, uint8 seqNum )
 {
-#if defined ( ZCL_PRICING )
   if ( pCmd )
   {
     // display Provider ID field
@@ -1122,44 +739,10 @@ static void ipd_PublishPriceCB( zclCCPublishPrice_t *pCmd,
     HalLcdWriteValue( pCmd->providerId, 10, HAL_LCD_LINE_2 );
   }
 
-  // Verify Price Control Options
-  if ((pCmd->priceControl != SE_OPTIONAL_FIELD_UINT8) &&
-      (pCmd->priceControl & SE_PROFILE_PRICEACK_REQUIRED_MASK))
-  {
-    zclCCPriceAcknowledgement_t cmd;
-
-    cmd.providerId = pCmd->providerId;
-    cmd.issuerEventId = pCmd->issuerEventId;
-    cmd.priceAckTime = osal_getClock();
-    cmd.control = pCmd->priceControl;
-
-    zclSE_Pricing_Send_PriceAcknowledgement( IPD_ENDPOINT, srcAddr,
-                                            &cmd, TRUE, seqNum );
-  }
-
 #if defined ( INTER_PAN )
-  ZMacSetReq( ZMacRxOnIdle, &rxOnIdle ); // set receiver on when idle flag to FALSE
+  ZMacSetReq( ZMacRxOnIdle, &rxOnIdle ); // set receiver on when idle flag to false
                                          // after getting publish price command via INTER-PAN
-#endif // INTER_PAN
-#endif // ZCL_PRICING
-}
-
-/*********************************************************************
- * @fn      ipd_PublishBlockPeriodCB
- *
- * @brief   Callback from the ZCL SE Profile Pricing Cluster Library when
- *          it received a Publish Block Period for this application.
- *
- * @param   pCmd - pointer to structure for Get Block Period command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number for this command
- *
- * @return  none
- */
-static void ipd_PublishBlockPeriodCB( zclCCPublishBlockPeriod_t *pCmd,
-                                      afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
+#endif
 }
 
 /*********************************************************************
@@ -1170,7 +753,7 @@ static void ipd_PublishBlockPeriodCB( zclCCPublishBlockPeriod_t *pCmd,
  *          this application.
  *
  * @param   pCmd - pointer to structure for Display Message command
- * @param   srcAddr - pointer to source address
+ * @param   srcAddr - source address
  * @param   seqNum - sequence number for this command
  *
  * @return  none
@@ -1190,21 +773,7 @@ static void ipd_DisplayMessageCB( zclCCDisplayMessage_t *pCmd,
   // the message is displayed until confirmed.
 
 #if defined ( LCD_SUPPORTED )
-  // Allowing that strings have a non-printing '\0' terminator.
-  if (pCmd->msgString.strLen <= HAL_LCD_MAX_CHARS+1)
-  {
-    HalLcdWriteString((char*)pCmd->msgString.pStr, HAL_LCD_LINE_3);
-  }
-  else
-  {
-    // Allow 3 digit message remainder size and space; and the ellipse ("...") plus the plus ("+"):
-    const uint8 left = HAL_LCD_MAX_CHARS - 4 - 4;
-    uint8 buf[HAL_LCD_MAX_CHARS];
-
-    (void)osal_memcpy(buf, pCmd->msgString.pStr, left);
-    (void)osal_memcpy(buf+left, "...+\0", 5);  // Copy the "end-of-string" delimiter.
-    HalLcdWriteStringValue((char *)buf, pCmd->msgString.strLen-left, 10, HAL_LCD_LINE_3);
-  }
+    HalLcdWriteString( (char*)pCmd->msgString.pStr, HAL_LCD_LINE_3 );
 #endif // LCD_SUPPORTED
 }
 
@@ -1216,7 +785,7 @@ static void ipd_DisplayMessageCB( zclCCDisplayMessage_t *pCmd,
  *          this application.
  *
  * @param   pCmd - pointer to structure for Cancel Message command
- * @param   srcAddr - pointer to source address
+ * @param   srcAddr - source address
  * @param   seqNum - sequence number for this command
  *
  * @return  none
@@ -1235,7 +804,7 @@ static void ipd_CancelMessageCB( zclCCCancelMessage_t *pCmd,
  *          this application.
  *
  * @param   pCmd - pointer to structure for Get Last Message command
- * @param   srcAddr - pointer to source address
+ * @param   srcAddr - source address
  * @param   seqNum - sequence number for this command
  *
  * @return  none
@@ -1260,7 +829,7 @@ static void ipd_GetLastMessageCB( afAddrType_t *srcAddr, uint8 seqNum )
   cmd.msgString.pStr = msg;
 
   zclSE_Message_Send_DisplayMessage( IPD_ENDPOINT, srcAddr, &cmd,
-                                     FALSE, seqNum );
+                                     false, seqNum );
 #endif // ZCL_MESSAGE
 }
 
@@ -1272,418 +841,16 @@ static void ipd_GetLastMessageCB( afAddrType_t *srcAddr, uint8 seqNum )
  *          this application.
  *
  * @param   pCmd - pointer to structure for Message Confirmation command
- * @param   srcAddr - pointer to source address
+ * @param   srcAddr - source address
  * @param   seqNum - sequence number for this command
  *
  * @return  none
  */
 static void ipd_MessageConfirmationCB( zclCCMessageConfirmation_t *pCmd,
-                                        afAddrType_t *srcAddr, uint8 seqNum )
+                                             afAddrType_t *srcAddr, uint8 seqNum)
 {
  // add user code here
 }
-
-/*********************************************************************
- * @fn      ipd_ReqFastPollModeCmdCB
- *
- * @brief   Callback from the ZCL SE Profile Simple Metering Cluster Library when
- *          it received a Request Fast Poll Mode Command for this application.
- *
- * @param   pCmd - pointer to structure for Request Fast Poll Mode command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_ReqFastPollModeCmdCB( zclCCReqFastPollModeCmd_t *pCmd,
-                                        afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-
-/*********************************************************************
- * @fn      ipd_ReqFastPollModeRspCB
- *
- * @brief   Callback from the ZCL SE Profile Simple Metering Cluster Library when
- *          it received a Request Fast Poll Mode Response for this application.
- *
- * @param   pRsp - pointer to structure for Request Fast Poll Mode Response command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_ReqFastPollModeRspCB( zclCCReqFastPollModeRsp_t *pRsp,
-                                      afAddrType_t *srcAddr, uint8 seqNum )
-{
-#if defined ( ZCL_SIMPLE_METERING )
-#if defined ( LCD_SUPPORTED )
-
-  HalLcdWriteString("Fast Polling", HAL_LCD_LINE_1 );
-  HalLcdWriteStringValue("App: ", pRsp->appliedUpdatePeriod, 10, HAL_LCD_LINE_2 );
-  HalLcdWriteStringValue("End 0x", pRsp->fastPollModeEndTime, 16, HAL_LCD_LINE_3 );
-
-#endif // LCD_SUPPORTED
-#endif // ZCL_SIMPLE_METERING
-}
-
-/*********************************************************************
- * @fn      ipd_SelAvailEmergencyCreditCmdCB
- *
- * @brief   Callback from the ZCL SE Prepayment Cluster Library when it recieved
- *          Select Available Emergency Credit command in the application
- *
- *
- * @param   pCmd - pointer to structure for Select Available Emergency Credit command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - Sequence no of the message
- *
- * @return  none
- */
-static void ipd_SelAvailEmergencyCreditCmdCB( zclCCSelAvailEmergencyCredit_t *pCmd,
-                                              afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_ChangeSupplyCmdCB
- *
- * @brief   Callback from the ZCL SE Prepayment Cluster Library when it recieved
- *          Change Supply command in the application
- *
- * @param   pCmd - pointer to structure for Change Supply command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - Sequence no of the message
- *
- * @return  none
- */
-static void ipd_ChangeSupplyCmdCB( zclCCChangeSupply_t *pCmd,
-                                   afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_SupplyStatusRspCB
- *
- * @brief   Callback from the ZCL SE Prepayment Cluster Library when it recieved
- *          Supply Status Response command in the application
- *
- * @param   pCmd - pointer to structure for Supply Status Response command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - Sequence no of the message
- *
- * @return  none
- */
-static void ipd_SupplyStatusRspCB( zclCCSupplyStatusResponse_t *pCmd,
-                                   afAddrType_t *srcAddr, uint8 seqNum )
-{
-#if defined ( ZCL_PREPAYMENT )
-#if ! defined ( SE_UK_EXT )
-#if defined ( LCD_SUPPORTED )
-  if ( pCmd )
-  {
-    // display Provider ID field
-    HalLcdWriteString("SupplyStatusRsp", HAL_LCD_LINE_1 );
-    HalLcdWriteValue( pCmd->providerId, 10, HAL_LCD_LINE_2 );
-    HalLcdWriteStringValue("Status 0x", pCmd->supplyStatus, 16, HAL_LCD_LINE_3 );
-  }
-#endif // LCD_SUPPORTED
-#endif // SE_UK_EXT
-#endif // ZCL_PREPAYMENT
-}
-
-#if defined ( SE_UK_EXT )
-/*********************************************************************
- * @fn      ipd_PublishTariffInformationCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Tariff Information for this application.
- *
- * @param   pCmd - pointer to structure for Publish Tariff Information command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishTariffInformationCB( zclCCPublishTariffInformation_t *pCmd,
-                                            afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishPriceMatrixCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Price Matrix for this application.
- *
- * @param   pCmd - pointer to structure for Publish Price Matrix command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishPriceMatrixCB( zclCCPublishPriceMatrix_t *pCmd,
-                                      afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishBlockThresholdsCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Block Thresholds for this application.
- *
- * @param   pCmd - pointer to structure for Publish Block Thresholds command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishBlockThresholdsCB( zclCCPublishBlockThresholds_t *pCmd,
-                                          afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishConversionFactorCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Conversion Factor for this application.
- *
- * @param   pCmd - pointer to structure for Publish Conversion Factor command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishConversionFactorCB( zclCCPublishConversionFactor_t *pCmd,
-                                           afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishCalorificValueCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Calorific Value for this application.
- *
- * @param   pCmd - pointer to structure for Publish Calorific Value command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishCalorificValueCB( zclCCPublishCalorificValue_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishCO2ValueCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish CO2 Value for this application.
- *
- * @param   pCmd - pointer to structure for Publish CO2 Value command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishCO2ValueCB( zclCCPublishCO2Value_t *pCmd,
-                                   afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishCPPEventCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish CPP Event for this application.
- *
- * @param   pCmd - pointer to structure for Publish CPP Event command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishCPPEventCB( zclCCPublishCPPEvent_t *pCmd,
-                                   afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishBillingPeriodCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Billing Period for this application.
- *
- * @param   pCmd - pointer to structure for Publish Billing Period command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishBillingPeriodCB( zclCCPublishBillingPeriod_t *pCmd,
-                                        afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishConsolidatedBillCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Consolidated Bill for this application.
- *
- * @param   pCmd - pointer to structure for Publish Consolidated Bill command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishConsolidatedBillCB( zclCCPublishConsolidatedBill_t *pCmd,
-                                           afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishCreditPaymentInfoCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Credit Payment Info for this application.
- *
- * @param   pCmd - pointer to structure for Publish Credit Payment Info command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishCreditPaymentInfoCB( zclCCPublishCreditPaymentInfo_t *pCmd,
-                                            afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_GetPrepaySnapshotResponseCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Get Prepay Snapshot Response for this application.
- *
- * @param   pCmd - pointer to structure for Get Prepay Snapshot Response command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_GetPrepaySnapshotResponseCB( zclCCGetPrepaySnapshotResponse_t *pCmd,
-                                             afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_ChangePaymentModeResponseCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Change Payment Mode Response for this application.
- *
- * @param   pCmd - pointer to structure for Change Payment Mode Response command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_ChangePaymentModeResponseCB( zclCCChangePaymentModeResponse_t *pCmd,
-                                             afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_ConsumerTopupResponseCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Consumer Topup Response for this application.
- *
- * @param   pCmd - pointer to structure for Consumer Topup Response command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_ConsumerTopupResponseCB( zclCCConsumerTopupResponse_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_GetCommandsCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Get Commands for this application.
- *
- * @param   prepayNotificationFlags - prepayment notification flags
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_GetCommandsCB( uint8 prepayNotificationFlags,
-                               afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishTopupLogCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Publish Topup Log for this application.
- *
- * @param   pCmd - pointer to structure for Publish Topup Log command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishTopupLogCB( zclCCPublishTopupLog_t *pCmd,
-                                   afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      ipd_PublishDebtLogCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Publish Debt Log for this application.
- *
- * @param   pCmd - pointer to structure for Publish Debt Log command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void ipd_PublishDebtLogCB( zclCCPublishDebtLog_t *pCmd,
-                                  afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-#endif  // SE_UK_EXT
 
 /******************************************************************************
  *

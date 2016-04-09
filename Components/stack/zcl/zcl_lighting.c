@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       zcl_lighting.c
-  Revised:        $Date: 2010-02-09 15:28:14 -0800 (Tue, 09 Feb 2010) $
-  Revision:       $Revision: 21679 $
+  Revised:        $Date: 2008-08-04 14:09:15 -0700 (Mon, 04 Aug 2008) $
+  Revision:       $Revision: 17703 $
 
   Description:    Zigbee Cluster Library -  Lighting
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2008 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user

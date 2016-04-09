@@ -12,20 +12,20 @@
       <name>General</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>5</version>
+        <version>3</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
           <name>DerivativeDescriptionFile</name>
-          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\CC2530F256.i51</state>
+          <state>$TOOLKIT_DIR$\config\derivatives\Chipcon\CC2530.i51</state>
         </option>
         <option>
           <name>Previous Derivative File</name>
-          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\CC2530F256.i51</state>
+          <state>$TOOLKIT_DIR$\config\derivatives\Chipcon\CC2530.i51</state>
         </option>
         <option>
           <name>Showed Derivative</name>
-          <state>CC2530F256</state>
+          <state>CC2530</state>
         </option>
         <option>
           <name>CPU Core</name>
@@ -94,11 +94,11 @@
         </option>
         <option>
           <name>Switch Method</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>Mask Value</name>
-          <state>0xFF</state>
+          <state>0x01</state>
         </option>
         <option>
           <name>DPS Address</name>
@@ -110,7 +110,7 @@
         </option>
         <option>
           <name>DPTR Addresses</name>
-          <state></state>
+          <state> -D?DPL1=0x84 -D?DPH1=0x85</state>
         </option>
         <option>
           <name>CodeBankReg</name>
@@ -126,19 +126,29 @@
         </option>
         <option>
           <name>ExePath</name>
-          <state>EndDeviceEB\Exe</state>
+          <state>DongleEB\Exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>EndDeviceEB\Obj</state>
+          <state>DongleEB\Obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>EndDeviceEB\List</state>
+          <state>DongleEB\List</state>
         </option>
         <option>
           <name>GOutputBinary</name>
           <state>0</state>
+        </option>
+        <option>
+          <name>GRuntimeLibSelect</name>
+          <version>0</version>
+          <state>4</state>
+        </option>
+        <option>
+          <name>GRuntimeLibSelectSlave</name>
+          <version>0</version>
+          <state>4</state>
         </option>
         <option>
           <name>RTDescription</name>
@@ -212,51 +222,20 @@
         </option>
         <option>
           <name>CodeBankRegMask</name>
-          <state>0xFF</state>
+          <state>0x07</state>
         </option>
         <option>
           <name>GeneralMisraRules98</name>
           <version>0</version>
           <state>1000111110110101101110011100111111101110011011000101110111101101100111111111111100110011111001110111001111111111111111111111111</state>
         </option>
-        <option>
-          <name>PDATA 8-15 register address</name>
-          <state>0x93</state>
-        </option>
-        <option>
-          <name>PDATA 16-31 register address</name>
-          <state></state>
-        </option>
-        <option>
-          <name>General Far22 Heap Size</name>
-          <state>0xFFF</state>
-        </option>
-        <option>
-          <name>GeneralMisraVer</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>GeneralMisraRules04</name>
-          <version>0</version>
-          <state>111101110010111111111000110111111111111111111111111110010111101111010101111111111111111111111111101111111011111001111011111011111111111111111</state>
-        </option>
-        <option>
-          <name>GRuntimeLibSelect2</name>
-          <version>0</version>
-          <state>3</state>
-        </option>
-        <option>
-          <name>GRuntimeLibSelectSlave2</name>
-          <version>0</version>
-          <state>3</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>ICC8051</name>
-      <archiveVersion>4</archiveVersion>
+      <archiveVersion>3</archiveVersion>
       <data>
-        <version>9</version>
+        <version>6</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -327,11 +306,11 @@
         </option>
         <option>
           <name>CCDiagSuppress</name>
-          <state>Pe001,Pa010</state>
+          <state></state>
         </option>
         <option>
           <name>CCDiagRemark</name>
-          <state>pe550</state>
+          <state></state>
         </option>
         <option>
           <name>CCDiagWarning</name>
@@ -368,7 +347,7 @@
         <option>
           <name>CCAllowList</name>
           <version>1</version>
-          <state>11101</state>
+          <state>11111</state>
         </option>
         <option>
           <name>CCObjUseModuleName</name>
@@ -435,6 +414,10 @@
           <state>1</state>
         </option>
         <option>
+          <name>CCLangSelect</name>
+          <state>0</state>
+        </option>
+        <option>
           <name>NoUBROFMessages</name>
           <state>0</state>
         </option>
@@ -454,30 +437,35 @@
         <option>
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
-          <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\include</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\high_level</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\low_level\srf04</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\low_level\srf04\single_chip</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mt</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\osal\include</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\services\saddr</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\services\sdata</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\af</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\sapi</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\sec</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\zmac</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\zmac\f8w</state>
+          <state>$PROJ_DIR$\..\SOURCE</state>
+          <state>$PROJ_DIR$\..\..\..\ZMAIN\TI2530DB</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MT</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\TARGET\CC2530EB</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\OSAL\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\AF</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\NWK</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\SEC</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\SAPI</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\SYS</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\ZDO</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\ZMAC\F8W</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\ZMAC</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\SERVICES\SADDR</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\SERVICES\SDATA</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\HIGH_LEVEL</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\LOW_LEVEL\srf04</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\LOW_LEVEL\srf04\SINGLE_CHIP</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
           <state>0</state>
+        </option>
+        <option>
+          <name>CCStdIncludePath</name>
+          <state>$TOOLKIT_DIR$\INC\</state>
+          <state>$TOOLKIT_DIR$\INC\CLIB\</state>
         </option>
         <option>
           <name>CompilerMisraRules98</name>
@@ -509,38 +497,13 @@
           <name>CCOptLevelSlave</name>
           <state>3</state>
         </option>
-        <option>
-          <name>CompilerMisraRules04</name>
-          <version>0</version>
-          <state>111101110010111111111000110111111111111111111111111110010111101111010101111111111111111111111111101111111011111001111011111011111111111111111</state>
-        </option>
-        <option>
-          <name>IccLang</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IccCDialect</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>IccAllowVLA</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IccCppDialect</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>IccRelaxedFpPrecision</name>
-          <state>0</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>A8051</name>
       <archiveVersion>2</archiveVersion>
       <data>
-        <version>5</version>
+        <version>4</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -645,6 +608,13 @@
           <state>0</state>
         </option>
         <option>
+          <name>AIncludes</name>
+          <state>$TOOLKIT_DIR$\inc\</state>
+          <state>$TOOLKIT_DIR$\src\lib</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\TARGET\CC2530EB</state>
+        </option>
+        <option>
           <name>ADefines</name>
           <state></state>
         </option>
@@ -684,14 +654,6 @@
           <name>AMaxErrNum</name>
           <state>100</state>
         </option>
-        <option>
-          <name>Ignore standard include paths</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Include directories</name>
-          <state>$TOOLKIT_DIR$\SRC\LIB</state>
-        </option>
       </data>
     </settings>
     <settings>
@@ -719,7 +681,7 @@
       <name>XLINK</name>
       <archiveVersion>3</archiveVersion>
       <data>
-        <version>17</version>
+        <version>16</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -918,7 +880,7 @@
         </option>
         <option>
           <name>AllowExtraOutput</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>GenerateExtraOutput</name>
@@ -930,17 +892,17 @@
         </option>
         <option>
           <name>ExtraOutputFile</name>
-          <state>Dongle.sim</state>
+          <state>Dongle.a51</state>
         </option>
         <option>
           <name>ExtraOutputFormat</name>
           <version>11</version>
-          <state>60</state>
+          <state>23</state>
         </option>
         <option>
           <name>ExtraFormatVariant</name>
           <version>8</version>
-          <state>2</state>
+          <state>14</state>
         </option>
         <option>
           <name>xcOverrideProgramEntryLabel</name>
@@ -1020,7 +982,7 @@
         </option>
         <option>
           <name>Linker Extra Options Edit</name>
-          <state>-C $PROJ_DIR$\..\..\..\Libraries\TI2530DB\bin\EndDeviceMt-Pro.lib</state>
+          <state>-C $PROJ_DIR$\..\..\..\Libraries\TI2530DB\bin\EndDeviceMt.lib</state>
           <state>-C $PROJ_DIR$\..\..\..\Libraries\TI2530DB\bin\Security.lib</state>
           <state>-C $PROJ_DIR$\..\..\..\Libraries\TIMAC\bin\TIMAC-CC2530.lib</state>
         </option>
@@ -1031,10 +993,6 @@
         <option>
           <name>CrcInitialValue</name>
           <state>0x0</state>
-        </option>
-        <option>
-          <name>Linker Far22 Heap Size</name>
-          <state>1</state>
         </option>
       </data>
     </settings>
@@ -1070,7 +1028,7 @@
     </settings>
   </configuration>
   <configuration>
-    <name>EndDeviceUSB</name>
+    <name>EndDeviceEB-Pro</name>
     <toolchain>
       <name>8051</name>
     </toolchain>
@@ -1079,20 +1037,20 @@
       <name>General</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>5</version>
+        <version>3</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
           <name>DerivativeDescriptionFile</name>
-          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\CC2531F256.i51</state>
+          <state>$TOOLKIT_DIR$\config\derivatives\Chipcon\CC2530.i51</state>
         </option>
         <option>
           <name>Previous Derivative File</name>
-          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\CC2531F256.i51</state>
+          <state>$TOOLKIT_DIR$\config\derivatives\Chipcon\CC2530.i51</state>
         </option>
         <option>
           <name>Showed Derivative</name>
-          <state>CC2531F256</state>
+          <state>CC2530</state>
         </option>
         <option>
           <name>CPU Core</name>
@@ -1161,11 +1119,11 @@
         </option>
         <option>
           <name>Switch Method</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>Mask Value</name>
-          <state>0xFF</state>
+          <state>0x01</state>
         </option>
         <option>
           <name>DPS Address</name>
@@ -1177,7 +1135,7 @@
         </option>
         <option>
           <name>DPTR Addresses</name>
-          <state></state>
+          <state> -D?DPL1=0x84 -D?DPH1=0x85</state>
         </option>
         <option>
           <name>CodeBankReg</name>
@@ -1193,19 +1151,29 @@
         </option>
         <option>
           <name>ExePath</name>
-          <state>EndDeviceUSB\Exe</state>
+          <state>DongleEB-Pro\Exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>EndDeviceUSB\Obj</state>
+          <state>DongleEB-Pro\Obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>EndDeviceUSB\List</state>
+          <state>DongleEB-Pro\List</state>
         </option>
         <option>
           <name>GOutputBinary</name>
           <state>0</state>
+        </option>
+        <option>
+          <name>GRuntimeLibSelect</name>
+          <version>0</version>
+          <state>4</state>
+        </option>
+        <option>
+          <name>GRuntimeLibSelectSlave</name>
+          <version>0</version>
+          <state>4</state>
         </option>
         <option>
           <name>RTDescription</name>
@@ -1279,51 +1247,20 @@
         </option>
         <option>
           <name>CodeBankRegMask</name>
-          <state>0xFF</state>
+          <state>0x07</state>
         </option>
         <option>
           <name>GeneralMisraRules98</name>
           <version>0</version>
           <state>1000111110110101101110011100111111101110011011000101110111101101100111111111111100110011111001110111001111111111111111111111111</state>
         </option>
-        <option>
-          <name>PDATA 8-15 register address</name>
-          <state>0x93</state>
-        </option>
-        <option>
-          <name>PDATA 16-31 register address</name>
-          <state></state>
-        </option>
-        <option>
-          <name>General Far22 Heap Size</name>
-          <state>0xFFF</state>
-        </option>
-        <option>
-          <name>GeneralMisraVer</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>GeneralMisraRules04</name>
-          <version>0</version>
-          <state>111101110010111111111000110111111111111111111111111110010111101111010101111111111111111111111111101111111011111001111011111011111111111111111</state>
-        </option>
-        <option>
-          <name>GRuntimeLibSelect2</name>
-          <version>0</version>
-          <state>3</state>
-        </option>
-        <option>
-          <name>GRuntimeLibSelectSlave2</name>
-          <version>0</version>
-          <state>3</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>ICC8051</name>
-      <archiveVersion>4</archiveVersion>
+      <archiveVersion>3</archiveVersion>
       <data>
-        <version>9</version>
+        <version>6</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -1341,6 +1278,7 @@
         </option>
         <option>
           <name>CCDefines</name>
+          <state>ZIGBEEPRO</state>
           <state>NWK_AUTO_POLL</state>
           <state>ZTOOL_P1</state>
           <state>MT_TASK</state>
@@ -1435,7 +1373,7 @@
         <option>
           <name>CCAllowList</name>
           <version>1</version>
-          <state>11101</state>
+          <state>11111</state>
         </option>
         <option>
           <name>CCObjUseModuleName</name>
@@ -1502,6 +1440,10 @@
           <state>1</state>
         </option>
         <option>
+          <name>CCLangSelect</name>
+          <state>0</state>
+        </option>
+        <option>
           <name>NoUBROFMessages</name>
           <state>0</state>
         </option>
@@ -1521,33 +1463,35 @@
         <option>
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
-          <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\cc2531</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\include</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\high_level</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\low_level\srf04</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mac\low_level\srf04\single_chip</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\mt</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\osal\include</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\services\saddr</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\services\sdata</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\af</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\sapi</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\sec</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\zmac</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\zmac\f8w</state>
+          <state>$PROJ_DIR$\..\SOURCE</state>
+          <state>$PROJ_DIR$\..\..\..\ZMAIN\TI2530DB</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MT</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\TARGET\CC2530EB</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\OSAL\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\AF</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\NWK</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\SEC</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\SAPI</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\SYS</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\STACK\ZDO</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\ZMAC\F8W</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\ZMAC</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\SERVICES\SADDR</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\SERVICES\SDATA</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\HIGH_LEVEL</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\LOW_LEVEL\srf04</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\MAC\LOW_LEVEL\srf04\SINGLE_CHIP</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
           <state>0</state>
+        </option>
+        <option>
+          <name>CCStdIncludePath</name>
+          <state>$TOOLKIT_DIR$\INC\</state>
+          <state>$TOOLKIT_DIR$\INC\CLIB\</state>
         </option>
         <option>
           <name>CompilerMisraRules98</name>
@@ -1579,38 +1523,13 @@
           <name>CCOptLevelSlave</name>
           <state>3</state>
         </option>
-        <option>
-          <name>CompilerMisraRules04</name>
-          <version>0</version>
-          <state>111101110010111111111000110111111111111111111111111110010111101111010101111111111111111111111111101111111011111001111011111011111111111111111</state>
-        </option>
-        <option>
-          <name>IccLang</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IccCDialect</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>IccAllowVLA</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IccCppDialect</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>IccRelaxedFpPrecision</name>
-          <state>0</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>A8051</name>
       <archiveVersion>2</archiveVersion>
       <data>
-        <version>5</version>
+        <version>4</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -1715,6 +1634,13 @@
           <state>0</state>
         </option>
         <option>
+          <name>AIncludes</name>
+          <state>$TOOLKIT_DIR$\inc\</state>
+          <state>$TOOLKIT_DIR$\src\lib</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\TARGET\CC2530EB</state>
+        </option>
+        <option>
           <name>ADefines</name>
           <state></state>
         </option>
@@ -1754,14 +1680,6 @@
           <name>AMaxErrNum</name>
           <state>100</state>
         </option>
-        <option>
-          <name>Ignore standard include paths</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Include directories</name>
-          <state>$TOOLKIT_DIR$\SRC\LIB</state>
-        </option>
       </data>
     </settings>
     <settings>
@@ -1789,7 +1707,7 @@
       <name>XLINK</name>
       <archiveVersion>3</archiveVersion>
       <data>
-        <version>17</version>
+        <version>16</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -2101,10 +2019,6 @@
         <option>
           <name>CrcInitialValue</name>
           <state>0x0</state>
-        </option>
-        <option>
-          <name>Linker Far22 Heap Size</name>
-          <state>1</state>
         </option>
       </data>
     </settings>
@@ -2198,7 +2112,7 @@
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_drivers.h</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_flash.h</name>
+        <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\hal\include\hal_flash.h</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_key.h</name>
@@ -2226,9 +2140,6 @@
       <name>Target</name>
       <group>
         <name>CC2530EB</name>
-        <excluded>
-          <configuration>EndDeviceUSB</configuration>
-        </excluded>
         <group>
           <name>Config</name>
           <file>
@@ -2274,152 +2185,17 @@
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_aes.h</name>
           </file>
           <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_dma.h</name>
+            <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\hal\target\CC2530EB\hal_dma.h</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_mcu.h</name>
           </file>
           <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_ota.h</name>
+            <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\hal\target\CC2530EB\hal_oad.h</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_types.h</name>
           </file>
-        </group>
-      </group>
-      <group>
-        <name>CC2530USB</name>
-        <excluded>
-          <configuration>EndDeviceEB</configuration>
-        </excluded>
-        <group>
-          <name>Config</name>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_board_cfg.h</name>
-          </file>
-        </group>
-        <group>
-          <name>Drivers</name>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_adc.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_dma.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_flash.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_key.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_lcd.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_led.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_sleep.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_startup.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_timer.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_uart.c</name>
-          </file>
-        </group>
-        <group>
-          <name>Includes</name>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_aes.h</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_dma.h</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_mcu.h</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\hal_types.h</name>
-          </file>
-        </group>
-        <group>
-          <name>USB</name>
-          <group>
-            <name>class_cdc</name>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc\usb_cdc.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc\usb_cdc_descriptor.s51</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc\usb_cdc_hooks.c</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc\usb_cdc_hooks.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc\usb_firmware_library_config.c</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc\usb_firmware_library_config.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\class_cdc\usb_firmware_library_headers.h</name>
-            </file>
-          </group>
-          <group>
-            <name>library</name>
-            <group>
-              <name>cc2531</name>
-              <file>
-                <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\cc2531\usb_board_cfg.h</name>
-              </file>
-              <file>
-                <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\cc2531\usb_interrupt.c</name>
-              </file>
-              <file>
-                <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\cc2531\usb_suspend.c</name>
-              </file>
-            </group>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_descriptor.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_descriptor_parser.c</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_descriptor_parser.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_framework.c</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_framework.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_framework_structs.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_interrupt.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_reg.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_standard_requests.c</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_standard_requests.h</name>
-            </file>
-            <file>
-              <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530USB\usb\library\usb_suspend.h</name>
-            </file>
-          </group>
         </group>
       </group>
     </group>
@@ -2433,9 +2209,6 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\..\..\..\..\Components\mac\high_level\mac_high_level.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\..\..\..\..\Components\mac\high_level\mac_pib.c</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\..\..\..\..\Components\mac\high_level\mac_pib.h</name>
@@ -2640,9 +2413,6 @@
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\AssocList.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\BindingTable.c</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\BindingTable.h</name>
     </file>
     <file>
@@ -2670,12 +2440,6 @@
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\rtg.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\stub_aps.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\stub_aps.h</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZGlobals.c</name>
     </file>
     <file>
@@ -2698,9 +2462,6 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\osal\include\OSAL_Clock.h</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\osal\mcu\cc2530\OSAL_Math.s51</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\osal\common\OSAL_Memory.c</name>

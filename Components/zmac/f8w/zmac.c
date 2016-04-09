@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       zmac.c
-  Revised:        $Date: 2011-02-28 16:59:59 -0800 (Mon, 28 Feb 2011) $
-  Revision:       $Revision: 25230 $
+  Revised:        $Date: 2010-01-08 14:36:19 -0800 (Fri, 08 Jan 2010) $
+  Revision:       $Revision: 21466 $
 
 
   Description:    This file contains the ZStack MAC Porting Layer
@@ -121,7 +121,7 @@ uint8 ZMacInit( void )
   /* Set the callback function for 16 byte random seed */
   MAC_SetRandomSeedCB( SSP_StoreRandomSeedNV);
 #endif
-
+  
   MAC_Init();
   MAC_InitDevice();
 
@@ -214,39 +214,6 @@ uint8 ZMacSetReq( uint8 attr, byte *value )
   return (ZMacStatus_t) MAC_MlmeSetReq( attr, value );
 }
 
-#ifdef MAC_SECURITY
-/********************************************************************************************************
- * @fn      ZMacSecurityGetReq
- *
- * @brief   Read a MAC Security PIB attribute.
- *
- * @param   attr - PIB attribute to get
- * @param   value - pointer to the buffer to store the attribute
- *
- * @return  status
- ********************************************************************************************************/
-uint8 ZMacSecurityGetReq( uint8 attr, uint8 *value )
-{
-  return (ZMacStatus_t) MAC_MlmeGetSecurityReq( attr, value );
-}
-
-
-/********************************************************************************************************
- * @fn      ZMacSecuritySetReq
- *
- * @brief   Write a MAC Security PIB attribute.
- *
- * @param   attr - PIB attribute to Set
- * @param   value - pointer to the data
- *
- * @return  status
- ********************************************************************************************************/
-uint8 ZMacSecuritySetReq( uint8 attr, byte *value )
-{
-  return (ZMacStatus_t) MAC_MlmeSetSecurityReq( attr, value );
-}
-#endif /* MAC_SECURITY */
-
 /********************************************************************************************************
  * @fn      ZMacAssociateReq
  *
@@ -276,7 +243,7 @@ uint8 ZMacAssociateReq( ZMacAssociateReq_t *pData )
  ********************************************************************************************************/
 uint8 ZMacAssociateRsp( ZMacAssociateRsp_t *pData )
 {
-  /* TBD: set security to zero for now. Require Ztool change */
+  /* Right now, set security to zero */
   pData->Sec.SecurityLevel = false;
 
   return ( MAC_MlmeAssociateRsp( (macMlmeAssociateRsp_t *) pData ) );
@@ -358,6 +325,9 @@ uint8 ZMacScanReq( ZMacScanReq_t *pData )
       }
     }
   }
+
+  /* Right now, set security to zero */
+  pData->Sec.SecurityLevel = false;
 
   /* Channel Page */
   pData->ChannelPage = 0x00;
@@ -447,28 +417,22 @@ uint8 ZMacPollReq( ZMacPollReq_t *pData )
  *
  * @return  status
  ********************************************************************************************************/
-//ninglvfeihong
-uint8 AT_ZMacACK_disable = FALSE;
 uint8 ZMacDataReqSec( ZMacDataReq_t *pData, applySecCB_t secCB )
 {
   macMcpsDataReq_t *pBuf;
 
   /* Allocate memory */
-  pBuf = MAC_McpsDataAlloc( pData->msduLength, pData->Sec.SecurityLevel, pData->Sec.KeyIdMode );
- //ninglvfeihong 
-  if(AT_ZMacACK_disable) pData->TxOptions &= !(MAC_TXOPTION_ACK);  
-  
+  pBuf = MAC_McpsDataAlloc( pData->msduLength, MAC_SEC_LEVEL_NONE, MAC_KEY_ID_MODE_NONE );
+
   if ( pBuf )
   {
     /* Copy the addresses */
     osal_memcpy( &pBuf->mac, pData, sizeof (macDataReq_t) );
 
     /* Copy data */
+    pBuf->msdu.len = pData->msduLength;
     osal_memcpy( pBuf->msdu.p, pData->msdu, pData->msduLength );
-
-    /* Copy Security parameters */
-    osal_memcpy( &pBuf->sec, &pData->Sec, sizeof (macSec_t));
-
+    
     /* Encrypt in place */
     if ( secCB && pBuf->msdu.len && pBuf->msdu.p )
     {
@@ -477,15 +441,17 @@ uint8 ZMacDataReqSec( ZMacDataReq_t *pData, applySecCB_t secCB )
         // Deallocate the buffer.  MAC_McpsDataAlloc() calls osal_msg_allocate() and
         // returns the same pointer.
         osal_msg_deallocate( (uint8 *)pBuf );
-
+        
         return ( MAC_NO_RESOURCES );
       }
     }
 
+    /* Right now, set MAC security to off */
+    pBuf->sec.securityLevel = false;
+
     /* Call Mac Data Request */
     MAC_McpsDataReq( pBuf );
-    //ninglvfeihong
-    AT_ZMacACK_disable=FALSE;
+
     return ( ZMacSuccess );
   }
 
@@ -502,7 +468,7 @@ uint8 ZMacDataReqSec( ZMacDataReq_t *pData, applySecCB_t secCB )
  * @return  status
  ********************************************************************************************************/
 uint8 ZMacDataReq( ZMacDataReq_t *pData )
-{ 
+{
   return ZMacDataReqSec( pData, NULL );
 }
 
@@ -657,7 +623,7 @@ uint8 ZMac_PwrMode(void)
  ********************************************************************************************************/
 uint8 ZMacSetTransmitPower( ZMacTransmitPower_t level )
 {
-  return MAC_MlmeSetReq( ZMacPhyTransmitPowerSigned, &level );
+  return MAC_MlmeSetReq( ZMacPhyTransmitPower, &level );
 }
 
 /********************************************************************************************************

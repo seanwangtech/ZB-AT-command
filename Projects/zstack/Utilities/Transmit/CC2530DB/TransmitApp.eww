@@ -6,7 +6,7 @@
   </project>
   <batchBuild>
     <batchDefinition>
-      <name>ALL</name>
+      <name>Build All</name>
       <member>
         <project>TransmitApp</project>
         <configuration>CoordinatorEB</configuration>
@@ -18,6 +18,18 @@
       <member>
         <project>TransmitApp</project>
         <configuration>EndDeviceEB</configuration>
+      </member>
+      <member>
+        <project>TransmitApp</project>
+        <configuration>CoordinatorEB-Pro</configuration>
+      </member>
+      <member>
+        <project>TransmitApp</project>
+        <configuration>RouterEB-Pro</configuration>
+      </member>
+      <member>
+        <project>TransmitApp</project>
+        <configuration>EndDeviceEB-Pro</configuration>
       </member>
     </batchDefinition>
   </batchBuild>

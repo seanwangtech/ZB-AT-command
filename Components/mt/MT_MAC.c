@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       MT_MAC.c
-  Revised:        $Date: 2011-03-25 18:16:38 -0700 (Fri, 25 Mar 2011) $
-  Revision:       $Revision: 25528 $
+  Revised:        $Date: 2009-03-30 22:36:57 -0700 (Mon, 30 Mar 2009) $
+  Revision:       $Revision: 19596 $
 
   Description:    MonitorTest functions for the MAC layer.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -57,10 +57,6 @@
 
 /* Hal */
 #include "hal_uart.h"
-
-#ifdef MAC_SECURITY
-  #include "mac_security_pib.h"
-#endif
 
 /***************************************************************************************************
  * MACROS
@@ -117,7 +113,6 @@ static uint8 mtMacBeaconPayload[MT_MAC_BEACON_PAYLOAD_MAX];
 static void MT_MacSpi2Sec( ZMacSec_t *pSec, uint8 *pSrc );
 static void MT_MacSpi2Addr( zAddrType_t *pDst, uint8 *pSrc );
 static void MT_MacAddr2Spi( uint8 *pDst, zAddrType_t *pSrc );
-static void MT_MacExtCpy( uint8 *pDst, uint8 *pSrc );
 static void MT_MacRevExtCpy( uint8 *pDst, uint8 *pSrc );
 
 void MT_MacResetReq(uint8 *pBuf);
@@ -129,16 +124,18 @@ void MT_MacAssociateReq(uint8 *pBuf);
 void MT_MacDisassociateReq(uint8 *pBuf);
 void MT_MacGetReq(uint8 *pBuf);
 void MT_MacSetReq(uint8 *pBuf);
-#ifdef MAC_SECURITY
-void MT_MacSecurityGetReq(uint8 *pBuf);
-void MT_MacSecuritySetReq(uint8 *pBuf);
-#endif
 void MT_MacScanReq(uint8 * pBuf);
 void MT_MacPollReq(uint8 *pBuf);
 void MT_MacPurgeReq(uint8 *pBuf);
 void MT_MacSetRxGainReq(uint8 *pBuf);
 void MT_MacAssociateRsp(uint8 *pBuf);
 void MT_MacOrphanRsp(uint8 *pBuf);
+void MT_MacSrcMatchEnable (uint8 *pBuf);
+void MT_MacSrcMatchAddEntry (uint8 *pBuf);
+void MT_MacSrcMatchDeleteEntry (uint8 *pBuf);
+void MT_MacSrcMatchCheckSrcAddr (uint8 *pBuf);
+void MT_MacSrcMatchAckAllPending (uint8 *pBuf);
+void MT_MacSrcMatchCheckAllPending (uint8 *pBuf);
 
 /***************************************************************************************************
  * @fn      MT_MacCommandProcessing
@@ -194,16 +191,6 @@ uint8 MT_MacCommandProcessing (uint8 *pBuf)
       MT_MacSetReq(pBuf);
       break;
 
-#ifdef MAC_SECURITY      
-    case MT_MAC_SECURITY_GET_REQ:
-      MT_MacSecurityGetReq(pBuf);
-      break;
-
-    case MT_MAC_SECURITY_SET_REQ:
-      MT_MacSecuritySetReq(pBuf);
-      break;
-#endif /* MAC_SECURITY */      
-
     case MT_MAC_GTS_REQ:
       /* Not supported */
       break;
@@ -231,6 +218,31 @@ uint8 MT_MacCommandProcessing (uint8 *pBuf)
     case MT_MAC_ORPHAN_RSP:
       MT_MacOrphanRsp(pBuf);
       break;
+
+    case MT_MAC_SRC_MATCH_ENABLE:
+      MT_MacSrcMatchEnable(pBuf);
+      break;
+
+    case MT_MAC_SRC_MATCH_ADD_ENTRY:
+      MT_MacSrcMatchAddEntry(pBuf);
+      break;
+
+    case MT_MAC_SRC_MATCH_DEL_ENTRY:
+      MT_MacSrcMatchDeleteEntry(pBuf);
+      break;
+
+    case MT_MAC_SRC_MATCH_CHECK_SRC_ADDR:
+      MT_MacSrcMatchCheckSrcAddr(pBuf);
+      break;
+
+    case MT_MAC_SRC_MATCH_ACK_ALL_PENDING:
+      MT_MacSrcMatchAckAllPending(pBuf);
+      break;
+
+    case MT_MAC_SRC_MATCH_CHECK_ALL_PENDING:
+      MT_MacSrcMatchCheckAllPending(pBuf);
+      break;
+
 
     default:
     status = MT_RPC_ERR_COMMAND_ID;
@@ -298,9 +310,7 @@ void MT_MacInit(uint8 *pBuf)
 void MT_MacStartReq(uint8 *pBuf)
 {
   uint8 retValue, cmdId;
-#ifdef RTR_NWK
   ZMacStartReq_t startReq;
-#endif
 
   /* Parse header */
   cmdId = pBuf[MT_RPC_POS_CMD1];
@@ -424,7 +434,7 @@ void MT_MacDataReq(uint8 *pBuf)
   /* Power */
   dataReq.Power = *pBuf++;
 
-  /* Data Security */
+  /* Security Information */
   MT_MacSpi2Sec( &dataReq.Sec, pBuf );
   pBuf += ZTEST_DEFAULT_SEC_LEN;
 
@@ -477,7 +487,7 @@ void MT_MacAssociateReq(uint8 *pBuf)
   pBuf += 2;
 
   /* Capability information */
-  assocReq.CapabilityFlags = *pBuf++;
+  assocReq.CapabilityInformation = *pBuf++;
 
   /* Security Information */
   MT_MacSpi2Sec( &assocReq.Sec, pBuf );
@@ -616,102 +626,6 @@ void MT_MacSetReq(uint8 *pBuf)
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 1, &retValue );
 }
-
-#ifdef MAC_SECURITY
-/***************************************************************************************************
- * @fn      MT_MacSecurityGetReq
- *
- * @brief   Process MAC Security Get Request command that are issued by test tool
- *
- * @param   pBuf - Buffer contains the data
- *
- * @return  void
- ***************************************************************************************************/
-void MT_MacSecurityGetReq(uint8 *pBuf)
-{
-  uint8 respLen, cmdId, attr;
-  uint8 *pRetBuf;
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-  /* Response length is 25 bytes + 2 bytes index + 1 byte status */
-  respLen = ZTEST_DEFAULT_SEC_PARAM_LEN;
-
-  /* Allocate */
-  pRetBuf = osal_mem_alloc(respLen);
-
-  /* Attribute to be read */
-  attr = *pBuf++;
-
-  if (pRetBuf)
-  {
-    /* Zero everything */
-    osal_memset(pRetBuf, 0, respLen);
-    
-    switch (attr)
-    {
-      case MAC_KEY_ID_LOOKUP_ENTRY:
-      case MAC_KEY_DEVICE_ENTRY:
-      case MAC_KEY_USAGE_ENTRY:
-        /* These security PIBs have two parameters */
-        pRetBuf[1] = *pBuf++;
-        pRetBuf[2] = *pBuf;
-        break;
-      case MAC_KEY_ENTRY:
-      case MAC_DEVICE_ENTRY:
-      case MAC_SECURITY_LEVEL_ENTRY:
-        /* These security PIBs have one parameter */
-        pRetBuf[1] = *pBuf;
-        break;      
-    }
-    
-    /* Other MAC Security PIB items. Read the pib value */
-    pRetBuf[0] = ZMacSecurityGetReq(attr, &pRetBuf[1]);
-
-    /* Build and send back the response */
-    MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, respLen, pRetBuf );
-
-    /* Deallocate */
-    osal_mem_free(pRetBuf);
-  }
-}
-
-/***************************************************************************************************
- * @fn      MT_MacSecuritySetReq
- *
- * @brief   Process MAC Set Req command that are issued by test tool
- *
- * @param   pBuf - Buffer contains the data
- *
- * @return  void
- ***************************************************************************************************/
-void MT_MacSecuritySetReq(uint8 *pBuf)
-{
-  uint8 cmdId, attr;
-  uint8 retValue = ZMAC_SUCCESS;
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-  /*
-    In the data field of 'msg', the first byte is the attribute and remainder
-    is the attribute value. So the pointer 'pBuf' points directly to the attribute.
-    The value of the attribute is from the next byte position
-  */
-  attr = *pBuf++;
-  if (attr == MAC_KEY_TABLE || attr == MAC_DEVICE_TABLE || attr == MAC_SECURITY_LEVEL_TABLE)
-  {
-    pBuf = NULL;
-  }
-  retValue = ZMacSecuritySetReq( (ZMacAttributes_t)attr , pBuf );      
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 1, &retValue );
-}
-#endif /* MAC_SECURITY */
 
 /***************************************************************************************************
  * @fn      MT_MacScanReq
@@ -878,7 +792,7 @@ void MT_MacAssociateRsp(uint8 *pBuf)
 #ifdef RTR_NWK
 
   /* The address of the device requesting association */
-  MT_MacExtCpy(assocRsp.DeviceAddress, pBuf);
+  MT_MacRevExtCpy(assocRsp.DeviceAddress, pBuf);
   pBuf += Z_EXTADDR_LEN;
 
   /* The short address allocated to the (associated) device */
@@ -941,6 +855,239 @@ void MT_MacOrphanRsp(uint8 *pBuf)
 
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 1, &retValue);
+}
+
+/***************************************************************************************************
+ * @fn          MAC_SrcMatchEnable
+ *
+ * @brief      Enabled AUTOPEND and source address matching.
+ *
+ * @param      pBuf - Buffer contains the data
+ *
+ * @return     void
+ ***************************************************************************************************/
+void MT_MacSrcMatchEnable (uint8 *pBuf)
+{
+  uint8 retValue, cmdId;
+
+  /* Parse header */
+  cmdId = pBuf[MT_RPC_POS_CMD1];
+  pBuf += MT_RPC_FRAME_HDR_SZ;
+
+#ifdef AUTO_PEND
+  /* Call the routine */
+  retValue = ZMacSrcMatchEnable (pBuf[0], pBuf[1]);
+#else
+  retValue = ZMacUnsupported;
+#endif
+
+  /* Build and send back the response */
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 1, &retValue );
+
+}
+
+/***************************************************************************************************
+ * @fn          MAC_SrcMatchAddEntry
+ *
+ * @brief       Add a short or extended address to source address table.
+ *
+ * @param       pBuf - Buffer contains the data
+ *
+ * @return      void
+ ***************************************************************************************************/
+void MT_MacSrcMatchAddEntry (uint8 *pBuf)
+{
+  uint8 retValue, cmdId;
+
+  /* Parse header */
+  cmdId = pBuf[MT_RPC_POS_CMD1];
+  pBuf += MT_RPC_FRAME_HDR_SZ;
+
+#ifdef AUTO_PEND
+  uint16 panID;
+  zAddrType_t devAddr;
+
+  /* Address mode */
+  devAddr.addrMode = *pBuf++;
+
+  /* Address based on the address mode */
+  MT_MacSpi2Addr( &devAddr, pBuf);
+  pBuf += Z_EXTADDR_LEN;
+
+  /* PanID */
+  panID = BUILD_UINT16( pBuf[0] , pBuf[1] );
+
+
+  /* Call the routine */
+  retValue =  ZMacSrcMatchAddEntry (&devAddr, panID);
+#else
+  retValue = ZMacUnsupported;
+#endif
+
+  /* Build and send back the response */
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 1, &retValue );
+}
+
+
+/***************************************************************************************************
+ * @fn          MAC_SrcMatchDeleteEntry
+ *
+ * @brief      Delete a short or extended address from source address table.
+ *
+ * @param      pBuf - Buffer contains the data
+ *
+ * @return     void
+ ***************************************************************************************************/
+void MT_MacSrcMatchDeleteEntry (uint8 *pBuf)
+{
+  uint8 retValue, cmdId;
+
+  /* Parse header */
+  cmdId = pBuf[MT_RPC_POS_CMD1];
+  pBuf += MT_RPC_FRAME_HDR_SZ;
+
+#ifdef AUTO_PEND
+  uint16 panID;
+  zAddrType_t devAddr;
+
+  /* Address mode */
+  devAddr.addrMode = *pBuf++;
+
+  /* Address based on the address mode */
+  MT_MacSpi2Addr( &devAddr, pBuf);
+  pBuf += Z_EXTADDR_LEN;
+
+  /* PanID */
+  panID = BUILD_UINT16( pBuf[0] , pBuf[1] );
+
+
+  /* Call the routine */
+  retValue =  ZMacSrcMatchDeleteEntry (&devAddr, panID);
+#else
+  retValue = ZMacUnsupported;
+#endif
+
+  /* Build and send back the response */
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 1, &retValue );
+}
+
+
+/***************************************************************************************************
+ * @fn          MT_MacSrcMatchCheckSrcAddr
+ *
+ * @brief      Check if a short or extended address is in the source address table.
+ *
+ * @param      pBuf - Buffer contains the data
+ *
+ * @return     void
+ ***************************************************************************************************/
+void MT_MacSrcMatchCheckSrcAddr (uint8 *pBuf)
+{
+  uint8 cmdId;
+  uint8 retArray[2];
+
+  /* Parse header */
+  cmdId = pBuf[MT_RPC_POS_CMD1];
+  pBuf += MT_RPC_FRAME_HDR_SZ;
+
+#if 0  /* Unsupported  */
+  uint16 panID;
+  zAddrType_t devAddr;
+
+  /* Address mode */
+  devAddr.addrMode = *pBuf++;
+
+  /* Address based on the address mode */
+  MT_MacSpi2Addr( &devAddr, pBuf);
+  pBuf += Z_EXTADDR_LEN;
+
+  /* PanID */
+  panID = BUILD_UINT16( pBuf[0] , pBuf[1] );
+
+  /* Call the routine */
+  retArray[1] =  ZMacSrcMatchCheckSrcAddr (&devAddr, panID);
+
+    /* Return failure if the index is invalid */
+  if (retArray[1] == ZMacSrcMatchInvalidIndex )
+  {
+    retArray[0] = ZFailure;
+  }
+  else
+  {
+    retArray[0] = ZSuccess;
+  }
+#else
+  retArray[0] = ZMacUnsupported;
+  retArray[1] = ZMacSrcMatchInvalidIndex;
+#endif
+
+  /* Build and send back the response */
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 2, retArray );
+}
+
+
+/***************************************************************************************************
+ * @fn          MAC_SrcMatchAckAllPending
+ *
+ * @brief       Enabled/disable acknowledging all packets with pending bit set
+ *              It is normally enabled when adding new entries to
+ *              the source address table fails due to the table is full, or
+ *              disabled when more entries are deleted and the table has
+ *              empty slots.
+ *
+ * @param       pBuf - Buffer contains the data
+ *
+ * @return      void
+ ***************************************************************************************************/
+void MT_MacSrcMatchAckAllPending (uint8 *pBuf)
+{
+  uint8 retValue, cmdId;
+
+  /* Parse header */
+  cmdId = pBuf[MT_RPC_POS_CMD1];
+  pBuf += MT_RPC_FRAME_HDR_SZ;
+
+#ifdef AUTO_PEND
+  /* Call the routine */
+  retValue = ZMacSrcMatchAckAllPending(*pBuf);
+#else
+  retValue = ZMacUnsupported;
+#endif
+
+  /* Build and send back the response */
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 1, &retValue );
+}
+
+
+/***************************************************************************************************
+ * @fn          MT_MacSrcMatchCheckAllPending
+ *
+ * @brief       Check if acknowledging all packets with pending bit set
+ *              is enabled.
+ *
+ * @param       pBuf - Buffer contains the data
+ *
+ * @return      void
+ ***************************************************************************************************/
+void MT_MacSrcMatchCheckAllPending (uint8 *pBuf)
+{
+  uint8 retArray[2], cmdId;
+
+  /* Parse header */
+  cmdId = pBuf[MT_RPC_POS_CMD1];
+  pBuf += MT_RPC_FRAME_HDR_SZ;
+
+#ifdef AUTO_PEND
+  /* Call the routine */
+  retArray[0] = ZMacSuccess;
+  retArray[1] = ZMacSrcMatchCheckAllPending();
+#else
+  retArray[0] = ZMacUnsupported;
+  retArray[1] = FALSE;
+#endif
+
+  /* Build and send back the response */
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_MAC), cmdId, 2, retArray );
 }
 
 #if defined ( MT_MAC_CB_FUNC )
@@ -1018,7 +1165,7 @@ void nwk_MTCallbackSubNwkAssociateInd( ZMacAssociateInd_t *param )
     tp += Z_EXTADDR_LEN;
 
     /* Capability Information */
-    *tp++ = param->CapabilityFlags;
+    *tp++ = param->CapabilityInformation;
 
     /* Security */
     MT_MacSpi2Sec ((ZMacSec_t *)tp, (uint8 *)&param->Sec);
@@ -1657,28 +1804,6 @@ void nwk_MTCallbackSubNwkPurgeCnf( ZMacPurgeCnf_t *param )
  ***************************************************************************************************/
 
 /***************************************************************************************************
- * @fn      MT_MacExtCpy
- *
- * @brief
- *
- *   Copy an extended address.
- *
- * @param   pDst - Pointer to data destination
- * @param   pSrc - Pointer to data source
- *
- * @return  void
- ***************************************************************************************************/
-static void MT_MacExtCpy( uint8 *pDst, uint8 *pSrc )
-{
-  int8 i;
-
-  for ( i = 0; i < Z_EXTADDR_LEN; i++ )
-  {
-    *pDst++ = pSrc[i];
-  }
-}
-
-/***************************************************************************************************
  * @fn      MT_MacRevExtCpy
  *
  * @brief
@@ -1735,8 +1860,8 @@ static void MT_MacSpi2Addr( zAddrType_t *pDst, uint8 *pSrc )
  ***************************************************************************************************/
 static void MT_MacSpi2Sec( ZMacSec_t *pSec, uint8 *pSrc )
 {
-  /* Copy the security structure directly from the byte array */
-  osal_memcpy (pSec, pSrc, sizeof (ZMacSec_t));
+  /* Right now, set everything to zero */
+  osal_memset (pSec, 0, sizeof (ZMacSec_t));
 }
 
 /***************************************************************************************************

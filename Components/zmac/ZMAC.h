@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       ZMAC.h
-  Revised:        $Date: 2011-02-28 17:30:28 -0800 (Mon, 28 Feb 2011) $
-  Revision:       $Revision: 25231 $
+  Revised:        $Date: 2009-12-11 09:23:51 -0800 (Fri, 11 Dec 2009) $
+  Revision:       $Revision: 21317 $
 
   Description:    This file contains the ZStack MAC Porting Layer.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -87,14 +87,6 @@ extern "C"
    MAC_CHAN_28_MASK )
 #else
  #define ZMAC_CHAN_MASK  0x07FFF800
-#endif
-
-/* LQI adjustment parameters */
-#if !defined( LQI_CORR_MIN )
- #define LQI_CORR_MIN  50  /* Theoretical CORR lower limt */
-#endif
-#if !defined( LQI_CORR_MAX )
- #define LQI_CORR_MAX  110  /* Theoretical CORR upper limt */
 #endif
 
 /*********************************************************************
@@ -194,7 +186,7 @@ typedef struct
   uint8         ChannelPage;
   zAddrType_t   CoordAddress;
   uint16        CoordPANId;
-  uint8         CapabilityFlags;
+  uint8         CapabilityInformation;
   ZMacSec_t     Sec;
 } ZMacAssociateReq_t;
 
@@ -212,7 +204,7 @@ typedef struct
 {
   ZMacEventHdr_t hdr;
   ZLongAddr_t    DeviceAddress;
-  uint8          CapabilityFlags;
+  uint8          CapabilityInformation;
   ZMacSec_t      Sec;
 } ZMacAssociateInd_t;
 
@@ -353,7 +345,6 @@ typedef struct
 typedef struct
 {
   ZMacEventHdr_t hdr;
-  ZMacSec_t      Sec;
   zAddrType_t    SrcAddr;
   zAddrType_t    DstAddr;
   uint32         Timestamp;
@@ -364,6 +355,7 @@ typedef struct
   uint8          Correlation;
   uint8          Rssi;
   uint8          Dsn;
+  ZMacSec_t      Sec;
   uint8          msduLength;
   uint8         *msdu;
 } ZMacDataInd_t;
@@ -407,48 +399,32 @@ typedef struct
 
 typedef enum
 {
-  TX_PWR_MINUS_22 = -22,
-  TX_PWR_MINUS_21,
-  TX_PWR_MINUS_20,
-  TX_PWR_MINUS_19,
-  TX_PWR_MINUS_18,
-  TX_PWR_MINUS_17,
-  TX_PWR_MINUS_16,
-  TX_PWR_MINUS_15,
-  TX_PWR_MINUS_14,
-  TX_PWR_MINUS_13,
-  TX_PWR_MINUS_12,
-  TX_PWR_MINUS_11,
-  TX_PWR_MINUS_10,
-  TX_PWR_MINUS_9,
-  TX_PWR_MINUS_8,
-  TX_PWR_MINUS_7,
-  TX_PWR_MINUS_6,
-  TX_PWR_MINUS_5,
-  TX_PWR_MINUS_4,
-  TX_PWR_MINUS_3,
-  TX_PWR_MINUS_2,
-  TX_PWR_MINUS_1,
-  TX_PWR_ZERO,
-  TX_PWR_PLUS_1,
+  TX_PWR_PLUS_3 = -3,
   TX_PWR_PLUS_2,
-  TX_PWR_PLUS_3,
-  TX_PWR_PLUS_4,
-  TX_PWR_PLUS_5,
-  TX_PWR_PLUS_6,
-  TX_PWR_PLUS_7,
-  TX_PWR_PLUS_8,
-  TX_PWR_PLUS_9,
-  TX_PWR_PLUS_10,
-  TX_PWR_PLUS_11,
-  TX_PWR_PLUS_12,
-  TX_PWR_PLUS_13,
-  TX_PWR_PLUS_14,
-  TX_PWR_PLUS_15,
-  TX_PWR_PLUS_16,
-  TX_PWR_PLUS_17,
-  TX_PWR_PLUS_18,
-  TX_PWR_PLUS_19
+  TX_PWR_PLUS_1,
+  TX_PWR_ZERO,
+  TX_PWR_MINUS_1,
+  TX_PWR_MINUS_2,
+  TX_PWR_MINUS_3,
+  TX_PWR_MINUS_4,
+  TX_PWR_MINUS_5,
+  TX_PWR_MINUS_6,
+  TX_PWR_MINUS_7,
+  TX_PWR_MINUS_8,
+  TX_PWR_MINUS_9,
+  TX_PWR_MINUS_10,
+  TX_PWR_MINUS_11,
+  TX_PWR_MINUS_12,
+  TX_PWR_MINUS_13,
+  TX_PWR_MINUS_14,
+  TX_PWR_MINUS_15,
+  TX_PWR_MINUS_16,
+  TX_PWR_MINUS_17,
+  TX_PWR_MINUS_18,
+  TX_PWR_MINUS_19,
+  TX_PWR_MINUS_20,
+  TX_PWR_MINUS_21,
+  TX_PWR_MINUS_22
 } ZMacTransmitPower_t;  // The transmit power in units of -1 dBm.
 
 typedef struct
@@ -466,14 +442,6 @@ typedef struct
 } beaconPayload_t;
 
 typedef uint8 (*applySecCB_t)( uint8 len, uint8 *msdu );
-
-typedef enum
-{
-  LQI_ADJ_OFF = 0,
-  LQI_ADJ_MODE1,
-  LQI_ADJ_MODE2,
-  LQI_ADJ_GET = 0xFF
-} ZMacLqiAdjust_t;  // Mode settings for lqi adjustment
 
 /*********************************************************************
  * GLOBAL VARIABLES
@@ -498,7 +466,7 @@ typedef enum
    * Send a MAC Data Frame packet and apply application security to the packet.
    */
   extern uint8 ZMacDataReqSec( ZMacDataReq_t *pData, applySecCB_t secCB );
-
+  
   /*
    * Request an association with a coordinator.
    */
@@ -551,18 +519,6 @@ typedef enum
    */
   extern ZMacStatus_t ZMacSetReq( ZMacAttributes_t attr, byte *value );
 
-#ifdef MAC_SECURITY
-  /*
-   * Read a MAC Security PIB attribute.
-   */
-  extern ZMacStatus_t ZMacSecurityGetReq( ZMacAttributes_t attr, byte *value );
-
-  /*
-   * Write a MAC Security PIB attribute.
-   */
-  extern ZMacStatus_t ZMacSecuritySetReq( ZMacAttributes_t attr, byte *value );
-#endif /* MAC_SECURITY */
-  
   /*
    * This function is called to tell the MAC to transmit beacons
    * and become a coordinator.
@@ -641,11 +597,6 @@ typedef enum
    * This function returns true if the MAC state is idle.
    */
   extern uint8 ZMacStateIdle( void );
-
-  /*
-   * This function sets/returns LQI adjust mode.
-   */
-  extern ZMacLqiAdjust_t ZMacLqiAdjustMode( ZMacLqiAdjust_t mode );
 
 /*********************************************************************
 *********************************************************************/

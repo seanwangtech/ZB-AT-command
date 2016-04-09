@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       comdef.h
-  Revised:        $Date: 2010-07-28 08:42:48 -0700 (Wed, 28 Jul 2010) $
-  Revision:       $Revision: 23160 $
+  Revised:        $Date: 2009-09-24 13:31:23 -0700 (Thu, 24 Sep 2009) $
+  Revision:       $Revision: 20816 $
 
   Description:    Type definitions and macros.
 
@@ -55,19 +55,51 @@ extern "C"
 #include "hal_defs.h"
 
 /*********************************************************************
- * Lint Keywords
+ * SPlint Keywords
  */
 #define VOID (void)
 
-#define NULL_OK
-#define INP
-#define OUTP
-#define UNUSED
-#define ONLY
-#define READONLY
-#define SHARED
-#define KEEP
-#define RELAX
+#if defined ( S_SPLINT_S )
+  #define NULL_OK /*@null@*/
+      // Indicates that a pointer is allowed to be NULL.
+
+  #define INP /*@in@*/
+      // Indicates that a parameter must be completely defined.
+
+  #define OUTP /*@out@*/
+      // Indicates that a passed in function parameter will be modified
+      // by the function.
+
+  #define UNUSED /*@unused@*/
+      // Indicates that a parameter is intentionally not used.
+
+  #define ONLY /*@only@*/
+      // Indicates a reference is the only pointer to the object it
+      // points to.   Example would be:
+      //     ONLY NULL_OK void *osal_mem_alloc( uint16 size );
+      //     void osal_mem_free( ONLY void *ptr );
+      // Where ONLY, in this case, indicates allocated memory.
+
+  #define READONLY /*@observer@*/
+      // Indicates that the pointer points to data that is read only.
+
+  #define SHARED /*@shared@*/
+      // declares storage that may be shared arbitrarily, but never
+      // released.
+
+  #define KEEP /*@keep@*/
+      // similar to only, except the caller may use the reference after
+      // the call.
+#else
+  #define NULL_OK
+  #define INP
+  #define OUTP
+  #define UNUSED
+  #define ONLY
+  #define READONLY
+  #define SHARED
+  #define KEEP
+#endif
 
 /*********************************************************************
  * CONSTANTS

@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       simplemeter.c
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2009-12-22 11:59:02 -0800 (Tue, 22 Dec 2009) $
+  Revision:       $Revision: 21385 $
 
   Description:    This module implements the Simple Meter functionality and
                   contains the init and event loop functions
 
 
-  Copyright 2009-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -64,7 +64,6 @@
 #include "OSAL_Clock.h"
 #include "OSAL_Nv.h"
 #include "ZDApp.h"
-#include "ZDObject.h"
 #include "AddrMgr.h"
 
 #include "se.h"
@@ -87,6 +86,8 @@
 
 // There is no attribute in the Mandatory Reportable Attribute list for now
 #define zcl_MandatoryReportableAttribute( a ) ( a == NULL )
+
+#define simpleMeterNwkState  devState
 
 /*********************************************************************
  * CONSTANTS
@@ -113,27 +114,12 @@
 static uint8 simpleMeterTaskID;                                    // osal task id of simple meter
 static uint8 simpleMeterTransID;                                   // transaction id
 static afAddrType_t ESPAddr;                                       // esp destination address
-static zclReportCmd_t *pSeReportCmd;                               // report command structure for SE Cluster
-static zclReportCmd_t *pBasicReportCmd;                            // report command structure for Basic Cluster
-static uint8 numSeAttr = 5;                                        // number of SE Cluster attributes in report
-static uint8 numBasicAttr = 2;                                     // number of Basic Cluster attributes in report
-
-// Report attributes defined in simplemeter_data.c
-extern uint8 simpleMeterCurrentSummationDelivered[];
-extern const uint8 simpleMeterZCLVersion;
-extern const uint8 simpleMeterPowerSource;
-extern uint8 simpleMeterStatus;
-extern uint8 simpleMeterUnitOfMeasure;
-extern uint8 simpleMeterSummationFormating;
-extern uint8 simpleMeterDeviceType;
-
+static zclReportCmd_t *pReportCmd;                                 // report command structure
+static uint8 numAttr = 1;                                          // number of attributes in report
+extern uint8 simpleMeterCurrentSummationDelivered[];               // defined in simplemeter_data.c
 #if SECURE
 static uint8 linkKeyStatus;                                        // status return from get link key routine
 #endif
-
-#if defined ( SE_UK_EXT ) && defined ( SE_MIRROR )
-static afAddrType_t mirrorAddr;
-#endif  // SE_UK_EXT && SE_MIRROR
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -143,6 +129,11 @@ static void simplemeter_HandleKeys( uint8 shift, uint8 keys );
 #if SECURE
 static uint8 simplemeter_KeyEstablish_ReturnLinkKey( uint16 shortAddr );
 #endif
+
+#if defined ( ZCL_ALARMS )
+static void simplemeter_ProcessAlarmCmd( uint8 srcEP, afAddrType_t *dstAddr,
+                        uint16 clusterID, zclFrameHdr_t *hdr, uint8 len, uint8 *data );
+#endif // ZCL_ALARMS
 
 static void simplemeter_ProcessIdentifyTimeChange( void );
 
@@ -158,70 +149,19 @@ static void simplemeter_BasicResetCB( void );
 static void simplemeter_IdentifyCB( zclIdentify_t *pCmd );
 static void simplemeter_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp );
 static void simplemeter_AlarmCB( zclAlarm_t *pAlarm );
-#ifdef SE_UK_EXT
-static void simplemeter_GetEventLogCB( uint8 srcEP, afAddrType_t *srcAddr,
-                                   zclGetEventLog_t *pEventLog, uint8 seqNum );
-static void simplemeter_PublishEventLogCB( afAddrType_t *srcAddr,
-                                             zclPublishEventLog_t *pEventLog );
-#endif // SE_UK_EXT
-
-// Function to process ZDO callback messages
-static void simplemeter_ProcessZDOMsgs( zdoIncomingMsg_t *pMsg );
 
 // SE Callback functions
 static void simplemeter_GetProfileCmdCB( zclCCGetProfileCmd_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
+                                       afAddrType_t *srcAddr, uint8 seqNum );
 static void simplemeter_GetProfileRspCB( zclCCGetProfileRsp_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
+                                       afAddrType_t *srcAddr, uint8 seqNum );
+static void simplemeter_ReqMirrorCmdCB( afAddrType_t *srcAddr, uint8 seqNum );
 static void simplemeter_ReqMirrorRspCB( zclCCReqMirrorRsp_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
+                                       afAddrType_t *srcAddr, uint8 seqNum );
+static void simplemeter_MirrorRemCmdCB( afAddrType_t *srcAddr, uint8 seqNum );
 static void simplemeter_MirrorRemRspCB( zclCCMirrorRemRsp_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-#if defined ( SE_UK_EXT )
-static void simplemeter_GetSnapshotCmdCB( zclCCReqGetSnapshotCmd_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_TakeSnapshotCmdCB( afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_MirrorReportAttrRspCB( zclCCReqMirrorReportAttrRsp_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishTariffInformationCB( zclCCPublishTariffInformation_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishPriceMatrixCB( zclCCPublishPriceMatrix_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishBlockThresholdsCB( zclCCPublishBlockThresholds_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishConversionFactorCB( zclCCPublishConversionFactor_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishCalorificValueCB( zclCCPublishCalorificValue_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishCO2ValueCB( zclCCPublishCO2Value_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishCPPEventCB( zclCCPublishCPPEvent_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishBillingPeriodCB( zclCCPublishBillingPeriod_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishConsolidatedBillCB( zclCCPublishConsolidatedBill_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_PublishCreditPaymentInfoCB( zclCCPublishCreditPaymentInfo_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_ChangeDebtCB( zclCCChangeDebt_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_EmergencyCreditSetupCB( zclCCEmergencyCreditSetup_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_ConsumerTopupCB( zclCCConsumerTopup_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_CreditAdjustmentCB( zclCCCreditAdjustment_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_ChangePaymentModeCB( zclCCChangePaymentMode_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_GetPrepaySnapshotCB( zclCCGetPrepaySnapshot_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_GetTopupLogCB( uint8 numEvents,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_SetLowCreditWarningLevelCB( uint8 numEvents,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-static void simplemeter_GetDebtRepaymentLogCB( zclCCGetDebtRepaymentLog_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum );
-#endif  // SE_UK_EXT
+                                       afAddrType_t *srcAddr, uint8 seqNum );
+
 
 /************************************************************************/
 /***               Functions to process ZCL Foundation                ***/
@@ -264,129 +204,33 @@ static zclGeneral_AppCallbacks_t simplemeter_GenCmdCallbacks =
   NULL,                                  // Scene Recall Request command
   NULL,                                  // Scene Response command
   simplemeter_AlarmCB,                   // Alarm (Response) command
-#ifdef SE_UK_EXT
-  simplemeter_GetEventLogCB,             // Get Event Log command
-  simplemeter_PublishEventLogCB,         // Publish Event Log command
-#endif
   NULL,                                  // RSSI Location command
-  NULL                                   // RSSI Location Response command
+  NULL,                                  // RSSI Location Response command
 };
 
 /*********************************************************************
  * ZCL SE Clusters Callback table
  */
-static zclSE_AppCallbacks_t simplemeter_SECmdCallbacks =
+static zclSE_AppCallbacks_t simplemeter_SECmdCallbacks =			
 {
-  NULL,                                               // Publish Price
-  NULL,                                               // Publish Block Period
-#if defined ( SE_UK_EXT )
-  simplemeter_PublishTariffInformationCB,             // Publish Tariff Information
-  simplemeter_PublishPriceMatrixCB,                   // Publish Price Matrix
-  simplemeter_PublishBlockThresholdsCB,               // Publish Block Thresholds
-  simplemeter_PublishConversionFactorCB,              // Publish Conversion Factor
-  simplemeter_PublishCalorificValueCB,                // Publish Calorific Value
-  simplemeter_PublishCO2ValueCB,                      // Publish CO2 Value
-  simplemeter_PublishCPPEventCB,                      // Publish CPP Event
-  simplemeter_PublishBillingPeriodCB,                 // Publish Billing Period
-  simplemeter_PublishConsolidatedBillCB,              // Publish Consolidated Bill
-  simplemeter_PublishCreditPaymentInfoCB,             // Publish Credit Payment Info
-#endif  // SE_UK_EXT
+  simplemeter_GetProfileCmdCB,                        // Get Profile Command
+  simplemeter_GetProfileRspCB,                        // Get Profile Response
+  simplemeter_ReqMirrorCmdCB,                         // Request Mirror Command
+  simplemeter_ReqMirrorRspCB,                         // Request Mirror Response
+  simplemeter_MirrorRemCmdCB,                         // Mirror Remove Command
+  simplemeter_MirrorRemRspCB,                         // Mirror Remove Response
   NULL,                                               // Get Current Price
   NULL,                                               // Get Scheduled Price
-  NULL,                                               // Price Acknowledgement
-  NULL,                                               // Get Block Period
-#if defined ( SE_UK_EXT )
-  NULL,                                               // Get Tariff Information
-  NULL,                                               // Get Price Matrix
-  NULL,                                               // Get Block Thresholds
-  NULL,                                               // Get Conversion Factor
-  NULL,                                               // Get Calorific Value
-  NULL,                                               // Get CO2 Value
-  NULL,                                               // Get Billing Period
-  NULL,                                               // Get Consolidated Bill
-  NULL,                                               // CPP Event Response
-#endif  // SE_UK_EXT
+  NULL,                                               // Publish Price
+  NULL,                                               // Display Message Command
+  NULL,                                               // Cancel Message Command
+  NULL,                                               // Get Last Message Command
+  NULL,                                               // Message Confirmation
   NULL,                                               // Load Control Event
   NULL,                                               // Cancel Load Control Event
   NULL,                                               // Cancel All Load Control Events
   NULL,                                               // Report Event Status
   NULL,                                               // Get Scheduled Event
-  simplemeter_GetProfileRspCB,                        // Get Profile Response
-  NULL,                                               // Request Mirror Command
-  NULL,                                               // Mirror Remove Command
-  NULL,                                               // Request Fast Poll Mode Response
-#if defined ( SE_UK_EXT )
-  NULL,                                               // Get Snapshot Response
-#endif  // SE_UK_EXT
-  simplemeter_GetProfileCmdCB,                        // Get Profile Command
-  simplemeter_ReqMirrorRspCB,                         // Request Mirror Response
-  simplemeter_MirrorRemRspCB,                         // Mirror Remove Response
-  NULL,                                               // Request Fast Poll Mode Command
-#if defined ( SE_UK_EXT )
-  simplemeter_GetSnapshotCmdCB,                       // Get Snapshot Command
-  simplemeter_TakeSnapshotCmdCB,                      // Take Snapshot Command
-  simplemeter_MirrorReportAttrRspCB,                  // Mirror Report Attribute Response
-#endif  // SE_UK_EXT
-  NULL,                                               // Display Message Command
-  NULL,                                               // Cancel Message Command
-  NULL,                                               // Get Last Message Command
-  NULL,                                               // Message Confirmation
-  NULL,                                               // Request Tunnel Response
-  NULL,                                               // Transfer Data
-  NULL,                                               // Transfer Data Error
-  NULL,                                               // Ack Transfer Data
-  NULL,                                               // Ready Data
-#if defined ( SE_UK_EXT )
-  NULL,                                               // Supported Tunnel Protocols Response
-  NULL,                                               // Tunnel Closure Notification
-#endif  // SE_UK_EXT
-  NULL,                                               // Request Tunnel
-  NULL,                                               // Close Tunnel
-#if defined ( SE_UK_EXT )
-  NULL,                                               // Get Supported Tunnel Protocols
-#endif  // SE_UK_EXT
-  NULL,                                               // Supply Status Response
-#if defined ( SE_UK_EXT )
-  NULL,                                               // Get Prepay Snapshot Response
-  NULL,                                               // Change Payment Mode Response
-  NULL,                                               // Consumer Topup Response
-  NULL,                                               // Get Commands
-  NULL,                                               // Publish Topup Log
-  NULL,                                               // Publish Debt Log
-#endif  // SE_UK_EXT
-  NULL,                                               // Select Available Emergency Credit Command
-  NULL,                                               // Change Supply Command
-#if defined ( SE_UK_EXT )
-  simplemeter_ChangeDebtCB,                           // Change Debt
-  simplemeter_EmergencyCreditSetupCB,                 // Emergency Credit Setup
-  simplemeter_ConsumerTopupCB,                        // Consumer Topup
-  simplemeter_CreditAdjustmentCB,                     // Credit Adjustment
-  simplemeter_ChangePaymentModeCB,                    // Change PaymentMode
-  simplemeter_GetPrepaySnapshotCB,                    // Get Prepay Snapshot
-  simplemeter_GetTopupLogCB,                          // Get Topup Log
-  simplemeter_SetLowCreditWarningLevelCB,             // Set Low Credit Warning Level
-  simplemeter_GetDebtRepaymentLogCB,                  // Get Debt Repayment Log
-  NULL,                                               // Publish Calendar
-  NULL,                                               // Publish Day Profile
-  NULL,                                               // Publish Week Profile
-  NULL,                                               // Publish Seasons
-  NULL,                                               // Publish Special Days
-  NULL,                                               // Get Calendar
-  NULL,                                               // Get Day Profiles
-  NULL,                                               // Get Week Profiles
-  NULL,                                               // Get Seasons
-  NULL,                                               // Get Special Days
-  NULL,                                               // Publish Change Tenancy
-  NULL,                                               // Publish Change Supplier
-  NULL,                                               // Change Supply
-  NULL,                                               // Change Password
-  NULL,                                               // Local Change Supply
-  NULL,                                               // Get Change Tenancy
-  NULL,                                               // Get Change Supplier
-  NULL,                                               // Get Change Supply
-  NULL,                                               // Supply Status Response
-  NULL,                                               // Get Password
-#endif  // SE_UK_EXT
 };
 
 /*********************************************************************
@@ -401,6 +245,7 @@ static zclSE_AppCallbacks_t simplemeter_SECmdCallbacks =
 void simplemeter_Init( uint8 task_id )
 {
   simpleMeterTaskID = task_id;
+  simpleMeterNwkState = DEV_INIT;
   simpleMeterTransID = 0;
 
   // Device hardware initialization can be added here or in main() (Zmain.c).
@@ -436,54 +281,22 @@ void simplemeter_Init( uint8 task_id )
   // Register for all key events - This app will handle all key events
   RegisterForKeys( simpleMeterTaskID );
 
-  // Register with the ZDO to receive Match Descriptor Responses
-  ZDO_RegisterForZDOMsg(task_id, Match_Desc_rsp);
-
   // Start the timer to sync SimpleMeter timer with the osal timer
   osal_start_timerEx( simpleMeterTaskID, SIMPLEMETER_UPDATE_TIME_EVT, SIMPLEMETER_UPDATE_TIME_PERIOD );
 
   // setup attribute IDs of interest for Simple Meter
-  pBasicReportCmd = (zclReportCmd_t *)osal_mem_alloc( sizeof( zclReportCmd_t ) + ( numBasicAttr * sizeof( zclReport_t ) ) );
-  if ( pBasicReportCmd != NULL )
+
+  pReportCmd = (zclReportCmd_t *)osal_mem_alloc( sizeof( zclReportCmd_t ) + ( numAttr * sizeof( zclReport_t ) ) );
+  if ( pReportCmd != NULL )
   {
-    pBasicReportCmd->numAttr = numBasicAttr;
-
-    pBasicReportCmd->attrList[0].attrID = ATTRID_BASIC_ZCL_VERSION;
-    pBasicReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT8;
-    pBasicReportCmd->attrList[0].attrData = (uint8*) &simpleMeterZCLVersion;
-
-    pBasicReportCmd->attrList[1].attrID = ATTRID_BASIC_POWER_SOURCE;
-    pBasicReportCmd->attrList[1].dataType = ZCL_DATATYPE_ENUM8;
-    pBasicReportCmd->attrList[1].attrData = (uint8*) &simpleMeterPowerSource;
-  }
-
-  pSeReportCmd = (zclReportCmd_t *)osal_mem_alloc( sizeof( zclReportCmd_t ) + ( numSeAttr * sizeof( zclReport_t ) ) );
-  if ( pSeReportCmd != NULL )
-  {
-    pSeReportCmd->numAttr = numSeAttr;
+    pReportCmd->numAttr = numAttr;
 
     // Set up the first attribute
-    pSeReportCmd->attrList[0].attrID = ATTRID_SE_CURRENT_SUMMATION_DELIVERED;
-    pSeReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT48;
-    pSeReportCmd->attrList[0].attrData = simpleMeterCurrentSummationDelivered;
+    pReportCmd->attrList[0].attrID = ATTRID_SE_CURRENT_SUMMATION_DELIVERED;
+    pReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT48;
+    pReportCmd->attrList[0].attrData = simpleMeterCurrentSummationDelivered;
 
-    pSeReportCmd->attrList[1].attrID = ATTRID_SE_STATUS;
-    pSeReportCmd->attrList[1].dataType = ZCL_DATATYPE_BITMAP8;
-    pSeReportCmd->attrList[1].attrData = &simpleMeterStatus;
-
-    pSeReportCmd->attrList[2].attrID = ATTRID_SE_UNIT_OF_MEASURE;
-    pSeReportCmd->attrList[2].dataType = ZCL_DATATYPE_ENUM8;
-    pSeReportCmd->attrList[2].attrData = &simpleMeterUnitOfMeasure;
-
-    pSeReportCmd->attrList[3].attrID = ATTRID_SE_SUMMATION_FORMATTING;
-    pSeReportCmd->attrList[3].dataType = ZCL_DATATYPE_BITMAP8;
-    pSeReportCmd->attrList[3].attrData = &simpleMeterSummationFormating;
-
-    pSeReportCmd->attrList[4].attrID = ATTRID_SE_METERING_DEVICE_TYPE;
-    pSeReportCmd->attrList[4].dataType = ZCL_DATATYPE_BITMAP8;
-    pSeReportCmd->attrList[4].attrData = &simpleMeterDeviceType;
-
-    // Set up additional attributes
+    // Set up the remaining attributes
   }
 }
 
@@ -507,10 +320,6 @@ uint16 simplemeter_event_loop( uint8 task_id, uint16 events )
     {
       switch ( MSGpkt->hdr.event )
       {
-        case ZDO_CB_MSG:
-          simplemeter_ProcessZDOMsgs( (zdoIncomingMsg_t *)MSGpkt );
-          break;
-
         case ZCL_INCOMING_MSG:
           // Incoming ZCL foundation command/response messages
           simplemeter_ProcessZCLMsg( (zclIncomingMsg_t *)MSGpkt );
@@ -531,24 +340,21 @@ uint16 simplemeter_event_loop( uint8 task_id, uint16 events )
 
               if (linkKeyStatus != ZSuccess)
               {
-                cId_t cbkeCluster = ZCL_CLUSTER_ID_GEN_KEY_ESTABLISHMENT;
-                zAddrType_t dstAddr;
+                // send out key establishment request
+                osal_set_event( simpleMeterTaskID, SIMPLEMETER_KEY_ESTABLISHMENT_REQUEST_EVT);
 
-                // Send out a match for the key establishment
-                dstAddr.addrMode = AddrBroadcast;
-                dstAddr.addr.shortAddr = NWK_BROADCAST_SHORTADDR;
-                ZDP_MatchDescReq( &dstAddr, NWK_BROADCAST_SHORTADDR, ZCL_SE_PROFILE_ID,
-                                  1, &cbkeCluster, 0, NULL, FALSE );
               }
               else
               {
                 // link key already established, resume sending reports
-                osal_set_event( simpleMeterTaskID, SIMPLEMETER_CONNECTED_EVT );
+                osal_start_timerEx( simpleMeterTaskID, SIMPLEMETER_REPORT_ATTRIBUTE_EVT,
+                                                       SIMPLEMETER_REPORT_PERIOD );
               }
             }
 #else
             {
-              osal_set_event( simpleMeterTaskID, SIMPLEMETER_CONNECTED_EVT );
+              osal_start_timerEx( simpleMeterTaskID, SIMPLEMETER_REPORT_ATTRIBUTE_EVT,
+                                                     SIMPLEMETER_REPORT_PERIOD );
             }
 #endif
             // per smart energy spec end device polling requirement of not to poll < 7.5 seconds
@@ -560,9 +366,9 @@ uint16 simplemeter_event_loop( uint8 task_id, uint16 events )
         case ZCL_KEY_ESTABLISH_IND:
           if ((MSGpkt->hdr.status) == TermKeyStatus_Success)
           {
-            ESPAddr.endPoint = SIMPLEMETER_ENDPOINT; // set destination endpoint back to application endpoint
-            osal_set_event( simpleMeterTaskID, SIMPLEMETER_CONNECTED_EVT );
+            osal_start_timerEx( simpleMeterTaskID, SIMPLEMETER_REPORT_ATTRIBUTE_EVT, SIMPLEMETER_REPORT_PERIOD );
           }
+
           break;
 #endif
 
@@ -572,6 +378,7 @@ uint16 simplemeter_event_loop( uint8 task_id, uint16 events )
 
       // Release the memory
       osal_msg_deallocate( (uint8 *)MSGpkt );
+
     }
 
     // return unprocessed events
@@ -586,27 +393,13 @@ uint16 simplemeter_event_loop( uint8 task_id, uint16 events )
     return ( events ^ SIMPLEMETER_KEY_ESTABLISHMENT_REQUEST_EVT );
   }
 
-  // Event indicating the meter has connected, and the security process has completed
-  if ( events & SIMPLEMETER_CONNECTED_EVT )
-  {
-#if defined ( SE_UK_EXT ) && defined ( SE_MIRROR )
-    // Request a mirror on the ESP
-    zclSE_SimpleMetering_Send_ReqMirrorCmd(SIMPLEMETER_ENDPOINT, &ESPAddr, TRUE, 0);
-#endif  // SE_UK_EXT && SE_MIRROR
-
-    // Start Reporting attributes
-    osal_start_timerEx( simpleMeterTaskID, SIMPLEMETER_REPORT_ATTRIBUTE_EVT, SIMPLEMETER_REPORT_PERIOD );
-
-    return ( events ^ SIMPLEMETER_CONNECTED_EVT );
-  }
-
   // event to send report attribute
   if ( events & SIMPLEMETER_REPORT_ATTRIBUTE_EVT )
   {
-    if ( pSeReportCmd != NULL )
+    if ( pReportCmd != NULL )
     {
       zcl_SendReportCmd( SIMPLEMETER_ENDPOINT, &ESPAddr,
-                         ZCL_CLUSTER_ID_SE_SIMPLE_METERING, pSeReportCmd,
+                         ZCL_CLUSTER_ID_SE_SIMPLE_METERING, pReportCmd,
                          ZCL_FRAME_SERVER_CLIENT_DIR, 1, 0 );
 
       osal_start_timerEx( simpleMeterTaskID, SIMPLEMETER_REPORT_ATTRIBUTE_EVT, SIMPLEMETER_REPORT_PERIOD );
@@ -640,36 +433,7 @@ uint16 simplemeter_event_loop( uint8 task_id, uint16 events )
   return 0;
 }
 
-/*********************************************************************
- * @fn      simplemeter_ProcessZDOMsgs
- *
- * @brief   Called to process callbacks from the ZDO.
- *
- * @param   none
- *
- * @return  none
- */
-static void simplemeter_ProcessZDOMsgs( zdoIncomingMsg_t *pMsg )
-{
-  if (pMsg->clusterID == Match_Desc_rsp)
-  {
-    ZDO_ActiveEndpointRsp_t *pRsp = ZDO_ParseEPListRsp( pMsg );
 
-    if (pRsp)
-    {
-      if (pRsp->cnt)
-      {
-        // Record the trust center
-        ESPAddr.endPoint = pRsp->epList[0];
-        ESPAddr.addr.shortAddr = pMsg->srcAddr.addr.shortAddr;
-
-        // send out key establishment request
-        osal_set_event( simpleMeterTaskID, SIMPLEMETER_KEY_ESTABLISHMENT_REQUEST_EVT);
-      }
-      osal_mem_free(pRsp);
-    }
-  }
-}
 
 /*********************************************************************
  * @fn      simplemeter_ProcessIdentifyTimeChange
@@ -706,6 +470,7 @@ static void simplemeter_ProcessIdentifyTimeChange( void )
  */
 static uint8 simplemeter_KeyEstablish_ReturnLinkKey( uint16 shortAddr )
 {
+  APSME_LinkKeyData_t* keyData;
   uint8 status = ZFailure;
   AddrMgrEntry_t entry;
 
@@ -716,8 +481,10 @@ static uint8 simplemeter_KeyEstablish_ReturnLinkKey( uint16 shortAddr )
 
   if ( AddrMgrEntryLookupNwk( &entry ) )
   {
-    // check if APS link key has been established
-    if ( APSME_IsLinkKeyValid( entry.extAddr ) == TRUE )
+    // check for APS link key data
+    APSME_LinkKeyDataGet( entry.extAddr, &keyData );
+
+    if ( (keyData != NULL) && (keyData->key != NULL) )
     {
       status = ZSuccess;
     }
@@ -773,8 +540,7 @@ static void simplemeter_HandleKeys( uint8 shift, uint8 keys )
 
     if ( keys & HAL_KEY_SW_2 )
     {
-      // Remove mirror
-      zclSE_SimpleMetering_Send_RemMirrorCmd(SIMPLEMETER_ENDPOINT, &ESPAddr, TRUE, 0);
+
     }
 
     if ( keys & HAL_KEY_SW_3 )
@@ -839,7 +605,7 @@ static void simplemeter_BasicResetCB( void )
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Command for this application.
  *
- * @param   pCmd - pointer to structure for Identify command
+ * @param   pCmd - pointer to structure for identify command
  *
  * @return  none
  */
@@ -855,7 +621,7 @@ static void simplemeter_IdentifyCB( zclIdentify_t *pCmd )
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Query Response Command for this application.
  *
- * @param   pRsp - pointer to structure for Identity Query Response command
+ * @param   pRsp - pointer to structure for identify query response
  *
  * @return  none
  */
@@ -873,7 +639,7 @@ static void simplemeter_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp )
  *          it received an Alarm request or response command for
  *          this application.
  *
- * @param   pAlarm - pointer to structure for Alarm command
+ * @param   pAlarm - pointer to structure for alarm command
  *
  * @return  none
  */
@@ -882,51 +648,6 @@ static void simplemeter_AlarmCB( zclAlarm_t *pAlarm )
   // add user code here
 }
 
-#ifdef SE_UK_EXT
-/*********************************************************************
- * @fn      simplemeter_GetEventLogCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a Get Event Log command for this
- *          application.
- *
- * @param   srcEP - source endpoint
- * @param   srcAddr - pointer to source address
- * @param   pEventLog - pointer to structure for Get Event Log command
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_GetEventLogCB( uint8 srcEP, afAddrType_t *srcAddr,
-                                       zclGetEventLog_t *pEventLog, uint8 seqNum )
-{
-  // add user code here, which could fragment the event log payload if
-  // the entire payload doesn't fit into one Publish Event Log Command.
-  // Note: the Command Index starts at 0 and is incremented for each
-  // fragment belonging to the same command.
-
-  // There's no event log for now! The Metering Device will support
-  // logging for all events configured to do so.
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishEventLogCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a Publish Event Log command for this
- *          application.
- *
- * @param   srcAddr - pointer to source address
- * @param   pEventLog - pointer to structure for Publish Event Log command
- *
- * @return  none
- */
-static void simplemeter_PublishEventLogCB( afAddrType_t *srcAddr, zclPublishEventLog_t *pEventLog )
-{
-  // add user code here
-}
-#endif // SE_UK_EXT
-
 /*********************************************************************
  * @fn      simplemeter_GetProfileCmdCB
  *
@@ -934,14 +655,13 @@ static void simplemeter_PublishEventLogCB( afAddrType_t *srcAddr, zclPublishEven
  *          it received a Get Profile Command for
  *          this application.
  *
- * @param   pCmd - pointer to structure for Get Profile command
+ * @param   pCmd - pointer to get profile command structure
  * @param   srcAddr - pointer to source address
  * @param   seqNum - sequence number of this command
  *
  * @return  none
  */
-static void simplemeter_GetProfileCmdCB( zclCCGetProfileCmd_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum )
+static void simplemeter_GetProfileCmdCB( zclCCGetProfileCmd_t *pCmd, afAddrType_t *srcAddr, uint8 seqNum )
 {
 #if defined ( ZCL_SIMPLE_METERING )
   // Upon receipt of the Get Profile Command, the metering device shall send
@@ -977,7 +697,7 @@ static void simplemeter_GetProfileCmdCB( zclCCGetProfileCmd_t *pCmd,
                                            status,
                                            profileIntervalPeriod,
                                            numberOfPeriodDelivered, intervals,
-                                           FALSE, seqNum );
+                                           false, seqNum );
 #endif // ZCL_SIMPLE_METERING
 }
 
@@ -988,18 +708,33 @@ static void simplemeter_GetProfileCmdCB( zclCCGetProfileCmd_t *pCmd,
  *          it received a Get Profile Response for
  *          this application.
  *
- * @param   pCmd - pointer to structure for Get Profile Response command
+ * @param   pCmd - pointer to get profile response structure
  * @param   srcAddr - pointer to source address
  * @param   seqNum - sequence number of this command
  *
  * @return  none
  */
-static void simplemeter_GetProfileRspCB( zclCCGetProfileRsp_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum )
+static void simplemeter_GetProfileRspCB( zclCCGetProfileRsp_t *pCmd, afAddrType_t *srcAddr, uint8 seqNum )
 {
   // add user code here
 }
 
+/*********************************************************************
+ * @fn      simplemeter_ReqMirrorCmdCB
+ *
+ * @brief   Callback from the ZCL SE Profile Simple Metering Cluster Library when
+ *          it received a Request Mirror Command for
+ *          this application.
+ *
+ * @param   srcAddr - pointer to source address
+ * @param   seqNum - sequence number of this command
+ *
+ * @return  none
+ */
+static void simplemeter_ReqMirrorCmdCB( afAddrType_t *srcAddr, uint8 seqNum )
+{
+  // add user code here
+}
 /*********************************************************************
  * @fn      simplemeter_ReqMirrorRspCB
  *
@@ -1007,50 +742,32 @@ static void simplemeter_GetProfileRspCB( zclCCGetProfileRsp_t *pCmd,
  *          it received a Request Mirror Response for
  *          this application.
  *
- * @param   pCmd - pointer to structure for Request Mirror Response command
+ * @param   pRsp - pointer to request mirror response structure
  * @param   srcAddr - pointer to source address
  * @param   seqNum - sequence number of this command
  *
  * @return  none
  */
-static void simplemeter_ReqMirrorRspCB( zclCCReqMirrorRsp_t *pCmd,
-                                        afAddrType_t *srcAddr, uint8 seqNum )
+static void simplemeter_ReqMirrorRspCB( zclCCReqMirrorRsp_t *pRsp, afAddrType_t *srcAddr, uint8 seqNum )
 {
-#if defined ( ZCL_SIMPLE_METERING )
-#if defined ( SE_UK_EXT ) && defined ( SE_MIRROR )
-  if ( pCmd != NULL )
-  {
-    if (pCmd->endpointId == 0xFFFF)
-    {
-      // The create mirror failed, try another ESP
-      // Add user code
-    }
-    else
-    {
-      // Record the mirror address and endpoint
-      osal_memcpy(&mirrorAddr, srcAddr, sizeof(afAddrType_t));
-      mirrorAddr.endPoint = pCmd->endpointId;
-
-      // Send a report attribute to the mirror endpoint
-      if (pSeReportCmd)
-      {
-        zcl_SendReportCmd( SIMPLEMETER_ENDPOINT, &mirrorAddr,
-                           ZCL_CLUSTER_ID_SE_SIMPLE_METERING, pSeReportCmd,
-                           ZCL_FRAME_SERVER_CLIENT_DIR, 1, 0 );
-      }
-
-      if (pBasicReportCmd)
-      {
-        zcl_SendReportCmd( SIMPLEMETER_ENDPOINT, &mirrorAddr,
-                           ZCL_CLUSTER_ID_GEN_BASIC, pBasicReportCmd,
-                           ZCL_FRAME_SERVER_CLIENT_DIR, 1, 0 );
-      }
-    }
-  }
-#endif  // SE_UK_EXT && SE_MIRROR
-#endif  // ZCL_SIMPLE_METERING
+  // add user code here
 }
-
+/*********************************************************************
+ * @fn      simplemeter_MirrorRemCmdCB
+ *
+ * @brief   Callback from the ZCL SE Profile Simple Metering Cluster Library when
+ *          it received a Mirror Remove Command for
+ *          this application.
+ *
+ * @param   srcAddr - pointer to source address
+ * @param   seqNum - sequence number of this command
+ *
+ * @return  none
+ */
+static void simplemeter_MirrorRemCmdCB( afAddrType_t *srcAddr, uint8 seqNum )
+{
+ // add user code here
+}
 /*********************************************************************
  * @fn      simplemeter_MirrorRemRspCB
  *
@@ -1058,418 +775,17 @@ static void simplemeter_ReqMirrorRspCB( zclCCReqMirrorRsp_t *pCmd,
  *          it received a Mirror Remove Response for
  *          this application.
  *
- * @param   pCmd - pointer to structure for Mirror Remove Response command
+ * @param   pCmd - pointer to mirror remove response structure
  * @param   srcAddr - pointer to source address
  * @param   seqNum - sequence number of this command
  *
  * @return  none
  */
-static void simplemeter_MirrorRemRspCB( zclCCMirrorRemRsp_t *pCmd,
-                                        afAddrType_t *srcAddr, uint8 seqNum )
-{
-#if defined ( ZCL_SIMPLE_METERING )
-  osal_stop_timerEx( simpleMeterTaskID, SIMPLEMETER_REPORT_ATTRIBUTE_EVT );
-#endif  // ZCL_SIMPLE_METERING
-}
-
-#if defined ( SE_UK_EXT )
-/*********************************************************************
- * @fn      simplemeter_GetSnapshotCmdCB
- *
- * @brief   Callback from the ZCL SE Profile Simple Metering Cluster Library when
- *          it received a Get Snapshot Command for
- *          this application.
- *
- * @param   pCmd - pointer to structure for Get Snapshot command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_GetSnapshotCmdCB( zclCCReqGetSnapshotCmd_t *pCmd,
-                                          afAddrType_t *srcAddr, uint8 seqNum )
+static void simplemeter_MirrorRemRspCB( zclCCMirrorRemRsp_t *pCmd, afAddrType_t *srcAddr, uint8 seqNum )
 {
   // add user code here
 }
 
-/*********************************************************************
- * @fn      simplemeter_TakeSnapshotCmdCB
- *
- * @brief   Callback from the ZCL SE Profile Simple Metering Cluster Library when
- *          it received a Take Snapshot Command for
- *          this application.
- *
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_TakeSnapshotCmdCB( afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code  to store the snapshot
-}
-
-/*********************************************************************
- * @fn      simplemeter_MirrorReportAttrRspCB
- *
- * @brief   Callback from the ZCL SE Profile Simple Metering Cluster Library when
- *          it received a Mirror Report Attribute Response for
- *          this application.
- *
- * @param   pCmd - pointer to structure for Mirror Report Attribute Response command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_MirrorReportAttrRspCB( zclCCReqMirrorReportAttrRsp_t *pCmd,
-                                              afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishTariffInformationCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Tariff Information for this application.
- *
- * @param   pCmd - pointer to structure for Publish Tariff Information command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishTariffInformationCB( zclCCPublishTariffInformation_t *pCmd,
-                                                    afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishPriceMatrixCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Price Matrix for this application.
- *
- * @param   pCmd - pointer to structure for Publish Price Matrix command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishPriceMatrixCB( zclCCPublishPriceMatrix_t *pCmd,
-                                              afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishBlockThresholdsCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Block Thresholds for this application.
- *
- * @param   pCmd - pointer to structure for Publish Block Thresholds command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishBlockThresholdsCB( zclCCPublishBlockThresholds_t *pCmd,
-                                                  afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishConversionFactorCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Conversion Factor for this application.
- *
- * @param   pCmd - pointer to structure for Publish Conversion Factor command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishConversionFactorCB( zclCCPublishConversionFactor_t *pCmd,
-                                                   afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishCalorificValueCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Calorific Value for this application.
- *
- * @param   pCmd - pointer to structure for Publish Calorific Value command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishCalorificValueCB( zclCCPublishCalorificValue_t *pCmd,
-                                                 afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishCO2ValueCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish CO2 Value for this application.
- *
- * @param   pCmd - pointer to structure for Publish CO2 Value command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishCO2ValueCB( zclCCPublishCO2Value_t *pCmd,
-                                           afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishCPPEventCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish CPP Event for this application.
- *
- * @param   pCmd - pointer to structure for Publish CPP Event command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishCPPEventCB( zclCCPublishCPPEvent_t *pCmd,
-                                           afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishBillingPeriodCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Billing Period for this application.
- *
- * @param   pCmd - pointer to structure for Publish Billing Period command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishBillingPeriodCB( zclCCPublishBillingPeriod_t *pCmd,
-                                                afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishConsolidatedBillCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Consolidated Bill for this application.
- *
- * @param   pCmd - pointer to structure for Publish Consolidated Bill command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishConsolidatedBillCB( zclCCPublishConsolidatedBill_t *pCmd,
-                                                   afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_PublishCreditPaymentInfoCB
- *
- * @brief   Callback from the ZCL SE Profile Price Cluster Library when
- *          it received a Publish Credit Payment Info for this application.
- *
- * @param   pCmd - pointer to structure for Publish Credit Payment Info command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_PublishCreditPaymentInfoCB( zclCCPublishCreditPaymentInfo_t *pCmd,
-                                                    afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_ChangeDebtCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Change Debt for this application.
- *
- * @param   pCmd - pointer to structure for Change Debt command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_ChangeDebtCB( zclCCChangeDebt_t *pCmd,
-                                      afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_EmergencyCreditSetupCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Emergency Credit Setup for this application.
- *
- * @param   pCmd - pointer to structure for Emergency Credit Setup command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_EmergencyCreditSetupCB( zclCCEmergencyCreditSetup_t *pCmd,
-                                                afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_ConsumerTopupCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Consumer Topup for this application.
- *
- * @param   pCmd - pointer to structure for Consumer Topup command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_ConsumerTopupCB( zclCCConsumerTopup_t *pCmd,
-                                         afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_CreditAdjustmentCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Credit Adjustment for this application.
- *
- * @param   pCmd - pointer to structure for Credit Adjustment command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_CreditAdjustmentCB( zclCCCreditAdjustment_t *pCmd,
-                                            afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_ChangePaymentModeCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Change Payment Mode for this application.
- *
- * @param   pCmd - pointer to structure for Change Payment Mode command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_ChangePaymentModeCB( zclCCChangePaymentMode_t *pCmd,
-                                             afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_GetPrepaySnapshotCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Get Prepay Snapshot for this application.
- *
- * @param   pCmd - pointer to structure for Get Prepay Snapshot command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_GetPrepaySnapshotCB( zclCCGetPrepaySnapshot_t *pCmd,
-                                             afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_GetTopupLogCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Get Topup Log for this application.
- *
- * @param   numEvents - number of events
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_GetTopupLogCB( uint8 numEvents,
-                                       afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_SetLowCreditWarningLevelCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Set Low Credit Warning Level for this application.
- *
- * @param   numEvents - number of events
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_SetLowCreditWarningLevelCB( uint8 numEvents,
-                                                    afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-
-/*********************************************************************
- * @fn      simplemeter_GetDebtRepaymentLogCB
- *
- * @brief   Callback from the ZCL SE Profile Prepayment Cluster Library when
- *          it received a Get Debt Repayment Log for this application.
- *
- * @param   pCmd - pointer to structure for Get Debt Repayment Log command
- * @param   srcAddr - pointer to source address
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void simplemeter_GetDebtRepaymentLogCB( zclCCGetDebtRepaymentLog_t *pCmd,
-                                               afAddrType_t *srcAddr, uint8 seqNum )
-{
-  // add user code here
-}
-#endif  // SE_UK_EXT
 
 /******************************************************************************
  *
@@ -1710,7 +1026,7 @@ static uint8 simplemeter_ProcessInConfigReportCmd( zclIncomingMsg_t *pInMsg )
   // Send the response back
   zcl_SendConfigReportRspCmd( SIMPLEMETER_ENDPOINT, &(pInMsg->srcAddr),
                               pInMsg->clusterId, cfgReportRspCmd, ZCL_FRAME_SERVER_CLIENT_DIR,
-                              TRUE, pInMsg->zclHdr.transSeqNum );
+                              true, pInMsg->zclHdr.transSeqNum );
   osal_mem_free( cfgReportRspCmd );
 
   return TRUE ;
@@ -1841,7 +1157,7 @@ static uint8 simplemeter_ProcessInReadReportCfgCmd( zclIncomingMsg_t *pInMsg )
   // Send the response back
   zcl_SendReadReportCfgRspCmd( SIMPLEMETER_ENDPOINT, &(pInMsg->srcAddr),
                                pInMsg->clusterId, readReportCfgRspCmd, ZCL_FRAME_SERVER_CLIENT_DIR,
-                               TRUE, pInMsg->zclHdr.transSeqNum );
+                               true, pInMsg->zclHdr.transSeqNum );
   osal_mem_free( readReportCfgRspCmd );
 
   return TRUE;

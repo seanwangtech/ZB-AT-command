@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       mac_spec.h
-  Revised:        $Date: 2011-02-28 16:59:59 -0800 (Mon, 28 Feb 2011) $
-  Revision:       $Revision: 25230 $
+  Revised:        $Date: 2009-06-19 15:41:12 -0700 (Fri, 19 Jun 2009) $
+  Revision:       $Revision: 20176 $
 
   Description:    This file contains constants and other data defined by the 802.15.4 spec.
 
 
-  Copyright 2005-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -56,7 +56,6 @@
 #define MAC_EXT_ADDR_FIELD_LEN          8       /* Extended address */
 #define MAC_SHORT_ADDR_FIELD_LEN        2       /* Short address */
 #define MAC_FCS_FIELD_LEN               2       /* FCS field */
-#define MAC_SEC_CONTROL_FIELD_LEN       1       /* Security control field */
 
 /* Frame offsets in bytes */
 #define MAC_FCF_OFFSET                  0       /* offset to frame control field */
@@ -83,14 +82,6 @@
 #define MAC_FCF_DST_ADDR_MODE_POS       10
 #define MAC_FCF_FRAME_VERSION_POS       12
 #define MAC_FCF_SRC_ADDR_MODE_POS       14
-
-/* Security control field bit masks */
-#define MAC_SCF_SECURITY_LEVEL_MASK     0x07
-#define MAC_SCF_KEY_IDENTIFIER_MASK     0x18
-
-/* Security control field bit positions */
-#define MAC_SCF_SECURITY_LEVEL_POS      0
-#define MAC_SCF_KEY_IDENTIFIER_POS      3
 
 /* MAC Payload offsets in bytes */
 #define MAC_SFS_OFFSET                  0
@@ -197,7 +188,7 @@
 /* The number of consecutive lost beacons that will case the MAC to declare a sync loss */
 #define MAC_A_MAX_LOST_BEACONS          4
 
-/* The maximum number of bytes that can be transmitted in the MAC frame payload */
+/* The maximum number of bytes that can b e transmitted in the MAC frame payload */
 #define MAC_A_MAX_FRAME_SIZE            (MAC_A_MAX_PHY_PACKET_SIZE - MAC_A_MAX_FRAME_OVERHEAD)
 
 /* The maximum frame size in bytes that can be followed by a short interframe spacing period */
@@ -264,7 +255,7 @@
  */
 
 #define MAC_FRAME_TYPE(p)       ((p)[MAC_FCF_OFFSET+0] & 0x07)
-#define MAC_SEC_ENABLED(p)      ((p)[MAC_FCF_OFFSET+0] & 0x08)  /* note: value is *non-zero* if true */
+#define MAC_SECURITY(p)         ((p)[MAC_FCF_OFFSET+0] & 0x08)  /* note: value is *non-zero* if true */
 #define MAC_FRAME_PENDING(p)    ((p)[MAC_FCF_OFFSET+0] & 0x10)  /* note: value is *non-zero* if true */
 #define MAC_ACK_REQUEST(p)      ((p)[MAC_FCF_OFFSET+0] & 0x20)  /* note: value is *non-zero* if true */
 #define MAC_INTRA_PAN(p)        ((p)[MAC_FCF_OFFSET+0] & 0x40)  /* note: value is *non-zero* if true */

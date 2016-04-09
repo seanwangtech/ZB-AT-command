@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_adc.c
-  Revised:        $Date: 2010-03-12 16:10:36 -0800 (Fri, 12 Mar 2010) $
-  Revision:       $Revision: 21910 $
+  Revised:        $Date: 2009-12-17 13:13:47 -0800 (Thu, 17 Dec 2009) $
+  Revision:       $Revision: 21356 $
 
   Description:    This file contains the interface to the HAL ADC.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -40,11 +40,10 @@
 /**************************************************************************************************
  *                                           INCLUDES
  **************************************************************************************************/
-
-#include  "hal_adc.h"
-#include  "hal_defs.h"
 #include  "hal_mcu.h"
+#include  "hal_defs.h"
 #include  "hal_types.h"
+#include  "hal_adc.h"
 
 /**************************************************************************************************
  *                                            CONSTANTS
@@ -76,14 +75,37 @@
 #define HAL_ADC_SCHN        HAL_ADC_CHN_VDD3
 #define HAL_ADC_ECHN        HAL_ADC_CHN_GND
 
-/* ------------------------------------------------------------------------------------------------
- *                                       Local Variables
- * ------------------------------------------------------------------------------------------------
- */
+/* Vdd limit values */
+static __code const uint16 HalAdcVddLimit[] =
+{
+  0x369C,       /*  VDD Limit - 1.6v  */
+  0x3A06,       /*  VDD Limit - 1.7v  */
+  0x3D70,       /*  VDD Limit - 1.8v  */
+  0x40D9,       /*  VDD Limit - 1.9v  */
+  0x4443,       /*  VDD Limit - 2.0v  */
+  0x47AD,       /*  VDD Limit - 2.1v  */
+  0x4B17,       /*  VDD Limit - 2.2v  */
+  0x4E81,       /*  VDD Limit - 2.3v  */
+  0x51EA,       /*  VDD Limit - 2.4v  */
+};
 
-#if (HAL_ADC == TRUE)
-static uint8 adcRef;
-#endif
+/**************************************************************************************************
+ *                                              MACROS
+ **************************************************************************************************/
+#define HAL_ADC_CLR_EOC()   asm("PUSH A"); asm("MOV A,ADCL"); asm("MOV A,ADCH"); asm("POP A");
+
+/**************************************************************************************************
+ *                                            TYPEDEFS
+ **************************************************************************************************/
+
+/**************************************************************************************************
+ *                                         GLOBAL VARIABLES
+ **************************************************************************************************/
+
+/**************************************************************************************************
+ *                                          FUNCTIONS - API
+ **************************************************************************************************/
+extern bool HalAdcCheckVdd (uint8 limit);
 
 /**************************************************************************************************
  * @fn      HalAdcInit
@@ -97,7 +119,24 @@ static uint8 adcRef;
 void HalAdcInit (void)
 {
 #if (HAL_ADC == TRUE)
-  adcRef = HAL_ADC_REF_VOLT;
+  volatile uint8  tmp;
+
+  ADCCON1 = HAL_ADC_STSEL | HAL_ADC_RAND_GEN | 0x03;
+  ADCCON2 = HAL_ADC_REF_VOLT | HAL_ADC_DEC_RATE | HAL_ADC_SCHN;
+  /*
+  *  After reset, the first ADC reading of the extra conversion always reads GND level.
+  *  We will do a few dummy conversions to bypass this bug.
+  */
+  tmp = ADCL;     /* read ADCL,ADCH to clear EOC */
+  tmp = ADCH;
+  ADCCON3 = HAL_ADC_REF_VOLT | HAL_ADC_DEC_RATE | HAL_ADC_ECHN;
+  while ((ADCCON1 & HAL_ADC_EOC) != HAL_ADC_EOC);   /* Wait for conversion */
+  tmp = ADCL;     /* read ADCL,ADCH to clear EOC */
+  tmp = ADCH;
+  ADCCON3 = HAL_ADC_REF_VOLT | HAL_ADC_DEC_RATE | HAL_ADC_ECHN;
+  while ((ADCCON1 & HAL_ADC_EOC) != HAL_ADC_EOC);   /* Wait for conversion */
+  tmp = ADCL;     /* read ADCL,ADCH to clear EOC */
+  tmp = ADCH;
 #endif
 }
 
@@ -119,17 +158,24 @@ uint16 HalAdcRead (uint8 channel, uint8 resolution)
   int16  reading = 0;
 
 #if (HAL_ADC == TRUE)
+
   uint8   i, resbits;
+  uint8   adctemp;
+  volatile  uint8 tmp;
   uint8  adcChannel = 1;
+  uint8  reference;
+
+  /* store the previously set reference voltage selection */
+  reference = ADCCON3 & HAL_ADC_REF_BITS;
 
   /*
-   * If Analog input channel is AIN0..AIN7, make sure corresponing P0 I/O pin is enabled.  The code
-   * does NOT disable the pin at the end of this function.  I think it is better to leave the pin
-   * enabled because the results will be more accurate.  Because of the inherent capacitance on the
-   * pin, it takes time for the voltage on the pin to charge up to its steady-state level.  If
-   * HalAdcRead() has to turn on the pin for every conversion, the results may show a lower voltage
-   * than actuality because the pin did not have time to fully charge.
-   */
+  * If Analog input channel is AIN0..AIN7, make sure corresponing P0 I/O pin is enabled.  The code
+  * does NOT disable the pin at the end of this function.  I think it is better to leave the pin
+  * enabled because the results will be more accurate.  Because of the inherent capacitance on the
+  * pin, it takes time for the voltage on the pin to charge up to its steady-state level.  If
+  * HalAdcRead() has to turn on the pin for every conversion, the results may show a lower voltage
+  * than actuality because the pin did not have time to fully charge.
+  */
   if (channel < 8)
   {
     for (i=0; i < channel; i++)
@@ -159,8 +205,17 @@ uint16 HalAdcRead (uint8 channel, uint8 resolution)
       break;
   }
 
+  /* read ADCL,ADCH to clear EOC */
+  tmp = ADCL;
+  tmp = ADCH;
+
+  /* Setup Sample */
+  adctemp = ADCCON3;
+  adctemp &= ~(HAL_ADC_CHN_BITS | HAL_ADC_DEC_BITS | HAL_ADC_REF_BITS);
+  adctemp |= channel | resbits | (reference);
+
   /* writing to this register starts the extra conversion */
-  ADCCON3 = channel | resbits | adcRef;
+  ADCCON3 = adctemp;
 
   /* Wait for the conversion to be done */
   while (!(ADCCON1 & HAL_ADC_EOC));
@@ -214,26 +269,60 @@ uint16 HalAdcRead (uint8 channel, uint8 resolution)
 void HalAdcSetReference ( uint8 reference )
 {
 #if (HAL_ADC == TRUE)
-  adcRef = reference;
+  volatile uint8 tmp;
+
+  ADCCON1 = HAL_ADC_STSEL | HAL_ADC_RAND_GEN | 0x03;
+  ADCCON2 = (reference) | HAL_ADC_DEC_RATE | HAL_ADC_SCHN;
+  /*
+  *  After reset, the first ADC reading of the extra conversion always reads GND level.
+  *  We will do a few dummy conversions to bypass this bug.
+  */
+  tmp = ADCL;     /* read ADCL,ADCH to clear EOC */
+  tmp = ADCH;
+  ADCCON3 = (reference) | HAL_ADC_DEC_RATE | HAL_ADC_ECHN;
+  while ((ADCCON1 & HAL_ADC_EOC) != HAL_ADC_EOC);   /* Wait for conversion */
+  tmp = ADCL;     /* read ADCL,ADCH to clear EOC */
+  tmp = ADCH;
+  ADCCON3 = (reference) | HAL_ADC_DEC_RATE | HAL_ADC_ECHN;
+  while ((ADCCON1 & HAL_ADC_EOC) != HAL_ADC_EOC);   /* Wait for conversion */
+  tmp = ADCL;     /* read ADCL,ADCH to clear EOC */
+  tmp = ADCH;
 #endif
 }
 
-/*********************************************************************
+/**************************************************************************************************
  * @fn      HalAdcCheckVdd
  *
- * @brief   Check for minimum Vdd specified.
+ * @brief   Check the Vdd and return TRUE if it greater than or equal the limit
  *
- * @param   vdd - The board-specific Vdd reading to check for.
+ * @param   limit - limit that needs to be checked with the Vdd
  *
- * @return  TRUE if the Vdd measured is greater than the 'vdd' minimum parameter;
- *          FALSE if not.
+ * @return  TRUE if Vdd >= limit, FALSE otherwise
  *
- *********************************************************************/
-bool HalAdcCheckVdd(uint8 vdd)
+ **************************************************************************************************/
+bool HalAdcCheckVdd (uint8 limit)
 {
-  ADCCON3 = 0x0F;
-  while (!(ADCCON1 & 0x80));
-  return (ADCH > vdd);
+  uint16 value;
+  uint8 tmpADCCON3 = ADCCON3;  // Save ADCCON3 to restore later
+
+  /* Clear ADC interrupt flag */
+  ADCIF = 0;
+
+  /* Setup the new value for conversion */
+  ADCCON3 = (HAL_ADC_REF_125V | HAL_ADC_DEC_064 | HAL_ADC_CHN_VDD3);
+
+  /* Wait for the conversion to finish */
+  while ( !ADCIF );
+
+  /* Get the result */
+  value = ADCL;
+  value |= ((uint16) ADCH) << 8;
+
+  // Restore ADCCON3
+  ADCCON3 = tmpADCCON3;
+  
+  /* Check the limit and return */
+  return ( value >= HalAdcVddLimit[limit] );
 }
 
 /**************************************************************************************************

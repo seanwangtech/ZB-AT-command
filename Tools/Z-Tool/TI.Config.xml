@@ -116,12 +116,4 @@
     <name>TI.ZPI2.UTIL_CALLBACK_SUBSCRIBE.CommandID</name>
     <mode>HEX</mode>
   </member>
-  <member>
-    <name>TI.ZPI2.ZMAC_ASSOCIATE_RSP.ExtAddr</name>
-    <mode>HEX</mode>
-  </member>
-  <member>
-    <name>TI.ZPI2.ZMAC_SCAN_REQUEST.MaxResults</name>
-    <mode>HEX</mode>
-  </member>
 </doc>

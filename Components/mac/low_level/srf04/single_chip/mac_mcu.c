@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       mac_mcu.c
-  Revised:        $Date: 2012-03-07 16:55:44 -0800 (Wed, 07 Mar 2012) $
-  Revision:       $Revision: 29672 $
+  Revised:        $Date: 2010-01-08 14:36:19 -0800 (Fri, 08 Jan 2010) $
+  Revision:       $Revision: 21466 $
 
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,7 +22,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -67,6 +67,12 @@
  * ------------------------------------------------------------------------------------------------
  */
 
+#if !defined (OSC32K_CRYSTAL_INSTALLED) || (defined (OSC32K_CRYSTAL_INSTALLED) && (OSC32K_CRYSTAL_INSTALLED == TRUE))
+#define T2CNF_BASE_VALUE    (RUN | SYNC)
+#else
+#define T2CNF_BASE_VALUE     RUN
+#endif
+
 /* for optimized indexing of uint32's */
 #if HAL_MCU_LITTLE_ENDIAN()
 #define UINT32_NDX0   0
@@ -86,9 +92,7 @@
  */
 uint8       macChipVersion = 0;
 static int8 maxRssi;
-static uint32 prevAccumulatedOverflowCount = 0;
-static bool updateRolloverflag = FALSE;
-static uint32 prevoverflowCount = 0;
+
 
 /*
  *  This number is used to calculate the precision count for OSAL timer update. In Beacon mode,
@@ -145,45 +149,21 @@ MAC_INTERNAL_API void macMcuInit(void)
    */
   MDMCTRL1 = CORR_THR;
 
-#ifdef FEATURE_CC253X_LOW_POWER_RX
-  /* Reduce RX power consumption current to 20mA at the cost of some sensitivity
-   * Note: This feature can be applied to CC2530 and CC2533 only.
-   */
-  RXCTRL = 0x00;
-  FSCTRL = 0x50;
-#else
   /* tuning adjustments for optimal radio performance; details available in datasheet */
   RXCTRL = 0x3F;
-  
-  /* Adjust current in synthesizer; details available in datasheet. */
-  FSCTRL = 0x55;
-#endif /* #ifdef FEATURE_CC253X_LOW_POWER_RX */ 
 
-#if !(defined HAL_PA_LNA || defined HAL_PA_LNA_CC2590)
-  /* Raises the CCA threshold from about -108 dBm to about -80 dBm input level.
+  /* Raises the CCA threshold from about -108dBm to about -80 dBm input level.
    */
   CCACTRL0 = CCA_THR;
-#endif
 
-#ifdef CC2591_COMPRESSION_WORKAROUND
-  /* For Coordinators/Routers with CC2591, increase preamble from 4 to 12 bytes */
-  MDMCTRL0 = 0x95; 
-
-  /* For End devices without CC2591, increase preamble from 4 to 8 bytes */
-  /* MDMCTRL0 = 0x8D; */
-#else
   /* Makes sync word detection less likely by requiring two zero symbols before the sync word.
    * details available in datasheet.
    */
   MDMCTRL0 = 0x85;
-#endif /* CC2591_COMPRESSION_WORKAROUND */
 
-  if (*(uint8 *)(P_INFOPAGE+0x03) == 0x95)  // Device is a CC2533
-  {
-    /* In case the device is a 2533, just update the IVCTRL regoster which is 2533 specific */
-    #define IVCTRL          XREG( 0x6265 )  
-    IVCTRL = 0xF;
-  }
+  /* Adjust current in synthesizer; details available in datasheet. */
+  FSCTRL = 0x5A;
+
   /* Adjust current in VCO; details available in datasheet. */
   FSCAL1 = 0x00;
 
@@ -216,12 +196,6 @@ MAC_INTERNAL_API void macMcuInit(void)
   IP0 |=  IP_RFERR_RF_DMA_BV;
   IP1 &= ~IP_RFERR_RF_DMA_BV;
 
-  /* set T2 interrupts one notch above lowest priority (four levels available)
-   * This effectively turned off nested interrupt between T2 and RF.
-   */
-  IP0 |=  IP_RXTX0_T2_BV;
-  IP1 &= ~IP_RXTX0_T2_BV;
-
   /* read chip version */
   macChipVersion = CHVER;
 
@@ -239,11 +213,9 @@ MAC_INTERNAL_API void macMcuInit(void)
   /* start timer */
   MAC_RADIO_TIMER_WAKE_UP();
 
-  /* Enable latch mode and T2 SYNC start. OSAL timer is based on MAC timer. 
-   * The SYNC start msut be on when POWER_SAVING is on for this design to work.
-   */
-  T2CTRL |= (LATCH_MODE | TIMER2_SYNC);
-  
+  /* Enable latch mode */
+  T2CTRL |= LATCH_MODE;
+
   /* enable timer interrupts */
   T2IE = 1;
 
@@ -296,29 +268,29 @@ MAC_INTERNAL_API void macMcuInit(void)
     RNDL = rndSeed & 0xFF;
     RNDL = rndSeed >> 8;
   }
-
+  
   /* Read 16*8 random bits and store them in flash for future use in random
      key generation for CBKE key establishment */
   if( pRandomSeedCB )
   {
     uint8 randomSeed[MAC_RANDOM_SEED_LEN];
     uint8 i,j;
-
+    
     for(i = 0; i < 16; i++)
     {
       uint8 rndByte = 0;
       for(j = 0; j < 8; j++)
       {
-        /* use most random bit of analog to digital receive conversion to
+        /* use most random bit of analog to digital receive conversion to 
            populate the random seed */
         rndByte = (rndByte << 1) | (RFRND & 0x01);
       }
       randomSeed[i] = rndByte;
-
+      
     }
-    pRandomSeedCB( randomSeed );
+    pRandomSeedCB( randomSeed ); 
   }
-
+    
   /* turn off the receiver */
   macRxOff();
 
@@ -511,7 +483,7 @@ MAC_INTERNAL_API void macMcuOverflowSetCount(uint32 count)
 
   /* save the current overflow count */
   accumulatedOverflowCount += macMcuOverflowCount();
-  
+
   /* deduct the initial count */
   accumulatedOverflowCount -= count;
 
@@ -565,7 +537,7 @@ MAC_INTERNAL_API void macMcuOverflowSetCompare(uint32 count)
    *  Now that new compare value is stored, clear the interrupt flag.  This is important just
    *  in case a false match was generated as the multi-byte compare value was written.
    */
-  T2IRQF = ~TIMER2_OVF_COMPARE1F;
+  T2IRQF &= ~TIMER2_OVF_COMPARE1F;
 
   /* re-enable overflow compare interrupts if they were previously enabled */
   if (enableCompareInt)
@@ -573,57 +545,6 @@ MAC_INTERNAL_API void macMcuOverflowSetCompare(uint32 count)
     T2IRQM |= TIMER2_OVF_COMPARE1M;
   }
 
-  HAL_EXIT_CRITICAL_SECTION(s);
-}
-
-
-/**************************************************************************************************
- * @fn          macMcuOverflowSetPeriod
- *
- * @brief       Set overflow count period value.  An interrupt is triggered when the overflow
- *              count equals this period value.
- *
- * @param       count - overflow count compare value
- *
- * @return      none
- **************************************************************************************************
- */
-MAC_INTERNAL_API void macMcuOverflowSetPeriod(uint32 count)
-{
-  halIntState_t  s;
-  uint8 enableCompareInt = 0;
-
-  MAC_ASSERT( !(count >> 24) );   /* illegal count value */
-
-  HAL_ENTER_CRITICAL_SECTION(s);
-
-  /*  Disable overflow compare interrupts. */
-  if (T2IRQM & TIMER2_OVF_PERM)
-  {
-    enableCompareInt = 1;
-    T2IRQM &= ~TIMER2_OVF_PERM;
-  }
-
-  MAC_MCU_T2_ACCESS_OVF_PERIOD_VALUE();
-
-  /* for efficiency, the 32-bit value is decoded using endian abstracted indexing */
-  T2MOVF0 = ((uint8 *)&count)[UINT32_NDX0];
-  T2MOVF1 = ((uint8 *)&count)[UINT32_NDX1];
-  T2MOVF2 = ((uint8 *)&count)[UINT32_NDX2];
-
-  /*
-   *  Now that new compare value is stored, clear the interrupt flag.  This is important just
-   *  in case a false match was generated as the multi-byte compare value was written.
-   */
-  T2IRQF &= ~TIMER2_OVF_PERF;
-
-  /* re-enable overflow compare interrupts if they were previously enabled */
-  if (enableCompareInt)
-  {
-    T2IRQM |= TIMER2_OVF_PERM;
-  }
-
-  halSetMaxSleepLoopTime(count);
   HAL_EXIT_CRITICAL_SECTION(s);
 }
 
@@ -671,13 +592,8 @@ MAC_INTERNAL_API uint32 macMcuOverflowGetCompare(void)
  */
 HAL_ISR_FUNCTION( macMcuTimer2Isr, T2_VECTOR )
 {
-  uint8 t2irqm;
-  uint8 t2irqf;
-  
-  HAL_ENTER_ISR();
-
-  t2irqm = T2IRQM;
-  t2irqf = T2IRQF;
+  uint8 t2irqm = T2IRQM;
+  uint8 t2irqf = T2IRQF;
 
   /*------------------------------------------------------------------------------------------------
    *  Overflow compare interrupt - triggers when then overflow counter is
@@ -690,21 +606,7 @@ HAL_ISR_FUNCTION( macMcuTimer2Isr, T2_VECTOR )
     macBackoffTimerCompareIsr();
 
     /* clear overflow compare interrupt flag */
-    T2IRQF = ~TIMER2_OVF_COMPARE1F;
-  }
-
-  /*------------------------------------------------------------------------------------------------
-   *  Overflow compare interrupt - triggers when then overflow counter is
-   *  equal to the overflow compare register.
-   */
-  if ((t2irqf & TIMER2_OVF_PERF) & t2irqm)
-  {
-
-    /* call function for dealing with the timer compare interrupt */
-    macBackoffTimerPeriodIsr();
-
-    /* clear overflow compare interrupt flag */
-    T2IRQF = ~TIMER2_OVF_PERF;
+    T2IRQF &= ~TIMER2_OVF_COMPARE1F;
   }
 
   /*------------------------------------------------------------------------------------------------
@@ -716,11 +618,8 @@ HAL_ISR_FUNCTION( macMcuTimer2Isr, T2_VECTOR )
     mcuRecordMaxRssiIsr();
 
     /* clear the interrupt flag */
-    T2IRQF = ~TIMER2_PERF;
+    T2IRQF &= ~TIMER2_PERF;
   }
-  
-  CLEAR_SLEEP_MODE();
-  HAL_EXIT_ISR();  
 }
 
 
@@ -750,7 +649,7 @@ void macMcuTimer2OverflowWorkaround(void)
       {
         /* Set the flag to trigger the timer compare interrupt */
         macBackoffTimerCompareIsr();
-        T2IRQF = ~TIMER2_OVF_COMPARE1F;
+        T2IRQF &= ~TIMER2_OVF_COMPARE1F;
       }
     }
   }
@@ -768,9 +667,9 @@ void macMcuTimer2OverflowWorkaround(void)
  * @return      overflowCount
  **************************************************************************************************
  */
-uint32 macMcuPrecisionCount(void)
+uint16 macMcuPrecisionCount(void)
 {
-  uint32         overflowCount = 0;
+  uint16         overflowCount;
   halIntState_t  s;
 
   HAL_ENTER_CRITICAL_SECTION(s);
@@ -779,34 +678,17 @@ uint32 macMcuPrecisionCount(void)
   MAC_MCU_T2_ACCESS_OVF_COUNT_VALUE();
 
   /* Latch the entire T2MOVFx first by reading T2M0.
-   * T2M0 is discarded.
+   * T2M0 and T2MOVF2 are discarded.
    */
   T2M0;
   ((uint8 *)&overflowCount)[UINT32_NDX0] = T2MOVF0;
   ((uint8 *)&overflowCount)[UINT32_NDX1] = T2MOVF1;
-  ((uint8 *)&overflowCount)[UINT32_NDX2] = T2MOVF2;
+  HAL_EXIT_CRITICAL_SECTION(s);
 
   /* the overflowCount needs to account for the accumulated overflow count in Beacon mode.
+   * It's okay to let it overflow since only LSBs are used.
    */
-  overflowCount += accumulatedOverflowCount;
-  
-  /*
-   * Workaround to take care of the case where a rollover just occured and the call to
-   * macBackoffTimerPeriodIsr() hasn't yet occured or if one rollover occured during
-   * sleep then update the accumulatedoverflowCount with the rollover
-   */
-   if((prevoverflowCount > overflowCount) && (prevAccumulatedOverflowCount == accumulatedOverflowCount))
-  {
-    accumulatedOverflowCount += macGetBackOffTimerRollover();
-    overflowCount += macGetBackOffTimerRollover();
-    /*don't update the rollover since it has been updated already */
-    updateRolloverflag = TRUE;
-  }
-
-  /* store the current value of overflowcount and accumulatedOverflowCount */
-  prevoverflowCount = overflowCount;
-  prevAccumulatedOverflowCount = accumulatedOverflowCount;
-  HAL_EXIT_CRITICAL_SECTION(s);
+  overflowCount += (uint16)accumulatedOverflowCount;
 
   return(overflowCount);
 }
@@ -826,8 +708,6 @@ uint32 macMcuPrecisionCount(void)
 HAL_ISR_FUNCTION( macMcuRfIsr, RF_VECTOR )
 {
   uint8 rfim;
-  
-  HAL_ENTER_ISR();
 
   rfim = RFIRQM1;
 
@@ -872,9 +752,6 @@ HAL_ISR_FUNCTION( macMcuRfIsr, RF_VECTOR )
       RFIRQF0 = ~IRQ_FIFOP;
     } while (FSMSTAT1 & FIFOP);
   }
-  
-  CLEAR_SLEEP_MODE();
-  HAL_EXIT_ISR();  
 }
 
 
@@ -891,20 +768,13 @@ HAL_ISR_FUNCTION( macMcuRfIsr, RF_VECTOR )
  */
 HAL_ISR_FUNCTION( macMcuRfErrIsr, RFERR_VECTOR )
 {
-  uint8 rferrm;
-  
-  HAL_ENTER_ISR();
-  
-  rferrm = RFERRM;
+  uint8 rferrm = RFERRM;
 
   if ((RFERRF & RFERR_RXOVERF) & rferrm)
   {
-    RFERRF = ~RFERR_RXOVERF;
+    RFERRF &= ~RFERR_RXOVERF;
     macRxFifoOverflowIsr();
   }
-
-  CLEAR_SLEEP_MODE();
-  HAL_EXIT_ISR();  
 }
 
 
@@ -972,33 +842,6 @@ static void mcuRecordMaxRssiIsr(void)
   }
 }
 
-/**************************************************************************************************
- * @fn          macMcuAccumulatedOverFlow
- *
- * @brief       This function is used to accumulate timer 2 overflow if applicable
- *              on the relevant platform
- *
- * @param       none
- *
- * @return      none
- **************************************************************************************************
- */
-MAC_INTERNAL_API void macMcuAccumulatedOverFlow(void)
-{
-  halIntState_t  s;
-  HAL_ENTER_CRITICAL_SECTION(s);
-
-  if(updateRolloverflag == FALSE)
-  {
-    accumulatedOverflowCount += macGetBackOffTimerRollover();
-  }
-  else
-  {
-    updateRolloverflag = FALSE;
-  }
-
-  HAL_EXIT_CRITICAL_SECTION(s);
-}
 
 /**************************************************************************************************
  *                                  Compile Time Integrity Checks
@@ -1006,10 +849,6 @@ MAC_INTERNAL_API void macMcuAccumulatedOverFlow(void)
  */
 #if ((IRQ_SFD != IM_SFD) || (IRQ_FIFOP != IM_FIFOP) || (IRQ_TXACKDONE != IM_TXACKDONE))
 #error "ERROR: Compile time error with RFIRQFx vs RFIRQMx register defines."
-#endif
-
-#if defined (FEATURE_CC253X_LOW_POWER_RX) && !(defined (HAL_MCU_CC2530) || defined (HAL_MCU_CC2533))
-#error "ERROR: FEATURE_CC253X_LOW_POWER_RX can only be used with CC2530 or CC2533."
 #endif
 
 /**************************************************************************************************

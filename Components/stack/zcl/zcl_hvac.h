@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       zcl_hvac.h
-  Revised:        $Date: 2011-05-19 11:53:12 -0700 (Thu, 19 May 2011) $
-  Revision:       $Revision: 26031 $
+  Revised:        $Date: 2007-07-31 09:16:11 -0700 (Tue, 31 Jul 2007) $
+  Revision:       $Revision: 14985 $
 
   Description:    This file contains the ZCL HVAC definitions.
 
 
-  Copyright 2006-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -270,13 +270,13 @@ extern "C"
   /*** ZCL HVAC Thermostat Cluster: Setpoint Raise/Lower Cmd payload ***/
 typedef struct
 {
-  uint8 mode;  // which setpoint is to be configured
-  int8 amount; // amount setpoint(s) are to be increased (or decreased) by, in steps of 0.1°C
+  uint8 mode;
+  uint8 amount;
 } zclCmdThermostatSetpointRaiseLowerPayload_t;
 
 // This callback is called to process a Setpoint Raise/Lower command
 //  mode - which setpoint to be configured
-//  amount  - the amount the setpoints are to be increased (or decreased) by, in steps of 0.1°C
+//  amount  - the amount the setpoints are to be increased (or decreased)
 typedef void (*zclHVAC_SetpointRaiseLower_t)( zclCmdThermostatSetpointRaiseLowerPayload_t *pCmd );
 
 // Register Callbacks table entry - enter function pointers for callbacks that
@@ -304,7 +304,7 @@ extern ZStatus_t zclHVAC_RegisterCmdCallbacks( uint8 endpoint, zclHVAC_AppCallba
  * Send a Setpoint Raise/Lower Command
  */
 ZStatus_t zclHVAC_SendSetpointRaiseLower( uint8 srcEP, afAddrType_t *dstAddr,
-                                          uint8 mode, int8 amount,
+                                          uint8 mode, uint8 amount,
                                           uint8 disableDefaultRsp, uint8 seqNum );
 
 /*********************************************************************

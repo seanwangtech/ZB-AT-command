@@ -6,7 +6,7 @@
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -351,11 +351,6 @@ static void txGo(void)
  */
 static void txCsmaGo(void)
 {
-  /* The CSMA needs to be performed at normal CCA threshold.
-   * Turn off the CC2591 compression workaround. 
-   */
-  COMPRESSION_WORKAROUND_OFF();
-
   if (macTxType == MAC_TX_TYPE_SLOTTED_CSMA)
   {
     if (macTxCsmaBackoffDelay >= macDataTxTimeAvailable())
@@ -497,7 +492,7 @@ MAC_INTERNAL_API void macTxDoneCallback(void)
        *  to expire after the timeout duration for waiting for an ACK.
        *  If an ACK is received, the function macTxAckReceived() is called.
        *  If an ACK is not received within the timeout period,
-       *  the function macTxAckNotReceivedCallback() is called.
+       *  the function macTxAckTimeoutCallback() is called.
        */
       macTxActive = MAC_TX_ACTIVE_LISTEN_FOR_ACK;
       MAC_RADIO_TX_REQUEST_ACK_TIMEOUT_CALLBACK();

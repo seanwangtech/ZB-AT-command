@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       mac_csp_tx.c
-  Revised:        $Date: 2010-10-05 11:47:04 -0700 (Tue, 05 Oct 2010) $
-  Revision:       $Revision: 23996 $
+  Revised:        $Date: 2009-08-12 14:34:18 -0700 (Wed, 12 Aug 2009) $
+  Revision:       $Revision: 20549 $
 
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -111,7 +111,6 @@
 #define C_CSPX_IS_ZERO        0x04
 #define C_CSPY_IS_ZERO        0x05
 #define C_CSPZ_IS_ZERO        0x06
-#define C_RSSI_IS_VALID       0x07
 
 /* negated conditions for use with instructions SKIP and RPT */
 #define C_NEGATE(c)   ((c) | 0x08)
@@ -122,7 +121,6 @@
 #define C_CSPX_IS_NON_ZERO    C_NEGATE(C_CSPX_IS_ZERO)
 #define C_CSPY_IS_NON_ZERO    C_NEGATE(C_CSPY_IS_ZERO)
 #define C_CSPZ_IS_NON_ZERO    C_NEGATE(C_CSPZ_IS_ZERO)
-#define C_RSSI_IS_INVALID     C_NEGATE(C_RSSI_IS_VALID)
 
 
 /* ------------------------------------------------------------------------------------------------
@@ -172,7 +170,7 @@ static uint8 cspReadCountSymbols(void);
  */
 #define T2THD_TICKS_PER_SYMBOL                (MAC_RADIO_TIMER_TICKS_PER_SYMBOL() >> 8)
 
-#define CSP_WEVENT_CLEAR_TRIGGER()            st( T2IRQF = ~TIMER2_COMPARE1F; )
+#define CSP_WEVENT_CLEAR_TRIGGER()            st( T2IRQF &= ~TIMER2_COMPARE1F; )
 #define CSP_WEVENT_SET_TRIGGER_NOW()          cspWeventSetTriggerNow()
 #define CSP_WEVENT_SET_TRIGGER_SYMBOLS(x)     cspWeventSetTriggerSymbols(x)
 #define CSP_WEVENT_READ_COUNT_SYMBOLS()       cspReadCountSymbols()
@@ -360,8 +358,9 @@ MAC_INTERNAL_API void macCspTxPrepCsmaUnslotted(void)
   RFST = WAITX;
   RFST = WEVENT1;
 
-  /* wait until RSSI is valid */
-  RFST = WHILE(C_RSSI_IS_INVALID);
+  /* wait for one backoff to guarantee receiver has been on at least that long */
+  RFST = WAITW(1);
+  RFST = WEVENT1;
 
   /* sample CCA, if it fails exit from here, CSPZ indicates result */
   RFST = SKIP(1, C_CCA_IS_VALID);
@@ -421,10 +420,7 @@ MAC_INTERNAL_API void macCspTxPrepCsmaSlotted(void)
 
   /* wait for X number of backoffs */
   RFST = WAITX;
-  
-  /* sample RSSI, if it is valid then skip one extra backoff. */
-  RFST = SKIP(1, C_RSSI_IS_VALID);
-  
+
   /* wait for one backoff to guarantee receiver has been on at least that long */
   RFST = WAITW(1);
 
@@ -489,9 +485,15 @@ MAC_INTERNAL_API void macCspTxPrepCsmaSlotted(void)
 MAC_INTERNAL_API void macCspTxGoCsma(void)
 {
   /*
-   *  Set CSPX with the countdown time of the CSMA delay.  
+   *  Set CSPX with the countdown time of the CSMA delay.  Subtract one because there is
+   *  a built-in one backoff delay in the CSP program to make sure receiver has been 'on'
+   *  for at least one backoff.  Don't subtract though if CSPX is already zero!
    */
   CSPX = macTxCsmaBackoffDelay;
+  if (CSPX != 0)
+  {
+    CSPX--;
+  }
 
   /*
    *  Set WEVENT to trigger at the current value of the timer.  This allows
@@ -708,7 +710,7 @@ MAC_INTERNAL_API void macCspForceTxDoneIfPending(void)
  * @fn          macCspTxRequestAckTimeoutCallback
  *
  * @brief       Requests a callback after the ACK timeout period has expired.  At that point,
- *              the function macCspTxStopIsr() is called via an interrupt.
+ *              the function macTxAckTimeoutCallback() is called via an interrupt.
  *
  * @param       none
  *
@@ -857,11 +859,6 @@ MAC_INTERNAL_API void macCspTxStopIsr(void)
 {
   MAC_MCU_CSP_STOP_DISABLE_INTERRUPT();
 
-  /* Whether we are waiting for ACK or not, turn on the compression workaround
-   * for incoming ACK or the next receive. 
-   */
-  COMPRESSION_WORKAROUND_ON();
-  
   if (CSPZ == CSPZ_CODE_TX_DONE)
   {
     macTxDoneCallback();

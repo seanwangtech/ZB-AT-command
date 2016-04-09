@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       mac_high_level.h
-  Revised:        $Date: 2011-02-28 16:59:59 -0800 (Mon, 28 Feb 2011) $
-  Revision:       $Revision: 25230 $
+  Revised:        $Date: 2010-01-08 14:36:19 -0800 (Fri, 08 Jan 2010) $
+  Revision:       $Revision: 21466 $
 
   Description:    Contains interfaces shared between high and low level MAC.
 
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,7 +34,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef MAC_HIGH_LEVEL_H
@@ -92,7 +92,6 @@ typedef struct
   macRxIntData_t    internal;
   macSec_t          sec;
   macDataInd_t      mac;
-  sData_t           mhr;
 } macRx_t;
 
 /* Function pointer for the 16 byte random seed callback */

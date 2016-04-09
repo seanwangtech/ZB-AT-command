@@ -1,14 +1,14 @@
 /**************************************************************************************************
   Filename:       OnBoard.c
-  Revised:        $Date: 2012-03-29 12:09:02 -0700 (Thu, 29 Mar 2012) $
-  Revision:       $Revision: 29943 $
+  Revised:        $Date: 2009-12-16 17:44:49 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21351 $
 
   Description:    This file contains the UI and control for the
                   peripherals on the EVAL development board
-  Notes:          This file targets the Chipcon CC2530/31
+  Notes:          This file targets the Chipcon CC2530
 
 
-  Copyright 2005-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -24,7 +24,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -44,7 +44,6 @@
  */
 
 #include "ZComDef.h"
-#include "ZGlobals.h"
 #include "OnBoard.h"
 #include "OSAL.h"
 #include "MT.h"
@@ -62,6 +61,10 @@
 #include "mac_radio_defs.h"
 
 /*********************************************************************
+ * MACROS
+ */
+
+/*********************************************************************
  * CONSTANTS
  */
 
@@ -72,35 +75,31 @@
 #define MIN_RAM_INIT 12
 
 /*********************************************************************
+ * TYPEDEFS
+ */
+
+/*********************************************************************
  * GLOBAL VARIABLES
  */
+
+uint8 OnboardKeyIntEnable;
 
 #if defined MAKE_CRC_SHDW
 #pragma location="CRC_SHDW"
 const CODE uint16 _crcShdw = 0xFFFF;
 #pragma required=_crcShdw
-
-#else  // if !defined MAKE_CRC_SHDW
-
-#pragma location="LOCK_BITS_ADDRESS_SPACE"
-__no_init uint8 _lockBits[16];
-#pragma required=_lockBits
-
-#if defined ZCL_KEY_ESTABLISH
-#include "zcl_cert_data.c"
-#else
-#pragma location="IEEE_ADDRESS_SPACE"
-__no_init uint8 _nvIEEE[Z_EXTADDR_LEN];
-#pragma required=_nvIEEE
-#endif
-
-#pragma location="RESERVED_ADDRESS_SPACE"
-__no_init uint8 _reserved[1932];
-#pragma required=_reserved
 #endif
 
 // 64-bit Extended Address of this device
 uint8 aExtendedAddress[8];
+
+/*********************************************************************
+ * EXTERNAL VARIABLES
+ */
+
+/*********************************************************************
+ * EXTERNAL FUNCTIONS
+ */
 
 /*********************************************************************
  * LOCAL VARIABLES
@@ -125,17 +124,18 @@ void InitBoard( uint8 level )
 {
   if ( level == OB_COLD )
   {
-    // IAR does not zero-out this byte below the XSTACK.
-    *(uint8 *)0x0 = 0;
     // Interrupts off
     osal_int_disable( INTS_ALL );
+    // Turn all LEDs off
+    HalLedSet( HAL_LED_ALL, HAL_LED_MODE_OFF );
     // Check for Brown-Out reset
     ChkReset();
   }
   else  // !OB_COLD
   {
     /* Initialize Key stuff */
-    HalKeyConfig(HAL_KEY_INTERRUPT_DISABLE, OnBoard_KeyCallback);
+    OnboardKeyIntEnable = HAL_KEY_INTERRUPT_DISABLE;
+    HalKeyConfig( OnboardKeyIntEnable, OnBoard_KeyCallback);
   }
 }
 
@@ -149,6 +149,7 @@ void InitBoard( uint8 level )
  *********************************************************************/
 void ChkReset( void )
 {
+  uint8 led;
   uint8 rib;
 
   // Isolate reset indicator bits
@@ -166,9 +167,21 @@ void ChkReset( void )
   {
     // Put code here to handle WatchDog reset
   }
-  else  // Unknown reason - not expected.
+  else
   {
-    HAL_ASSERT(0);
+    // Unknown, hang and blink
+    HAL_DISABLE_INTERRUPTS();
+    led = HAL_LED_4;
+    while ( 1 ) {
+      HalLedSet( led, HAL_LED_MODE_ON );
+      MicroWait( 62500 );
+      MicroWait( 62500 );
+      HalLedSet( led, HAL_LED_MODE_OFF );
+      MicroWait( 37500 );
+      MicroWait( 37500 );
+      if ( !(led >>= 1) )
+        led = HAL_LED_4;
+    }
   }
 }
 
@@ -244,7 +257,8 @@ void OnBoard_KeyCallback ( uint8 keys, uint8 state )
   uint8 shift;
   (void)state;
 
-  shift = (keys & HAL_KEY_SW_6) ? true : false;
+  /* Get shift key status */
+  shift = ((keys & HAL_KEY_SW_6) ? true : false);
 
   if ( OnBoard_SendKeys( keys, shift ) != ZSuccess )
   {
@@ -289,7 +303,7 @@ uint16 OnBoard_stack_used(void)
   uint8 const *ptr;
   uint8 cnt = 0;
 
-  for (ptr = CSTACK_END; ptr > CSTACK_BEG; ptr--)
+  for (ptr = XSTACK_END; ptr > XSTACK_BEG; ptr--)
   {
     if (STACK_INIT_VALUE == *ptr)
     {
@@ -305,7 +319,7 @@ uint16 OnBoard_stack_used(void)
     }
   }
 
-  return (uint16)(CSTACK_END - ptr + 1);
+  return (uint16)(XSTACK_END - ptr + 1);
 }
 
 /*********************************************************************
@@ -374,25 +388,6 @@ void Onboard_wait( uint16 timeout )
     asm("NOP");
     asm("NOP");
   }
-}
-
-/*********************************************************************
- * @fn      Onboard_soft_reset
- *
- * @brief   Effect a soft reset.
- *
- * @param   none
- *
- * @return  none
- *
- *********************************************************************/
-__near_func void Onboard_soft_reset( void )
-{
-  HAL_DISABLE_INTERRUPTS();
-  // Abort all DMA channels to insure that ongoing operations do not
-  // interfere with re-configuration.
-  DMAARM = 0x80 | 0x1F;
-  asm("LJMP 0x0");
 }
 
 /*********************************************************************

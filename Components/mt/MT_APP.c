@@ -1,21 +1,21 @@
 /***************************************************************************************************
   Filename:       MT_APP.c
-  Revised:        $Date: 2011-05-27 16:00:27 -0700 (Fri, 27 May 2011) $
-  Revision:       $Revision: 26145 $
+  Revised:        $Date: 2010-01-06 15:16:46 -0800 (Wed, 06 Jan 2010) $
+  Revision:       $Revision: 21443 $
 
   Description:    MonitorTest processing for APP commands
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -44,7 +44,6 @@
 #include "MT.h"        /* This is here because all the SPI_CMD_XXX are defined in this header */
 #include "MT_APP.h"
 #include "MT_AF.h"     /* This is here because this MT_APP makes some routine call to AF */
-#include "MT_RPC.h"
 
 #if defined( APP_TP )
  #include "TestProfile.h"
@@ -155,7 +154,7 @@ void MT_AppMsg(uint8 *pBuf)
  *
  * @return  void
  ***************************************************************************************************/
-void MT_AppUserCmd(uint8 *pBuf)
+void MT_AppUserCmd(uint8 *pBuf) 						
 {
 
   uint8 retValue, cmdId;
@@ -204,8 +203,8 @@ void MT_AppUserCmd(uint8 *pBuf)
 
     case TGEN_COUNT:
       retValue = TrafficGenApp_CountPkt( param1, param2 );
-      return;
-      break;
+      return;	
+      break;				
 #endif
 
 #if defined (NWK_TEST)
@@ -229,11 +228,11 @@ void MT_AppUserCmd(uint8 *pBuf)
       retValue = TestProfileApp_SendNoData( srcEp, (byte)param1 );
       break;
   #endif // APP_TP
-
+			
     case TP_SEND_BUFFERTEST:
       retValue = TestProfileApp_SendBufferReq( srcEp, (byte)param1 );
       break;
-
+			
   #if defined( APP_TP )
     case TP_SEND_UINT8:
       retValue = TestProfileApp_SendUint8( srcEp, (byte)param1 );
@@ -258,13 +257,13 @@ void MT_AppUserCmd(uint8 *pBuf)
     case TP_SEND_FREEFORM:
       retValue = TestProfileApp_SendFreeFormReq( srcEp, (byte)param1 );
       break;
-
+			
   #else // APP_TP
     case TP_SEND_FREEFORM:
       retValue = TestProfileApp_SendFreeFormReq(srcEp, (byte)param1, (byte)param2);
       break;
   #endif
-
+			
   #if defined( APP_TP )
     case TP_SEND_ABS_TIME:
       retValue = TestProfileApp_SendAbsTime( srcEp, (byte)param1 );
@@ -280,12 +279,12 @@ void MT_AppUserCmd(uint8 *pBuf)
 
     case TP_SEND_OCTET_STRING:
       retValue = TestProfileApp_SendOctetString( srcEp, (byte)param1 );
-      break;
+      break;		
   #endif // APP_TP
-
-    case TP_SET_DSTADDRESS:
+				
+    case TP_SET_DSTADDRESS:			
       retValue = TestProfileApp_SetDestAddress(HI_UINT16(param1), LO_UINT16(param1), param2);
-      break;
+      break;	
 
   #if defined( APP_TP2 )
     case TP_SEND_BUFFER_GROUP:
@@ -296,7 +295,7 @@ void MT_AppUserCmd(uint8 *pBuf)
     case TP_SEND_BUFFER:
       retValue = TestProfileApp_SendBuffer( srcEp, (byte)param1 );
       break;
-
+				
   #if defined( APP_TP )
     case TP_SEND_MULT_KVP_8BIT:
       TestProfileApp_SendMultiKVP_8bit( srcEp, (byte)param1 );
@@ -323,7 +322,7 @@ void MT_AppUserCmd(uint8 *pBuf)
       TestProfileApp_SendMultiKVP_String_Time( srcEp, (byte)param1 );
       break;
   #endif // APP_TP
-
+				
     case TP_SEND_COUNTED_PKTS:
       TestProfileApp_SendCountedPktsReq(HI_UINT16(param1), LO_UINT16(param1), param2);
       retValue = ZSuccess;
@@ -338,7 +337,7 @@ void MT_AppUserCmd(uint8 *pBuf)
       TestProfileApp_CountedPakts_GetCounterReq( srcEp, (byte)param1 );
       retValue = ZSuccess;
       break;
-
+				
     case TP_SET_PERMIT_JOIN:
       if ( ZG_BUILD_RTR_TYPE && ZG_DEVICE_RTR_TYPE )
       {
@@ -367,7 +366,7 @@ void MT_AppUserCmd(uint8 *pBuf)
     case TP_SEND_SWITCH_KEY:
       retValue = TestProfileApp_SwitchKey(  srcEp, (uint8)param1, param2 );
       break;
-
+			
     case TP_SEND_BUFFERTEST_GROUP:
       retValue = TestProfileApp_SendBufferGroupReq( srcEp, (byte)param1, (byte)param2 );
       break;
@@ -394,11 +393,11 @@ void MT_AppUserCmd(uint8 *pBuf)
       retValue = NLME_SendNetworkUpdate( NWK_BROADCAST_SHORTADDR, NWKUPDATE_PANID_UPDATE,
                                         _NIB.extendedPANID, _NIB.nwkUpdateId+1, param1 );
       break;
-
+      
     case TP_NWK_ADDR_CONFLICT:
-      retValue = NLME_SendNetworkStatus( NWK_BROADCAST_SHORTADDR_DEVZCZR, param1,
-                                         NWKSTAT_ADDRESS_CONFLICT, FALSE );
-      break;
+      retValue = NLME_SendNetworkStatus( NWK_BROADCAST_SHORTADDR_DEVZCZR,
+                         param1, NWKSTAT_ADDRESS_CONFLICT );
+      break;  
 
  #if (ZG_BUILD_JOINING_TYPE)
     case TP_AK_SETUP_PARTNER:
@@ -476,7 +475,7 @@ void MT_AppUserCmd(uint8 *pBuf)
       retValue = TestProfileApp_SendBcastRsp( srcEp, (byte)param1 );
       break;
 #endif
-
+			
     default:
       break;
   }

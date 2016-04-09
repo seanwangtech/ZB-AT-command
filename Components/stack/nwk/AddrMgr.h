@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       AddrMgr.h
-  Revised:        $Date: 2011-05-05 13:52:19 -0700 (Thu, 05 May 2011) $
-  Revision:       $Revision: 25878 $
+  Revised:        $Date: 2009-11-04 20:29:47 -0800 (Wed, 04 Nov 2009) $
+  Revision:       $Revision: 21070 $
 
   Description:    This file contains the interface to the Address Manager.
 
 
-  Copyright 2005-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -104,17 +104,6 @@ typedef void (*AddrMgrUserCB_t)( uint8           update,
  * @return      none
  */
 extern void AddrMgrInit( uint16 entryTotal );
-
-/******************************************************************************
- * @fn          AddrMgrReset
- *
- * @brief       Reset Address Manager.
- *
- * @param       none
- *
- * @return      none
- */
-extern void AddrMgrReset( void );
 
 /******************************************************************************
  * @fn          AddrMgrInitNV

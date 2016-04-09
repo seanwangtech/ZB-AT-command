@@ -1,14 +1,14 @@
 /**************************************************************************************************
   Filename:       oad-boot.xcl
-  Revised:        $Date: 2010-09-22 11:40:55 -0700 (Wed, 22 Sep 2010) $
-  Revision:       $Revision: 23872 $
+  Revised:        $Date: 2009-08-13 10:21:20 -0700 (Thu, 13 Aug 2009) $
+  Revision:       $Revision: 20561 $
 
   Description:    This is a linker command line file for the IAR XLINK tool for the
                   CC2530 SoC. This mapping is to build boot code for applications
                   written for OAD.
 
 
-  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -78,6 +78,7 @@
 //    PDATA page setup
 //
 -D?PBANK_NUMBER=00             // High byte of 16-bit address to the PDATA area.
+-D?PBANK=93                    // Most significant byte in MOVX A,@R0. (0x93 is sfr MPAGE).
 //
 //
 //    Virtual register setup
@@ -124,13 +125,15 @@
 //
 -Z(CODE)INTVEC=_CODE_START
 -Z(CODE)BIT_ID,BDATA_ID,DATA_ID,IDATA_ID,IXDATA_ID,PDATA_ID,XDATA_ID=_CODE_START-_CODE_END
+-Z(CODE)RAM_CODE_FLASH=_RAM_CODE_FLASH_START-_RAM_CODE_FLASH_END
 //
 //
 // The following segments *must* be placed in the root bank, but the order
 // of placement within the root bank is not important, which is why we use the
 // -P directive here.
 //
--P(CODE)CSTART,RCODE,DIFUNCT,NEAR_CODE=_CODE_START-_CODE_END
+-P(CODE)CSTART,BANK_RELAYS,RCODE,DIFUNCT,NEAR_CODE=_CODE_START-_CODE_END
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,6 +152,23 @@
 // Texas Instruments device specific
 // =================================
 //
+//
+// Include these two lines when generating a .hex file for banked code model:
+//-M(CODE)[(_CODEBANK_START+_FIRST_BANK_ADDR)-(_CODEBANK_END+_FIRST_BANK_ADDR)]*\
+//_NR_OF_BANKS+_FIRST_BANK_ADDR=0x8000
+//
+//
+// Any code that will be run from RAM by setting XMAP of MEMCTL must have the same bank-relative
+// address as the address in RAM to which the CODE will be copied to run.
+// Thus, any part of the first 8k of any bank can be dedicated to code that will run from RAM as
+// long as the corresponding relative address range is reserved in RAM by RAM_CODE_XDATA.
+//
+-D_RAM_CODE_XDATA_START=0x07E3
+-D_RAM_CODE_XDATA_END=(_RAM_CODE_XDATA_START+0x1C)
+-Z(XDATA)RAM_CODE_XDATA=_RAM_CODE_XDATA_START-_RAM_CODE_XDATA_END
+//
+-D_RAM_CODE_FLASH_START=0x07E3
+-D_RAM_CODE_FLASH_END=(_RAM_CODE_FLASH_START+0x1C)
 //
 // Fill code gaps with 0xFFFF so that the .hex image produced is full.
 -HFFFF

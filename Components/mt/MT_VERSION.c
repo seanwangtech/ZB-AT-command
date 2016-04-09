@@ -1,11 +1,11 @@
-/******************************************************************************
+/***************************************************************************************************
   Filename:     MT_VERSION.c
-  Revised:      $Date: 2011-11-14 16:46:15 -0800 (Mon, 14 Nov 2011) $
-  Revision:     $Revision: 28334 $
+  Revised:      $Date: 2009-08-03 16:38:01 -0700 (Mon, 03 Aug 2009) $
+  Revision:     $Revision: 20447 $
 
   Description:  Provides the version identification numbers
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -15,7 +15,7 @@
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -35,24 +35,27 @@
   Should you have any questions regarding your right to use this Software,
   contact Texas Instruments Incorporated at www.TI.com.
 
-******************************************************************************/
+ ***************************************************************************************************/
 
-/******************************************************************************
- * INCLUDES
- *****************************************************************************/
+/***************************************************************************************************
+ * CONSTANTS
+ ***************************************************************************************************/
 #include "ZComDef.h"
 #include "MT_VERSION.h"
 
-/******************************************************************************
+/***************************************************************************************************
  * CONSTANTS
- *****************************************************************************/
+ ***************************************************************************************************/
+
+
 const uint8 MTVersionString[5] = {
-                                   2,  /* Transport protocol revision */
-                                   0,  /* Product ID */
-                                   2,  /* Software major release number */
-                                   5,  /* Software minor release number */
-                                   1   /* Software maintenance release number */
+                                   2,           /* Transport protocol revision */
+                                   0,           /* Product ID */
+                                   2,           /* Software major release number */
+                                   3,           /* Software minor release number */
+                                   0            /* Software maintenance release number */
                                  };
 
-/******************************************************************************
- */
+
+/***************************************************************************************************
+ ***************************************************************************************************/

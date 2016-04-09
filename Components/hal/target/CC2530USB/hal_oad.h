@@ -5,7 +5,7 @@
 
   Description:    This module defines optionally-compiled Boot Code parameters for the CC2x3x.
 
-  Copyright 2008-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2008-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -69,7 +69,7 @@
 /* Note that corresponding changes must be made to oad.xcl when changing the source of Xtra-NV.
  * When using internal flash for XNV, (HAL_OAD_BOOT_PG_CNT + HAL_NV_PAGE_CNT) must be even.
  */
-#define HAL_OAD_XNV_IS_INT         TRUE
+#define HAL_OAD_XNV_IS_INT         FALSE
 #define HAL_OAD_XNV_IS_SPI        !HAL_OAD_XNV_IS_INT
 
 /* The oad/oad-boot.xcl files only need 1 page of boot code (located on the first flash page),
@@ -94,12 +94,6 @@
 
 // To run OAD with the legacy ZOAD.exe PC tool, place the preamble in this legacy location.
 #define PREAMBLE_OFFSET            0x8C
-
-#if HAL_OAD_XNV_IS_INT
-#define VDD_MIN_OAD  VDD_MIN_NV
-#else
-#error CC2531 OAD by external NV not characterized.
-#endif
 
 /*********************************************************************
  * TYPEDEFS

@@ -1,12 +1,12 @@
 /**************************************************************************************************
-  Filename:       hal_flash.c
-  Revised:        $Date: 2010-10-07 02:19:52 -0700 (Thu, 07 Oct 2010) $
-  Revision:       $Revision: 24049 $
+  Filename:       _hal_flash.c
+  Revised:        $Date:$
+  Revision:       $Revision:$
 
   Description: This file contains the interface to the H/W Flash driver.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -45,8 +45,95 @@
 #include "hal_board_cfg.h"
 #include "hal_dma.h"
 #include "hal_flash.h"
-#include "hal_mcu.h"
 #include "hal_types.h"
+
+/* ------------------------------------------------------------------------------------------------
+ *                                           Macros
+ * ------------------------------------------------------------------------------------------------
+ */
+
+/* ------------------------------------------------------------------------------------------------
+ *                                          Constants
+ * ------------------------------------------------------------------------------------------------
+ */
+
+// These values depend on RAM_CODE_FLASH in the .xcl file used.
+#if defined CC2530F64     // RemoTI is using 0x01DDD --> pg 3, offset 0x5DD.
+#define OSET_OF_RAM_CODE  0x5DD
+#define PAGE_OF_RAM_CODE  3
+#define SIZE_OF_RAM_CODE  0x23
+#elif defined HAL_OAD_BOOT_CODE
+                          // OAD boot code is using 0x7E3 --> pg 0, so same as offset 0x7E3.
+#define OSET_OF_RAM_CODE  0x7E3
+#define PAGE_OF_RAM_CODE  0
+#define SIZE_OF_RAM_CODE  0x1D
+#elif defined HAL_USB_BOOT_CODE
+                          // USB boot code is using 0x7DD --> pg 0, so same as offset 0x7DD.
+#define OSET_OF_RAM_CODE  0x7DD
+#define PAGE_OF_RAM_CODE  0
+#define SIZE_OF_RAM_CODE  0x23
+#else                     // Z-Stack is using 0x39EDD --> pg 51, offset 0x6DD.
+#define OSET_OF_RAM_CODE  0x6DD
+#define PAGE_OF_RAM_CODE  51
+#define SIZE_OF_RAM_CODE  0x23
+#endif
+
+/* ------------------------------------------------------------------------------------------------
+ *                                          Typedefs
+ * ------------------------------------------------------------------------------------------------
+ */
+
+/* ------------------------------------------------------------------------------------------------
+ *                                       Global Variables
+ * ------------------------------------------------------------------------------------------------
+ */
+
+/* ------------------------------------------------------------------------------------------------
+ *                                       Global Functions
+ * ------------------------------------------------------------------------------------------------
+ */
+
+/* ------------------------------------------------------------------------------------------------
+ *                                       Local Variables
+ * ------------------------------------------------------------------------------------------------
+ */
+
+#pragma location="RAM_CODE_XDATA"
+static __no_init uint8 ramCode[SIZE_OF_RAM_CODE];
+
+/* ------------------------------------------------------------------------------------------------
+ *                                       Local Functions
+ * ------------------------------------------------------------------------------------------------
+ */
+
+#pragma location="RAM_CODE_FLASH"
+#if defined HAL_OAD_BOOT_CODE
+static void HalFlashWriteTrigger(void);
+#else
+static __monitor void HalFlashWriteTrigger(void);
+#endif
+
+/**************************************************************************************************
+ * @fn          HalFlashInit
+ *
+ * @brief       This function initializes the environment for this module.
+ *
+ * input parameters
+ *
+ * None.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      None.
+ **************************************************************************************************
+ */
+void HalFlashInit(void)
+{
+  // Load the code to run from RAM into its reserved area of RAM once at startup.
+  HalFlashRead(PAGE_OF_RAM_CODE, OSET_OF_RAM_CODE, ramCode, SIZE_OF_RAM_CODE);
+}
 
 /**************************************************************************************************
  * @fn          HalFlashRead
@@ -70,17 +157,17 @@
 void HalFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt)
 {
   // Calculate the offset into the containing flash bank as it gets mapped into XDATA.
-  uint8 *pData = (uint8 *)(offset + HAL_FLASH_PAGE_MAP) +
-                 ((pg % HAL_FLASH_PAGE_PER_BANK) * HAL_FLASH_PAGE_SIZE);
+  uint8 *ptr = (uint8 *)(offset + HAL_FLASH_PAGE_MAP) +
+               ((pg % HAL_FLASH_PAGE_PER_BANK) * HAL_FLASH_PAGE_SIZE);
   uint8 memctr = MEMCTR;  // Save to restore.
 
-#if (!defined HAL_OAD_BOOT_CODE) && (!defined HAL_OTA_BOOT_CODE)
+#if !defined HAL_OAD_BOOT_CODE
   halIntState_t is;
 #endif
 
   pg /= HAL_FLASH_PAGE_PER_BANK;  // Calculate the flash bank from the flash page.
 
-#if (!defined HAL_OAD_BOOT_CODE) && (!defined HAL_OTA_BOOT_CODE)
+#if !defined HAL_OAD_BOOT_CODE
   HAL_ENTER_CRITICAL_SECTION(is);
 #endif
 
@@ -89,12 +176,12 @@ void HalFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt)
 
   while (cnt--)
   {
-    *buf++ = *pData++;
+    *buf++ = *ptr++;
   }
 
   MEMCTR = memctr;
 
-#if (!defined HAL_OAD_BOOT_CODE) && (!defined HAL_OTA_BOOT_CODE)
+#if !defined HAL_OAD_BOOT_CODE
   HAL_EXIT_CRITICAL_SECTION(is);
 #endif
 }
@@ -119,7 +206,6 @@ void HalFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt)
  */
 void HalFlashWrite(uint16 addr, uint8 *buf, uint16 cnt)
 {
-#if (defined HAL_DMA) && (HAL_DMA == TRUE)
   halDMADesc_t *ch = HAL_NV_DMA_GET_DESC();
 
   HAL_DMA_SET_SOURCE(ch, buf);
@@ -140,9 +226,7 @@ void HalFlashWrite(uint16 addr, uint8 *buf, uint16 cnt)
 
   FADDRL = (uint8)addr;
   FADDRH = (uint8)(addr >> 8);
-  FCTL |= 0x02;         // Trigger the DMA writes.
-  while (FCTL & 0x80);  // Wait until writing is done.
-#endif
+  HalFlashWriteTrigger();
 }
 
 /**************************************************************************************************
@@ -165,6 +249,36 @@ void HalFlashErase(uint8 pg)
 {
   FADDRH = pg * (HAL_FLASH_PAGE_SIZE / HAL_FLASH_WORD_SIZE / 256);
   FCTL |= 0x01;
+}
+
+/**************************************************************************************************
+ * @fn          HalFlashWriteTrigger
+ *
+ * @brief       This function must be copied to RAM before running because it triggers and then
+ *              awaits completion of Flash write, which can only be done from RAM.
+ *
+ * input parameters
+ *
+ * None.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      None.
+ **************************************************************************************************
+ */
+#if defined HAL_OAD_BOOT_CODE
+#pragma optimize=medium
+static void HalFlashWriteTrigger(void)
+#else
+static __monitor void HalFlashWriteTrigger(void)
+#endif
+{
+  MEMCTR |= 0x08;       // Start the Memory Arbiter running CODE from RAM.
+  FCTL |= 0x02;         // Trigger the DMA writes.
+  while (FCTL & 0x80);  // Wait until writing is done.
+  MEMCTR &= ~0x08;      // Stop the Memory Arbiter.
 }
 
 /**************************************************************************************************

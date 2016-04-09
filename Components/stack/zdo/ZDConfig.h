@@ -1,14 +1,14 @@
 /**************************************************************************************************
   Filename:       ZDConfig.h
-  Revised:        $Date: 2011-05-03 12:32:46 -0700 (Tue, 03 May 2011) $
-  Revision:       $Revision: 25849 $
+  Revised:        $Date: 2009-10-28 00:05:19 -0700 (Wed, 28 Oct 2009) $
+  Revision:       $Revision: 20998 $
 
   Description:    This file contains the configuration attributes for the Zigbee Device Object.
                   These are references to Configuration items that MUST be defined in ZDApp.c.
                   The names mustn't change.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -72,7 +72,7 @@ extern "C"
   #define ZDO_BIND_UNBIND_REQUEST
   #define ZDO_SERVERDISC_REQUEST
   #define ZDO_NETWORKSTART_REQUEST
-  #define ZDO_MANUAL_JOIN
+  #define ZDO_LINK_KEY_MANAGEMENT
 
   #define ZDO_COMPLEXDESC_RESPONSE
   #define ZDO_USERDESC_RESPONSE
@@ -114,11 +114,11 @@ extern "C"
   //#define ZDO_COMPLEXDESC_REQUEST
   //#define ZDO_USERDESC_REQUEST
   //#define ZDO_USERDESCSET_REQUEST
-  #define ZDO_ENDDEVICEBIND_REQUEST
-  //#define ZDO_BIND_UNBIND_REQUEST
+  //#define ZDO_ENDDEVICEBIND_REQUEST
+  #define ZDO_BIND_UNBIND_REQUEST
   //#define ZDO_SERVERDISC_REQUEST
   //#define ZDO_NETWORKSTART_REQUEST
-  //#define ZDO_MANUAL_JOIN
+  //#define ZDO_LINK_KEY_MANAGEMENT
 
   #define ZDO_BIND_UNBIND_RESPONSE
   //#define ZDO_COMPLEXDESC_RESPONSE
@@ -160,14 +160,14 @@ extern "C"
  */
 
 #define MAX_BUFFER_SIZE		        	80
-
+  
 #if defined ( ZIGBEE_FRAGMENTATION )
   // The application/profile must fill this field out.
   #define MAX_TRANSFER_SIZE	        	160
 #else
   #define MAX_TRANSFER_SIZE	        	80
 #endif
-
+  
 #define MAX_ENDPOINTS	            	240
 
 // Node Description Bitfields

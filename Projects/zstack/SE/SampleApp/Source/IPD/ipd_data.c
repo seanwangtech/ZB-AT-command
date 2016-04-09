@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       ipd_data.c
-  Revised:        $Date: 2011-05-17 17:00:08 -0700 (Tue, 17 May 2011) $
-  Revision:       $Revision: 26006 $
+  Revised:        $Date: 2009-12-16 11:21:45 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21339 $
 
   Description:    File that contains attribute and simple descriptor
                   definitions for the IPD
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -244,14 +244,6 @@ zclOptionRec_t ipdOptions[IPD_MAX_OPTIONS] =
     ZCL_CLUSTER_ID_SE_MESSAGE,
     ( AF_EN_SECURITY ),
   },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-    ( AF_EN_SECURITY ),
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    ( AF_EN_SECURITY ),
-  },
 };
 
 /*********************************************************************
@@ -259,37 +251,31 @@ zclOptionRec_t ipdOptions[IPD_MAX_OPTIONS] =
  */
 // This is the Cluster ID List and should be filled with Application
 // specific cluster IDs.
-#define IPD_MAX_INCLUSTERS       6
+#define IPD_MAX_INCLUSTERS       5
 const cId_t ipdInClusterList[IPD_MAX_INCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC,
   ZCL_CLUSTER_ID_GEN_IDENTIFY,
   ZCL_CLUSTER_ID_GEN_TIME,
   ZCL_CLUSTER_ID_SE_PRICING,
-  ZCL_CLUSTER_ID_SE_MESSAGE,
-  ZCL_CLUSTER_ID_SE_PREPAYMENT
+  ZCL_CLUSTER_ID_SE_MESSAGE
 };
 
-#define IPD_MAX_OUTCLUSTERS       6
+#define IPD_MAX_OUTCLUSTERS       5
 const cId_t ipdOutClusterList[IPD_MAX_OUTCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC,
   ZCL_CLUSTER_ID_GEN_IDENTIFY,
   ZCL_CLUSTER_ID_GEN_TIME,
   ZCL_CLUSTER_ID_SE_PRICING,
-  ZCL_CLUSTER_ID_SE_MESSAGE,
-  ZCL_CLUSTER_ID_SE_PREPAYMENT
+  ZCL_CLUSTER_ID_SE_MESSAGE
 };
 
 SimpleDescriptionFormat_t ipdSimpleDesc =
 {
   IPD_ENDPOINT,                       //  uint8 Endpoint;
   ZCL_SE_PROFILE_ID,                  //  uint16 AppProfId[2];
-#if defined ( ZCL_PREPAYMENT )
-  ZCL_SE_DEVICEID_PREPAY_TERMINAL,    //  uint16 AppDeviceId[2];
-#else
   ZCL_SE_DEVICEID_IN_PREMISE_DISPLAY, //  uint16 AppDeviceId[2];
-#endif
   IPD_DEVICE_VERSION,                 //  int   AppDevVer:4;
   IPD_FLAGS,                          //  int   AppFlags:4;
   IPD_MAX_INCLUSTERS,                 //  uint8  AppNumInClusters;

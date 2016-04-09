@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       nwk.h
-  Revised:        $Date: 2010-05-11 18:37:17 -0700 (Tue, 11 May 2010) $
-  Revision:       $Revision: 22455 $
+  Revised:        $Date: 2009-12-04 08:04:20 -0800 (Fri, 04 Dec 2009) $
+  Revision:       $Revision: 21276 $
 
   Description:    Network layer logic component interface.
 
 
-  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,7 +22,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -58,6 +58,7 @@ extern "C" {
  * MACROS
  */
 
+
 /*********************************************************************
  * CONSTANTS
  */
@@ -71,18 +72,17 @@ extern "C" {
 #define NWK_ASSOCIATE_RESP    0x06
 #define NWK_DISASSOCIATE_REQ  0x07
 
-#define NWK_AUTO_POLL_EVT         0x0001
-#define NWK_NOT_EXPECTING_EVT     0x0004
-#define RTG_TIMER_EVENT           0x0010
-#define NWK_DATABUF_SEND          0x0020
-#define NWK_BCAST_TIMER_EVT       0x0040
-#define NWK_PERMITJOIN_EVT        0x0080
-#define NWK_LINK_STATUS_EVT       0x0100
-#define NWK_PID_UPDATE_EVT        0x0200
-#define NWK_REJOIN_TIMEOUT_EVT    0x0400
-#define NWK_MTO_RTG_REQ_EVT       0x0800
-#define NWK_MTO_RTG_REQ_DELAY_EVT 0x1000  
-#define NWK_BROADCAST_MSG_EVT     0x2000
+#define NWK_AUTO_POLL_EVT       0x0001
+#define NWK_NOT_EXPECTING_EVT   0x0004
+#define RTG_TIMER_EVENT         0x0010
+#define NWK_DATABUF_SEND        0x0020
+#define NWK_BCAST_TIMER_EVT     0x0040
+#define NWK_PERMITJOIN_EVT      0x0080
+#define NWK_LINK_STATUS_EVT     0x0100
+#define NWK_PID_UPDATE_EVT      0x0200
+#define NWK_REJOIN_TIMEOUT_EVT  0x0400
+#define NWK_MTO_RTG_REQ_EVT     0x0800
+#define NWK_BROADCAST_MSG_EVT   0x1000
 
 //NWK PACKET: FIELD IDENTIFIERS
 #define NWK_CMD_ID                  0
@@ -144,20 +144,25 @@ extern "C" {
 #define SIZE_OF_PAIRING_TABLE_ENTRY 6 //Two short addr and two endpts
 #define SIZE_OF_DEVICE_LIST_ENTRY   2 //short addr in dev list is 2 bytes
 
+// the default network radius set twice the value of <nwkMaxDepth>
+#define DEF_NWK_RADIUS           ( 2 * BEACON_MAX_DEPTH )
+
 #define NWK_SEND_TIMER_INTERVAL  2
 #define NWK_BCAST_TIMER_INTERVAL 100 // NWK_BCAST_TIMER_EVT duration
 
 #define INVALID_NODE_ADDR                           0xFFFE
 #define INVALID_PAN_ID                              0xFFFE
 
+   
 // Link cost constants  
 #define DEF_LINK_COST              1   // Default link cost
 #define MAX_LINK_COST              7   // max link cost
 #define LINK_DOWN_COST             0   // link is down if txCost is equal to LINK_DOWN_COST
 #define LINK_AGEOUT_COST           0   // Set link cost to zero if the neighbor age out
-
 // Link counter constants
-#define DEF_LINK_COUNTER           ((gLINK_DOWN_TRIGGER+1) / 2)   // Starting tx counter
+#define DEF_LINK_COUNTER           2   // Starting tx counter
+#define MAX_LINK_COUNTER           4   // max tx counter
+#define LINK_DOWN_TRIGGER          3   // Link is down if txCounter exceeds this
 #define LINK_ACTIVE_TRIGGER        2   // link is up if txCounter goes below this  
   
 //NWK Callback subscription IDs
@@ -208,6 +213,7 @@ typedef enum
   MACCMDBUF_DISASSOC_REQ
 } nwkMacCmds_t;
 
+
 typedef struct
 {
   byte  SequenceNum;
@@ -217,21 +223,20 @@ typedef struct
   byte  MaxDepth;
   byte  MaxRouters;
 
+  //neighborEntry_t *       pNeighborTable;
   byte  dummyNeighborTable;     // to make everything a byte!!
 
   byte  BroadcastDeliveryTime;
   byte  ReportConstantCost;
   byte  RouteDiscRetries;
 
+  //rtgEntry_t *                pRoutingTable;
   byte  dummyRoutingTable;      // to make everything a byte!!
 
   byte  SecureAllFrames;
   byte  SecurityLevel;
-#if defined ( COMPATIBILITY_221 )   // Obsolete - do not use
-  byte  nwkAllFresh;
-#endif
   byte  SymLink;
-  byte  CapabilityFlags;
+  byte  CapabilityInfo;
 
   uint16 TransactionPersistenceTime;
 
@@ -262,14 +267,10 @@ typedef struct
   // Version 1.1 - extended PAN ID
   uint8         extendedPANID[Z_EXTADDR_LEN];
   
-  // Network key flag
-  uint8      nwkKeyLoaded;     
-  // Key information - Moved to nwkKeyInfo_t after ZStack 2.3.0 
-  // If these elements are going to be reused make sure to consider the size 
-  // of the structures and padding specific to the target where the stack is 
-  // going to be running.
-  nwkKeyDesc spare1;    // Not used
-  nwkKeyDesc spare2;    // Not used
+  // Key information
+  uint8      nwkKeyLoaded;
+  nwkKeyDesc nwkActiveKey;
+  nwkKeyDesc nwkAlternateKey;
   
   // Zigbee Pro extensions
   uint8      nwkAddrAlloc;
@@ -285,12 +286,8 @@ typedef struct
   uint8      nwkConcentratorDiscoveryTime;  // Time period between two consecutive MTO route discovery
   uint8      nwkConcentratorRadius;         // Broadcast radius of the MTO route discovery
 
-#if defined ( COMPATIBILITY_221 )   // Obsolete - do not use
-  uint8      nwkMaxSourceRoute;
-  uint8      nwkSrcRtgExpiryTime;
-#else
   uint8      nwkAllFresh;
-#endif
+  uint8      nwkSrcRtgExpiryTime;
 
   uint16     nwkManagerAddr;        // Network Manager Address
   uint16     nwkTotalTransmissions;
@@ -313,8 +310,6 @@ extern networkDesc_t *NwkDescList;
 extern byte nwkExpectingMsgs;
 extern byte nwk_beaconPayload[ZMAC_MAX_BEACON_PAYLOAD_LEN];
 extern byte nwk_beaconPayloadSize;
-
-extern uint8 nwkSendMTOReq;
 
 /*********************************************************************
  * FUNCTIONS
@@ -349,8 +344,7 @@ extern ZStatus_t nwk_start_coord( void );
  * Free any network discovery data
  */
 extern void nwk_desc_list_free( void );
-extern networkDesc_t *nwk_getNetworkDesc( uint8 *ExtendedPANID, uint16 PanId, byte Channel );
-extern networkDesc_t *nwk_getNwkDescList( void );
+networkDesc_t *nwk_getNetworkDesc( uint8 *ExtendedPANID, uint16 PanId, byte Channel );
 extern void nwk_BeaconFromNative(byte* buff, byte size, beaconPayload_t* beacon);
 extern void nwk_BeaconToNative(beaconPayload_t* beacon, byte* buff, byte size);
 

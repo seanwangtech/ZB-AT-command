@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       zcl_pi.c
-  Revised:        $Date: 2010-09-28 08:39:46 -0700 (Tue, 28 Sep 2010) $
-  Revision:       $Revision: 23926 $
+  Revised:        $Date: 2007-07-31 09:16:11 -0700 (Tue, 31 Jul 2007) $
+  Revision:       $Revision: 14985 $
 
   Description:    Zigbee Cluster Library - Protocol Interfaces (PI)
 
@@ -217,7 +217,7 @@ ZStatus_t zclPI_Send_MatchProtocolAddrRsp( uint8 srcEP, afAddrType_t *dstAddr,
                                            uint8 disableDefaultRsp, uint8 seqNum )
 {
   uint8 *buf;
-  uint8 msgLen = Z_EXTADDR_LEN + 1 + len; // IEEE Address + 1 for length field
+  uint8 msgLen = 8 + 1 + len; // 8 for IEEE Addr + 1 for length field
   ZStatus_t stat;
 
   buf = osal_mem_alloc( msgLen ); // 1 for length field
@@ -288,50 +288,41 @@ ZStatus_t zclPI_Send_AdvertiseProtocolAddrCmd( uint8 srcEP, afAddrType_t *dstAdd
   return ( stat );
 }
 
+
 /*******************************************************************************
  * @fn      zclPI_Send_11073TransferAPDUCmd
  *
- * @brief   Call to send out an 11073 Transfer APDU Command. This command is 
- *          used when an 11073 network layer wishes to transfer an 11073 APDU 
+ * @brief   Call to send out a 11073 Transfer APDU Command. This command is 
+ *          used when a 11073 network layer wishes to transfer a 11073 APDU 
  *          across a ZigBee tunnel to another 11073 network layer.
- *
- *          The most stringent reliability characteristic of a given transport
- *          technology is “Best” reliability. Note - For ZigBee, this corresponds
- *          to use of APS-ACKs.
- *
- *          The least stringent reliability characteristic of a given transport
- *          technology is “Good” reliability. Note - For ZigBee, this corresponds
- *          to no use of APS-ACKs.
- *
- *          Note: This command shall always be transmitted with the Disable Default 
- *          Response bit in the ZCL frame control field set to 1.
  *
  * @param   srcEP - Sending application's endpoint
  * @param   dstAddr - where you want the message to go
  * @param   len - length of APDU
  * @param   apdu - APDU to be sent
+ * @param   disableDefaultRsp - whether to disable the Default Response command
  * @param   seqNum - sequence number
  *
  * @return  ZStatus_t
  */
 ZStatus_t zclPI_Send_11073TransferAPDUCmd( uint8 srcEP, afAddrType_t *dstAddr,
-                                           uint16 len, uint8 *apdu, uint8 seqNum )
+                                           uint16 len, uint8 *apdu, 
+                                           uint8 disableDefaultRsp, uint8 seqNum )
 {
   uint8 *buf;
   ZStatus_t stat;
 
-  buf = osal_mem_alloc( len+2 ); // 2 for length field (long octet string)
+  buf = osal_mem_alloc( len+2 ); // 2 for length field
   if ( buf )
   {  
     buf[0] = LO_UINT16( len );
     buf[1] = HI_UINT16( len );
     osal_memcpy( &(buf[2]), apdu, len );
 
-    // This command shall always be transmitted with the Disable Default 
-    // Response bit in the ZCL frame control field set to 1.
     stat = zcl_SendCommand( srcEP, dstAddr, ZCL_CLUSTER_ID_PI_11073_PROTOCOL_TUNNEL,
                             COMMAND_PI_11073_TUNNEL_TRANSFER_APDU, TRUE, 
-                            ZCL_FRAME_CLIENT_SERVER_DIR, TRUE, 0, seqNum, (len+2), buf );
+                            ZCL_FRAME_CLIENT_SERVER_DIR, disableDefaultRsp, 0, seqNum,
+                            (len+2), buf );
     osal_mem_free( buf );
   }
   else
@@ -343,50 +334,43 @@ ZStatus_t zclPI_Send_11073TransferAPDUCmd( uint8 srcEP, afAddrType_t *dstAddr,
 }
 
 /*******************************************************************************
- * @fn      zclPI_Send_11073ConnectReq
+ * @fn      zclPI_Send_11073TransferAPDUMetadataCmd
  *
- * @brief   Call to send out an 11073 Connect Request Command. This command
- *          is generated when a Data Management device wishes to connect to
- *          an 11073 agent device. This may be in response to receiving a 
- *          connect status notification command from that agent device with
- *          the connect status field set to RECONNECT_REQUEST.
+ * @brief   Call to send out a 11073 Transfer APDU and Metadata Command.
+ *          This command is used when a 11073 network layer wishes to 
+ *          transfer a 11073 APDU and associated metadata across a ZigBee
+ *          tunnel to another 11073 network layer.
  *
  * @param   srcEP - Sending application's endpoint
  * @param   dstAddr - where you want the message to go
- * @param   connectCtrl - connect control
- * @param   idleTimeout - inactivity time (in minutes) which Data Management device
- *                        will wait w/o receiving any data before it disconnects
- * @param   managerAddr - IEEE address (64-bit) of Data Management device 
- *                        transmitting this frame
- * @param   managerEP - source endpoint from which Data Management device is
-                        transmitting this frame
+ * @param   metadata - metadata to be sent
+ * @param   len - length of APDU
+ * @param   apdu - APDU to be sent
  * @param   disableDefaultRsp - whether to disable the Default Response command
  * @param   seqNum - sequence number
  *
  * @return  ZStatus_t
  */
-ZStatus_t zclPI_Send_11073ConnectReq( uint8 srcEP, afAddrType_t *dstAddr,
-                                      uint8 connectCtrl, uint16 idleTimeout,
-                                      uint8 *managerAddr, uint8 managerEP, 
-                                      uint8 disableDefaultRsp, uint8 seqNum )
+ZStatus_t zclPI_Send_11073TransferAPDUMetadataCmd( uint8 srcEP, afAddrType_t *dstAddr,
+                                                   uint16 metadata, uint16 len, uint8 *apdu, 
+                                                   uint8 disableDefaultRsp, uint8 seqNum )
 {
   uint8 *buf;
-  uint8 msgLen = 1 + 2 + Z_EXTADDR_LEN + 1; // connect ctrl + idle timeout + IEEE Address + manager EP
   ZStatus_t stat;
 
-  buf = osal_mem_alloc( msgLen );
+  buf = osal_mem_alloc( len+4 ); // Metadata (2 octets) + APDU Length (2 octets)
   if ( buf )
   {
-    buf[0] = connectCtrl;
-    buf[1] = LO_UINT16( idleTimeout );
-    buf[2] = HI_UINT16( idleTimeout );
-    osal_memcpy( &(buf[3]), managerAddr, Z_EXTADDR_LEN );
-    buf[11] = managerEP;
+    buf[0] = LO_UINT16( metadata );
+    buf[1] = HI_UINT16( metadata );
+    buf[2] = LO_UINT16( len );
+    buf[3] = HI_UINT16( len );
+    osal_memcpy( &(buf[4]), apdu, len );
 
     stat = zcl_SendCommand( srcEP, dstAddr, ZCL_CLUSTER_ID_PI_11073_PROTOCOL_TUNNEL,
-                            COMMAND_PI_11073_TUNNEL_CONNECT_REQ, TRUE, 
+                            COMMAND_PI_11073_TUNNEL_TRANSFER_APDU_METADATA, TRUE, 
                             ZCL_FRAME_CLIENT_SERVER_DIR, disableDefaultRsp, 0, seqNum,
-                            msgLen, buf );
+                            (len+4), buf );
     osal_mem_free( buf );
   }
   else
@@ -395,6 +379,37 @@ ZStatus_t zclPI_Send_11073ConnectReq( uint8 srcEP, afAddrType_t *dstAddr,
   }
   
   return ( stat );
+}
+
+
+/*******************************************************************************
+ * @fn      zclPI_Send_11073TransfeMetadataCmd
+ *
+ * @brief   Call to send out a 11073 Transfer Metadata Command. This command
+ *          is used when a 11073 network layer wishes to transfer metadata 
+ *          across a ZigBee tunnel to another 11073 network layer.
+ *
+ * @param   srcEP - Sending application's endpoint
+ * @param   dstAddr - where you want the message to go
+ * @param   metadata - metadata to be sent
+ * @param   disableDefaultRsp - whether to disable the Default Response command
+ * @param   seqNum - sequence number
+ *
+ * @return  ZStatus_t
+ */
+ZStatus_t zclPI_Send_11073TransferMetadataCmd( uint8 srcEP, afAddrType_t *dstAddr,
+                                               uint16 metadata, uint8 disableDefaultRsp,
+                                               uint8 seqNum )
+{
+  uint8 buf[2];
+
+  buf[0] = LO_UINT16( metadata );
+  buf[1] = HI_UINT16( metadata );
+
+  return ( zcl_SendCommand( srcEP, dstAddr, ZCL_CLUSTER_ID_PI_11073_PROTOCOL_TUNNEL,
+                            COMMAND_PI_11073_TUNNEL_TRANSFER_METADATA, TRUE, 
+                            ZCL_FRAME_CLIENT_SERVER_DIR, disableDefaultRsp, 0, seqNum,
+                            2, buf ) );
 }
 
 /*********************************************************************
@@ -651,44 +666,29 @@ static ZStatus_t zclPI_ProcessIn_11073TunnelCmds( zclIncoming_t *pInMsg,
       }
       break;
 
-    case COMMAND_PI_11073_TUNNEL_CONNECT_REQ:
-      if ( pCBs->pfnPI_11073ConnectReq )
+    case COMMAND_PI_11073_TUNNEL_TRANSFER_APDU_METADATA:
+      if ( pCBs->pfnPI_11073TransferAPDUMetadata )
       {
-        zcl11073ConnectReq_t cmd;
+        zcl11073TransferAPDUMetadata_t cmd;
         
         cmd.srcAddr = &(pInMsg->msg->srcAddr);
-        cmd.seqNum = pInMsg->hdr.transSeqNum;
-        cmd.connectCtrl = pInMsg->pData[0];
-        cmd.idleTimeout = BUILD_UINT16( pInMsg->pData[1], pInMsg->pData[2] );
-        cmd.managerAddr = &(pInMsg->pData[3]);
-        cmd.managerEP = pInMsg->pData[11];
-
-        pCBs->pfnPI_11073ConnectReq( &cmd );
+        cmd.metadata = BUILD_UINT16( pInMsg->pData[0], pInMsg->pData[1] );
+        cmd.len = BUILD_UINT16( pInMsg->pData[2], pInMsg->pData[3] );
+        cmd.apdu = &(pInMsg->pData[4]);
+        
+        pCBs->pfnPI_11073TransferAPDUMetadata( &cmd );
       }
       break;
 
-    case COMMAND_PI_11073_TUNNEL_DISCONNECT_REQ:
-      if ( pCBs->pfnPI_11073DisconnectReq )
+    case COMMAND_PI_11073_TUNNEL_TRANSFER_METADATA:
+      if ( pCBs->pfnPI_11073TransferMetadata )
       {
-        zcl11073DisconnectReq_t cmd;
+        zcl11073TransferMetadata_t cmd;
         
         cmd.srcAddr = &(pInMsg->msg->srcAddr);
-        cmd.seqNum = pInMsg->hdr.transSeqNum;
-        cmd.managerAddr = pInMsg->pData;
+        cmd.metadata = BUILD_UINT16( pInMsg->pData[0], pInMsg->pData[1] );
         
-        pCBs->pfnPI_11073DisconnectReq( &cmd );
-      }
-      break;
-
-    case COMMAND_PI_11073_TUNNEL_CONNECT_STATUS_NOTI:
-      if ( pCBs->pfnPI_11073ConnectStatusNoti )
-      {
-        zcl11073ConnectStatusNoti_t cmd;
-        
-        cmd.srcAddr = &(pInMsg->msg->srcAddr);
-        cmd.connectStatus = pInMsg->pData[0];
-        
-        pCBs->pfnPI_11073ConnectStatusNoti( &cmd );
+        pCBs->pfnPI_11073TransferMetadata( &cmd );
       }
       break;
 

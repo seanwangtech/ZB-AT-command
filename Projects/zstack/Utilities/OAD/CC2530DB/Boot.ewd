@@ -10,9 +10,9 @@
     <debug>1</debug>
     <settings>
       <name>C-SPY</name>
-      <archiveVersion>2</archiveVersion>
+      <archiveVersion>1</archiveVersion>
       <data>
-        <version>8</version>
+        <version>6</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -84,76 +84,12 @@
           <state></state>
         </option>
         <option>
+          <name>DdfFile</name>
+          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\CC2530.ddf</state>
+        </option>
+        <option>
           <name>Debugger data model</name>
           <state>1</state>
-        </option>
-        <option>
-          <name>OCImagesSuppressCheck1</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>OCImagesPath1</name>
-          <state></state>
-        </option>
-        <option>
-          <name>OCImagesSuppressCheck2</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>OCImagesPath2</name>
-          <state></state>
-        </option>
-        <option>
-          <name>OCImagesSuppressCheck3</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>OCImagesPath3</name>
-          <state></state>
-        </option>
-        <option>
-          <name>DdfFile slave</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>DdfFile master</name>
-          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\ioCC2530F256.ddf</state>
-        </option>
-        <option>
-          <name>OCImagesOffset1</name>
-          <state></state>
-        </option>
-        <option>
-          <name>OCImagesOffset2</name>
-          <state></state>
-        </option>
-        <option>
-          <name>OCImagesOffset3</name>
-          <state></state>
-        </option>
-        <option>
-          <name>OCImagesUse1</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>OCImagesUse2</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>OCImagesUse3</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Exclude Exit Breakpoint</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>Exclude Putchar Breakpoint</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Exclude Getchar Breakpoint</name>
-          <state>0</state>
         </option>
       </data>
     </settings>
@@ -278,56 +214,10 @@
       </data>
     </settings>
     <settings>
-      <name>FS2_ID</name>
-      <archiveVersion>1</archiveVersion>
-      <data>
-        <version>0</version>
-        <wantNonLocal>1</wantNonLocal>
-        <debug>1</debug>
-        <option>
-          <name>Fs2DriverMandatory</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>Configuration</name>
-          <version>0</version>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Has program RAM</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Program RAM areas</name>
-          <state>0x8000-0x87FF,0xC000-0xC7FF</state>
-        </option>
-        <option>
-          <name>Has program Flash</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Program Flash cfg entry</name>
-          <state>nRF24LU1</state>
-        </option>
-        <option>
-          <name>Program Flash areas</name>
-          <state>0x0000-0x7FFF</state>
-        </option>
-        <option>
-          <name>FS2SuppressDownload</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>FS2VerifyDownload</name>
-          <state>0</state>
-        </option>
-      </data>
-    </settings>
-    <settings>
       <name>INFINEON_ID</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>1</version>
+        <version>0</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -351,6 +241,10 @@
           <state>localhost</state>
         </option>
         <option>
+          <name>InfServerName</name>
+          <state>JTAG over USB Box</state>
+        </option>
+        <option>
           <name>InfKey1</name>
           <state>0</state>
         </option>
@@ -372,32 +266,6 @@
         </option>
         <option>
           <name>InfineonSwBp</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>InfServerName2</name>
-          <version>0</version>
-          <state>3</state>
-        </option>
-      </data>
-    </settings>
-    <settings>
-      <name>NS_ID</name>
-      <archiveVersion>1</archiveVersion>
-      <data>
-        <version>0</version>
-        <wantNonLocal>1</wantNonLocal>
-        <debug>1</debug>
-        <option>
-          <name>NsDriverMandatory</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>NSSuppressDownload</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>NSVerifyDownload</name>
           <state>0</state>
         </option>
       </data>
@@ -477,7 +345,7 @@
       <name>AD2_ID</name>
       <archiveVersion>2</archiveVersion>
       <data>
-        <version>6</version>
+        <version>5</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -507,6 +375,14 @@
           <state>1</state>
         </option>
         <option>
+          <name>HandshakeAt9600</name>
+          <state>1</state>
+        </option>
+        <option>
+          <name>ADeProtocol</name>
+          <state>0</state>
+        </option>
+        <option>
           <name>ADuCpuClockFrequency</name>
           <state>12582912</state>
         </option>
@@ -517,10 +393,6 @@
         <option>
           <name>AD2EraseDataFlash</name>
           <state>1</state>
-        </option>
-        <option>
-          <name>Debug Interface</name>
-          <state>0</state>
         </option>
       </data>
     </settings>
@@ -599,7 +471,7 @@
       <name>SIM_ID</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>2</version>
+        <version>0</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -607,16 +479,8 @@
           <state>1</state>
         </option>
         <option>
-          <name>SimEnablePSP</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>SimPspOverrideConfig</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>SimPspConfigFile</name>
-          <state>###Uninitialized###</state>
+          <name>Guard Stack Pointers</name>
+          <state>1</state>
         </option>
       </data>
     </settings>
@@ -630,11 +494,11 @@
         <loadFlag>0</loadFlag>
       </plugin>
       <plugin>
-        <file>$EW_DIR$\common\plugins\Stack\Stack.ENU.ewplugin</file>
+        <file>$EW_DIR$\common\plugins\Profiling\Profiling.ENU.ewplugin</file>
         <loadFlag>1</loadFlag>
       </plugin>
       <plugin>
-        <file>$EW_DIR$\common\plugins\SymList\SymList.ENU.ewplugin</file>
+        <file>$EW_DIR$\common\plugins\Stack\Stack.ENU.ewplugin</file>
         <loadFlag>1</loadFlag>
       </plugin>
     </debuggerPlugins>

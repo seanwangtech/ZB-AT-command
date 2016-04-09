@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       hal_spi.h
-  Revised:        $Date: 2010-08-10 19:12:51 -0700 (Tue, 10 Aug 2010) $
-  Revision:       $Revision: 23375 $
+  Revised:        $Date: 2009-03-29 10:51:47 -0700 (Sun, 29 Mar 2009) $
+  Revision:       $Revision: 19585 $
 
   Description:     This file contains the interface to the SPI Service.
 

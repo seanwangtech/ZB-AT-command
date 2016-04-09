@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       ZGlobals.c
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2010-01-17 08:58:03 -0800 (Sun, 17 Jan 2010) $
+  Revision:       $Revision: 21533 $
 
   Description:    User definable Z-Stack parameters.
 
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -16,13 +16,13 @@
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -46,8 +46,12 @@
 #include "ZDObject.h"
 #include "ZGlobals.h"
 #include "ZDNwkMgr.h"
+
+#if defined(ZCL_KEY_ESTABLISH)
+#include "zcl_key_establish.h"
+#endif
+
 #include "OnBoard.h"
-#include "ZDSecMgr.h"
 
 /*********************************************************************
  * MACROS
@@ -103,8 +107,23 @@ uint8 zgSecurePermitJoin = true;
 // Trust center address
 uint16 zgTrustCenterAddr = ZG_TRUSTCENTER_ADDR;
 
-// Route Discovery Time - amount of time that a route request lasts
-uint8 zgRouteDiscoveryTime = ROUTE_DISCOVERY_TIME;
+#if defined(ZCL_KEY_ESTABLISH)
+
+// 32 bits counter for random number generator
+uint32 zgRNGCounter = 1;
+
+// Certificate Authority Public Key
+uint8 zgCAPublicKey[ZCL_KEY_ESTABLISHMENT_PUBLIC_KEY_LENGTH];
+
+// Local Certificate for AMI CBKE
+uint8 zgLocalCertificate[ZCL_KEY_ESTABLISHMENT_CERTIFICATE_LENGTH];
+
+// Static Private Key
+uint8 zgStaticPrivateKey[ZCL_KEY_ESTABLSIHMENT_PRIVATE_KEY_LENTGH];
+
+// For test only
+uint8 zgRemotePublicKey[ZCL_KEY_ESTABLISHMENT_PUBLIC_KEY_LENGTH];
+#endif
 
 // Route expiry
 uint8 zgRouteExpiryTime = ROUTE_EXPIRY_TIME;
@@ -125,10 +144,6 @@ uint8 zgConcentratorEnable = CONCENTRATOR_ENABLE;
 uint8 zgConcentratorDiscoveryTime = CONCENTRATOR_DISCOVERY_TIME;
 uint8 zgConcentratorRadius = CONCENTRATOR_RADIUS;
 uint8 zgConcentratorRC = CONCENTRATOR_ROUTE_CACHE;   // concentrator with route cache (no memory constraints)
-uint8 zgNwkSrcRtgExpiryTime = SRC_RTG_EXPIRY_TIME;
-
-// Cleanup Child Table according to routing traffic
-uint8 zgRouterOffAssocCleanup = FALSE;
 
 /*********************************************************************
  * APS GLOBAL VARIABLES
@@ -158,22 +173,31 @@ uint8 zgApsUseExtendedPANID[Z_EXTADDR_LEN] = {00,00,00,00,00,00,00,00};
 // on startup. Default set to true
 uint8 zgApsUseInsecureJoin = TRUE;
 
+// The size of a tx window when using fragmentation
+uint8 zgApscMaxWindowSize = APS_DEFAULT_WINDOW_SIZE;
+
+// The delay between tx packets when using fragmentaition
+uint16 zgApsInterframeDelay = APS_DEFAULT_INTERFRAME_DELAY;
+
 // The radius of broadcast multicast transmissions
 uint8 zgApsNonMemberRadius = APS_DEFAULT_NONMEMBER_RADIUS;
-
 /*********************************************************************
  * SECURITY GLOBAL VARIABLES
  */
+
+// This is the pre-configured key in use (from NV memory)
+uint8 zgPreConfigKey[SEC_KEY_LEN];
 
 // If true, preConfigKey should be configured on all devices on the network
 // If false, it is configured only on the coordinator and sent to other
 // devices upon joining.
 uint8 zgPreConfigKeys = FALSE;// TRUE;
 
-// If true, defaultTCLinkKey should be configured on all devices on the
-// network. If false, individual trust center link key between each device and
+// If true, defaultTCLinkKey should be configured on all devices on the 
+// network. If false, individual trust center link key between each device and 
 // the trust center should be manually configured via MT_WRITE_NV
 uint8 zgUseDefaultTCLK = TRUE; // FALSE
+
 
 /*********************************************************************
  * ZDO GLOBAL VARIABLES
@@ -193,9 +217,6 @@ uint8 zgStartDelay = START_DELAY;
 uint8 zgZdoDirectCB = FALSE;
 #endif
 
-// Min number of attempted transmissions for Channel Interference detection
-uint8 zgNwkMgrMinTransmissions = ZDNWKMGR_MIN_TRANSMISSIONS;
-
 /*********************************************************************
  * APPLICATION GLOBAL VARIABLES
  */
@@ -211,7 +232,7 @@ uint8 zgNwkMgrMode = ZDNWKMGR_ENABLE;
 uint8 zgSapiEndpoint = SAPI_ENDPOINT;
 
 /*********************************************************************
- * LOCAL VARIABLES
+ * LOCAl VARIABLES
  */
 
 /*********************************************************************
@@ -232,7 +253,7 @@ static CONST zgItem_t zgItemTable[] =
     ZCD_NV_POLL_RATE, sizeof(zgPollRate), &zgPollRate
   },
   {
-    ZCD_NV_QUEUED_POLL_RATE, sizeof(zgQueuedPollRate), &zgQueuedPollRate
+   ZCD_NV_QUEUED_POLL_RATE, sizeof(zgQueuedPollRate), &zgQueuedPollRate
   },
   {
     ZCD_NV_RESPONSE_POLL_RATE, sizeof(zgResponsePollRate), &zgResponsePollRate
@@ -241,10 +262,10 @@ static CONST zgItem_t zgItemTable[] =
     ZCD_NV_REJOIN_POLL_RATE, sizeof(zgRejoinPollRate), &zgRejoinPollRate
   },
   {
-    ZCD_NV_DATA_RETRIES, sizeof(zgMaxDataRetries), &zgMaxDataRetries
+   ZCD_NV_DATA_RETRIES, sizeof(zgMaxDataRetries), &zgMaxDataRetries
   },
   {
-    ZCD_NV_POLL_FAILURE_RETRIES, sizeof(zgMaxPollFailureRetries), &zgMaxPollFailureRetries
+     ZCD_NV_POLL_FAILURE_RETRIES, sizeof(zgMaxPollFailureRetries), &zgMaxPollFailureRetries
   },
   {
     ZCD_NV_CHANLIST, sizeof(zgDefaultChannelList), &zgDefaultChannelList
@@ -288,15 +309,12 @@ static CONST zgItem_t zgItemTable[] =
   {
     ZCD_NV_CONCENTRATOR_RC, sizeof(zgConcentratorRC), &zgConcentratorRC
   },
-  {
-    ZCD_NV_SRC_RTG_EXPIRY_TIME, sizeof(zgNwkSrcRtgExpiryTime), &zgNwkSrcRtgExpiryTime
-  },
-  {
-    ZCD_NV_ROUTE_DISCOVERY_TIME, sizeof(zgRouteDiscoveryTime), &zgRouteDiscoveryTime
-  },
 #ifndef NONWK
   {
     ZCD_NV_PANID, sizeof(zgConfigPANID), &zgConfigPANID
+  },
+  {
+    ZCD_NV_PRECFGKEY, SEC_KEY_LEN, &zgPreConfigKey
   },
   {
     ZCD_NV_PRECFGKEYS_ENABLE, sizeof(zgPreConfigKeys), &zgPreConfigKeys
@@ -313,6 +331,23 @@ static CONST zgItem_t zgItemTable[] =
   {
     ZCD_NV_TRUSTCENTER_ADDR, sizeof(zgTrustCenterAddr), &zgTrustCenterAddr
   },
+#if defined(ZCL_KEY_ESTABLISH)
+  {
+    ZCD_NV_RNG_COUNTER, sizeof(zgRNGCounter), &zgRNGCounter
+  },
+  {
+    ZCD_NV_CA_PUBLIC_KEY, ZCL_KEY_ESTABLISHMENT_PUBLIC_KEY_LENGTH, zgCAPublicKey
+  },
+  {
+    ZCD_NV_lOCAL_CERTIFICATE, ZCL_KEY_ESTABLISHMENT_CERTIFICATE_LENGTH, zgLocalCertificate
+  },
+  {
+    ZCD_NV_STATIC_PRIVATE_KEY, ZCL_KEY_ESTABLSIHMENT_PRIVATE_KEY_LENTGH, zgStaticPrivateKey
+  },
+  {
+    ZCD_NV_STATIC_PUBLIC_KEY, ZCL_KEY_ESTABLISHMENT_PUBLIC_KEY_LENGTH, zgRemotePublicKey
+  },
+#endif // CBKE
 #endif // NONWK
   {
     ZCD_NV_APS_FRAME_RETRIES, sizeof(zgApscMaxFrameRetries), &zgApscMaxFrameRetries
@@ -333,6 +368,12 @@ static CONST zgItem_t zgItemTable[] =
     ZCD_NV_APS_USE_INSECURE_JOIN, sizeof(zgApsUseInsecureJoin), &zgApsUseInsecureJoin
   },
   {
+    ZCD_NV_APSF_WINDOW_SIZE, sizeof(zgApscMaxWindowSize), &zgApscMaxWindowSize
+  },
+  {
+    ZCD_NV_APSF_INTERFRAME_DELAY, sizeof(zgApsInterframeDelay), &zgApsInterframeDelay
+  },
+  {
     ZCD_NV_APS_NONMEMBER_RADIUS, sizeof(zgApsNonMemberRadius), &zgApsNonMemberRadius
   },
   {
@@ -343,12 +384,6 @@ static CONST zgItem_t zgItemTable[] =
   },
   {
     ZCD_NV_NWK_MGR_MODE, sizeof(zgNwkMgrMode), &zgNwkMgrMode
-  },
-  {
-    ZCD_NV_NWKMGR_MIN_TX, sizeof(zgNwkMgrMinTransmissions), &zgNwkMgrMinTransmissions
-  },
-  {
-    ZCD_NV_ROUTER_OFF_ASSOC_CLEANUP, sizeof(zgRouterOffAssocCleanup), &zgRouterOffAssocCleanup
   },
 #endif // NV_INIT
   // Last item -- DO NOT MOVE IT!
@@ -363,9 +398,6 @@ static CONST zgItem_t zgItemTable[] =
 
 static uint8 zgItemInit( uint16 id, uint16 len, void *buf, uint8 setDefault );
 
-#ifndef NONWK
-static uint8 zgPreconfigKeyInit( uint8 setDefault );
-#endif
 
 /*********************************************************************
  * @fn       zgItemInit()
@@ -389,6 +421,7 @@ static uint8 zgPreconfigKeyInit( uint8 setDefault );
  */
 static uint8 zgItemInit( uint16 id, uint16 len, void *buf, uint8 setDefault )
 {
+
   uint8 status;
 
   // If the item doesn't exist in NV memory, create and initialize
@@ -399,7 +432,7 @@ static uint8 zgItemInit( uint16 id, uint16 len, void *buf, uint8 setDefault )
     if ( setDefault )
     {
       // Write the default value back to NV
-      status = osal_nv_write( id, 0, len, buf );
+      status =  osal_nv_write( id, 0, len, buf );
     }
     else
     {
@@ -415,6 +448,7 @@ static uint8 zgItemInit( uint16 id, uint16 len, void *buf, uint8 setDefault )
  * API FUNCTIONS
  */
 
+
 /*********************************************************************
  * @fn          zgInit
  *
@@ -427,6 +461,7 @@ static uint8 zgItemInit( uint16 id, uint16 len, void *buf, uint8 setDefault )
  * NOTE: The Startup Options (ZCD_NV_STARTUP_OPTION) indicate
  *       that the Config state items (zgItemTable) need to be
  *       set to defaults (ZCD_STARTOPT_DEFAULT_CONFIG_STATE). The
+ *
  *
  * @param       none
  *
@@ -466,19 +501,13 @@ uint8 zgInit( void )
   // Initialize the Extended PAN ID as my own extended address
   ZMacGetReq( ZMacExtAddr, zgExtendedPANID );
 
+#ifndef NONWK
+  // Initialize the Pre-Configured Key to the default key
+  osal_memcpy( zgPreConfigKey, defaultKey, SEC_KEY_LEN );  // Do NOT Change!!!
+#endif // NONWK
+
   // Initialize the items table
   zgInitItems( setDefault );
-
-#ifndef NONWK
-  if ( ZG_SECURE_ENABLED )
-  {
-    // Initialize the Pre-Configured Key to the default key
-    zgPreconfigKeyInit( setDefault );
-
-    // Initialize NV items for all Keys: NWK, APS, TCLK and Master
-    ZDSecMgrInitNVKeyTables( setDefault );
-  }
-#endif // NONWK
 
   // Clear the Config State default
   if ( setDefault )
@@ -620,51 +649,9 @@ void zgSetItem( uint16 id, uint16 len, void *buf )
     // Move on to the next item
     i++;
   }
+
 }
 
-#ifndef NONWK
-/*********************************************************************
- * @fn       zgPreconfigKeyInit()
- *
- * @brief
- *
- *   Initialize ZCD_NV_PRECFGKEY NV item. If the item doesn't exist in NV memory,
- *   write the system default (value passed in) into NV memory. But if
- *   it exists do not overwrite it.
- *
- *   Also, if setDefault is TRUE and the item exists, we will write
- *   the default value to NV space.
- *
- * @param   setDefault - TRUE to set default
- *
- * @return  ZSUCCESS if successful, NV_ITEM_UNINIT if item did not
- *          exist in NV, NV_OPER_FAILED if failure.
- */
-static uint8 zgPreconfigKeyInit( uint8 setDefault )
-{
-  uint8 zgPreConfigKey[SEC_KEY_LEN];
-  uint8 status;
-
-  // Initialize the Pre-Configured Key to the default key
-  osal_memcpy( zgPreConfigKey, defaultKey, SEC_KEY_LEN );
-
-  // If the item doesn't exist in NV memory, create and initialize it
-  status = osal_nv_item_init( ZCD_NV_PRECFGKEY, SEC_KEY_LEN, zgPreConfigKey );
-  if ( status == ZSUCCESS )
-  {
-    if ( setDefault )
-    {
-      // Write the default value back to NV
-      status =  osal_nv_write( ZCD_NV_PRECFGKEY, 0, SEC_KEY_LEN, zgPreConfigKey );
-    }
-  }
-
-  // clear local copy of default key
-  osal_memset(zgPreConfigKey, 0x00, SEC_KEY_LEN);
-
-  return (status);
-}
-#endif
 
 /*********************************************************************
 *********************************************************************/

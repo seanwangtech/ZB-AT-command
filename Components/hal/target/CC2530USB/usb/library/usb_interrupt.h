@@ -165,7 +165,7 @@ void usbirqHookProcessEvents(void);
 //-------------------------------------------------------------------------------------------------------
 // Function prototypes
 void usbirqInit(uint16 irqMask);
-#if defined HAL_SB_BOOT_CODE
+#if defined HAL_USB_BOOT_CODE
 void usbirqHandler(void);
 #else
 __interrupt void usbirqHandler(void);

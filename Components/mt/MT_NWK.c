@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       MT_NWK.c
-  Revised:        $Date: 2010-05-06 16:49:18 -0700 (Thu, 06 May 2010) $
-  Revision:       $Revision: 22409 $
+  Revised:        $Date: 2009-08-26 14:17:16 -0700 (Wed, 26 Aug 2009) $
+  Revision:       $Revision: 20661 $
 
 
     Description:    MonitorTest functions for the NWK layer.
 
-    Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
+    Copyright 2007-2009 Texas Instruments Incorporated. All rights reserved.
 
     IMPORTANT: Your use of this Software is limited to those specific rights
     granted under the terms of a software license agreement between the user
@@ -329,33 +329,15 @@ void MT_NlmeJoinRequest(uint8 *pBuf)
 {
   uint8 retValue = ZFailure;
   uint8 dummyExPANID[Z_EXTADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  uint16 panID;
   uint8 cmdId;
-  networkDesc_t *pNwkDesc;   
-  
+
   /* parse header */
   cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;     
-  panID = BUILD_UINT16(pBuf[0], pBuf[1]);
-  
-  if((pNwkDesc = nwk_getNetworkDesc(dummyExPANID,panID, pBuf[2])) != NULL )
-  {  
-    if (pNwkDesc->chosenRouter == INVALID_NODE_ADDR )
-    {
-      retValue = ZNwkNotPermitted;
-    }
-    else
-    {      
-      retValue = NLME_JoinRequest( dummyExPANID, panID, pBuf[2], pBuf[3],
-                                   pNwkDesc->chosenRouter, pNwkDesc->chosenRouterDepth );
-    }
-  }
-  else
-  {
-    retValue = ZNwkNotPermitted;    
-  }
+  pBuf += MT_RPC_FRAME_HDR_SZ;
 
-  if ( pBuf[3] & CAPINFO_RCVR_ON_IDLE )
+	retValue = NLME_JoinRequest(dummyExPANID, BUILD_UINT16(pBuf[0], pBuf[1]), pBuf[2], pBuf[3]);
+
+  if ( pBuf[6] & CAPINFO_RCVR_ON_IDLE )
   {
     /* The receiver is on, turn network layer polling off. */
     NLME_SetPollRate( 0 );
@@ -619,9 +601,9 @@ void MT_NlmeOrphanJoinRequest(uint8 *pBuf)
       _NIB.scanDuration = *pBuf;
       _NIB.nwkLogicalChannel = attr;
       _NIB.channelList = channelList;
-      if ( !_NIB.CapabilityFlags )
+      if ( !_NIB.CapabilityInfo )
       {
-        _NIB.CapabilityFlags = ZDO_Config_Node_Descriptor.CapabilityFlags;
+        _NIB.CapabilityInfo = ZDO_Config_Node_Descriptor.CapabilityFlags;
       }
 
       devState = DEV_NWK_ORPHAN;
@@ -844,8 +826,8 @@ void nwk_MTCallbackSubNetworkDiscoveryConfirm( uint8 ResultCount, networkDesc_t 
 		  *msg++ = LO_UINT16( NetworkList->panId );
 		  *msg++ = HI_UINT16( NetworkList->panId );
 		  *msg++ = NetworkList->logicalChannel;
-		  *msg++ = BEACON_ORDER_NO_BEACONS;
-		  *msg++ = BEACON_ORDER_NO_BEACONS;
+		  *msg++ = NetworkList->beaconOrder;
+		  *msg++ = NetworkList->superFrameOrder;
 		  *msg++ = NetworkList->routerCapacity;
 		  *msg++ = NetworkList->deviceCapacity;
 		  *msg++ = NetworkList->version;
@@ -867,12 +849,12 @@ void nwk_MTCallbackSubNetworkDiscoveryConfirm( uint8 ResultCount, networkDesc_t 
  *
  * @param       ShortAddress - 16-bit address
  * @param       ExtendedAddress - IEEE (64-bit) address
- * @param       CapabilityFlags - Association Capability Information
+ * @param       CapabilityInformation - Association Capability Information
  *
  * @return      ZStatus_t
  ***************************************************************************************************/
 void nwk_MTCallbackSubJoinIndication( uint16 ShortAddress, uint8 *ExtendedAddress,
-                                      uint8 CapabilityFlags )
+                                      uint8 CapabilityInformation )
 {
   uint8 *msgPtr;
   uint8 *msg;
@@ -893,7 +875,7 @@ void nwk_MTCallbackSubJoinIndication( uint16 ShortAddress, uint8 *ExtendedAddres
     osal_cpyExtAddr( msg, ExtendedAddress );
     msg += Z_EXTADDR_LEN;
 
-    *msg = CapabilityFlags;
+    *msg = CapabilityInformation;
 
     MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_AREQ | (uint8)MT_RPC_SYS_NWK), MT_NLME_JOIN_IND, len, msgPtr );
 

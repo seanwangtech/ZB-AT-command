@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       hal_mac_cfg.h
-  Revised:        $Date: 2010-04-12 09:38:02 -0700 (Mon, 12 Apr 2010) $
-  Revision:       $Revision: 22158 $
+  Revised:        $Date: 2009-06-05 09:21:31 -0700 (Fri, 05 Jun 2009) $
+  Revision:       $Revision: 20106 $
 
   Description:    Describe the purpose and contents of the file.
 
@@ -55,6 +55,15 @@
  * ------------------------------------------------------------------------------------------------
  */
 #define HAL_MAC_RSSI_OFFSET                         -73   /* no units */
+#if defined (HAL_PA_LNA)
+/* CC22591 RSSI offset */
+#define HAL_MAC_RSSI_LNA_HGM_OFFSET                 -9
+#define HAL_MAC_RSSI_LNA_LGM_OFFSET                  4
+#elif defined (HAL_PA_LNA_CC2590)
+/* CC22590 RSSI offset */
+#define HAL_MAC_RSSI_LNA_HGM_OFFSET                 -10   /* TBD: place holder */
+#define HAL_MAC_RSSI_LNA_LGM_OFFSET                  0    /* TBD: place holder */
+#endif
 
 
 /**************************************************************************************************

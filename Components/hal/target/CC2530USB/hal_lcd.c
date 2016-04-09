@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_lcd.c
-  Revised:        $Date: 2010-02-25 12:33:58 -0800 (Thu, 25 Feb 2010) $
-  Revision:       $Revision: 21797 $
+  Revised:        $Date: 2009-03-12 16:25:22 -0700 (Thu, 12 Mar 2009) $
+  Revision:       $Revision: 19404 $
 
   Description:    This file contains the interface to the HAL LCD Service.
 
 
-  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 - 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -49,6 +49,8 @@
 #if defined (ZTOOL_P1) || defined (ZTOOL_P2)
   #include "DebugTrace.h"
 #endif
+
+#if (HAL_LCD == TRUE)
 
 /**************************************************************************************************
  *                                          CONSTANTS
@@ -196,9 +198,9 @@
 #define LCD_ACTIVATE_RESET()  HAL_IO_SET(HAL_LCD_RESET_PORT, HAL_LCD_RESET_PIN, 0);
 #define LCD_RELEASE_RESET()   HAL_IO_SET(HAL_LCD_RESET_PORT, HAL_LCD_RESET_PIN, 1);
 
-#if (HAL_LCD == TRUE)
+
 /**************************************************************************************************
- *                                       LOCAL VARIABLES
+ *                                       GLOBAL VARIABLES
  **************************************************************************************************/
 
 static uint8 *Lcd_Line1;
@@ -216,7 +218,6 @@ void HalLcd_HW_Write(uint8 data);
 void HalLcd_HW_SetContrast(uint8 value);
 void HalLcd_HW_WriteChar(uint8 line, uint8 col, char text);
 void HalLcd_HW_WriteLine(uint8 line, const char *pText);
-#endif //LCD
 
 /**************************************************************************************************
  * @fn      HalLcdInit
@@ -229,8 +230,8 @@ void HalLcd_HW_WriteLine(uint8 line, const char *pText);
  **************************************************************************************************/
 void HalLcdInit(void)
 {
-#if (HAL_LCD == TRUE)
   Lcd_Line1 = NULL;
+#if (HAL_LCD == TRUE)
   HalLcd_HW_Init();
 #endif
 }
@@ -275,7 +276,7 @@ void HalLcdWriteString ( char *str, uint8 option)
   if ( Lcd_Line1 == NULL )
   {
     Lcd_Line1 = osal_mem_alloc( HAL_LCD_MAX_CHARS+1 );
-    HalLcdWriteString( "TexasInstruments", 1 );
+    HalLcdWriteString( "Texas Instruments", 1 );
   }
 
   strLen = (uint8)osal_strlen( (char*)str );
@@ -487,7 +488,6 @@ void HalLcdDisplayPercentBar( char *title, uint8 value )
 
 }
 
-#if (HAL_LCD == TRUE)
 /**************************************************************************************************
  *                                    HARDWARE LCD
  **************************************************************************************************/

@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       znp_app.c
-  Revised:        $Date: 2011-06-01 14:52:32 -0700 (Wed, 01 Jun 2011) $
-  Revision:       $Revision: 26173 $
+  Revised:        $Date: 2010-01-17 08:58:03 -0800 (Sun, 17 Jan 2010) $
+  Revision:       $Revision: 21533 $
 
   Description:    This file is the Application implementation for the ZNP.
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -52,20 +52,56 @@
 #include "MT_UTIL.h"
 #include "OSAL.h"
 #include "OSAL_Nv.h"
-#if defined POWER_SAVING || defined CC2531ZNP
+#if defined POWER_SAVING
 #include "OSAL_PwrMgr.h"
-#endif
+#endif        
 #include "ZComDef.h"
-#include "ZMAC.h"
 #include "znp_app.h"
 #include "znp_spi.h"
+
+/* ------------------------------------------------------------------------------------------------
+ *                                           Constants
+ * ------------------------------------------------------------------------------------------------
+ */
+
+#define ZNP_UART_PORT                      0
+#define ZNP_UART_BAUD                      HAL_UART_BR_115200
+
+#if defined CC2531ZNP
+#define ZNP_TX_MAX                         255
+#else
+#define ZNP_TX_MAX                         HAL_UART_DMA_TX_MAX
+#endif
+
+/* ------------------------------------------------------------------------------------------------
+ *                                           Macros 
+ * ------------------------------------------------------------------------------------------------
+ */
+
+#define MAC_RADIO_TX_ON()     st( RFST = ISTXON;   )
+
+#define MOD_IF             4     // ~Modulation bit of MDMTEST1 register.
+#define TX_PWR_MOD__SET(MOD_) st ( \
+  if ((MOD_)) \
+  { \
+    MDMTEST1 |= BV(MOD_IF); \
+  } \
+  else \
+  { \
+    MDMTEST1 &= ~BV(MOD_IF); \
+  } \
+);
+
+#define TX_PWR_TONE_SET(TONE) st ( \
+  MDMTEST0 &= ~0xF0; \
+  MDMTEST0 |= (TONE << 4); \
+)
 
 /* ------------------------------------------------------------------------------------------------
  *                                           Local Functions
  * ------------------------------------------------------------------------------------------------
  */
 
-static void npInit(void);
 static void npInitNV(void);
 
 static void npUartCback(uint8 port, uint8 event);
@@ -80,6 +116,10 @@ uint8* npSpiPollCallback(void);
 bool npSpiReadyCallback(void);
 #endif
 
+#if ZNP_RUN_CRC
+static void znpCrc(void);
+#endif
+
 /* ------------------------------------------------------------------------------------------------
  *                                           Local Variables
  * ------------------------------------------------------------------------------------------------
@@ -87,17 +127,26 @@ bool npSpiReadyCallback(void);
 
 static osal_msg_q_t npTxQueue;
 
+#if ZNP_RUN_CRC
+__root __code const unsigned char CRC[4] @ 0x3FFF4 = {
+  0xFF,
+  0xFF,
+  0x5F,
+  0xD9
+};
+#endif
+
 /* ------------------------------------------------------------------------------------------------
  *                                           Global Variables
  * ------------------------------------------------------------------------------------------------
  */
 
+uint8 znpTaskId;
 uint8 znpCfg1;
-uint8 znpCfg0;
-#if defined TC_LINKKEY_JOIN
+#if ZNP_ZCL
 extern uint8 zcl_TaskID;
 extern void zclProcessMessageMSG(afIncomingMSGPacket_t *pkt);
-#endif
+#endif        
 
 /**************************************************************************************************
  * @fn          znpInit
@@ -117,8 +166,41 @@ extern void zclProcessMessageMSG(afIncomingMSGPacket_t *pkt);
  */
 void znpInit(uint8 taskId)
 {
+#if ZNP_RUN_CRC
+  znpCrc();
+#endif
+
+  if (ZNP_CFG1_UART == znpCfg1)
+  {
+    halUARTCfg_t uartConfig;
+
+    uartConfig.configured           = TRUE;
+    uartConfig.baudRate             = ZNP_UART_BAUD;
+    uartConfig.flowControl          = TRUE;
+    uartConfig.flowControlThreshold = 0;  // CC2530 by #define - see hal_board_cfg.h
+    uartConfig.rx.maxBufSize        = 0;  // CC2530 by #define - see hal_board_cfg.h
+    uartConfig.tx.maxBufSize        = 0;  // CC2530 by #define - see hal_board_cfg.h
+    uartConfig.idleTimeout          = 0;  // CC2530 by #define - see hal_board_cfg.h
+    uartConfig.intEnable            = TRUE;
+    uartConfig.callBackFunc         = npUartCback;
+    HalUARTOpen(ZNP_UART_PORT, &uartConfig);
+    MT_UartRegisterTaskID(taskId);
+  }
+  else
+  {
+    //npSpiInit() is called by hal_spi.c: HalSpiInit().
+  }
+
   znpTaskId = taskId;
-  osal_set_event(taskId, ZNP_SECONDARY_INIT_EVENT);
+  MT_Init(taskId);
+  npInitNV();
+
+#if ZNP_ZCL
+  zcl_TaskID = taskId;
+#endif        
+#if defined CC2531ZNP
+  (void)osal_pwrmgr_task_state(znpTaskId, PWRMGR_HOLD);
+#endif
 }
 
 /**************************************************************************************************
@@ -157,22 +239,23 @@ uint16 znpEventLoop(uint8 taskId, uint16 events)
         MT_ProcessIncoming(((mtOSALSerialData_t *)pMsg)->msg);
         break;
 
-#if defined TC_LINKKEY_JOIN
+#if ZNP_ZCL
 #if defined (MT_UTIL_FUNC)
       case ZCL_KEY_ESTABLISH_IND:
         MT_UtilKeyEstablishInd((keyEstablishmentInd_t *)pMsg);
         break;
-#endif
-#endif
+#endif        
+#endif        
 
       case AF_INCOMING_MSG_CMD:
-#if defined TC_LINKKEY_JOIN
-        if (ZCL_KEY_ESTABLISHMENT_ENDPOINT == (((afIncomingMSGPacket_t *)pMsg)->endPoint))
+#if ZNP_ZCL
+        if ((ZCL_KEY_ESTABLISHMENT_ENDPOINT == (((afIncomingMSGPacket_t *)pMsg)->endPoint)) ||
+            (ZCL_KEY_ESTABLISHMENT_ENDPOINT == (((afIncomingMSGPacket_t *)pMsg)->srcAddr.endPoint)))
         {
           zclProcessMessageMSG((afIncomingMSGPacket_t *)pMsg);
         }
         else
-#endif
+#endif        
         {
           MT_AfIncomingMsg((afIncomingMSGPacket_t *)pMsg);
         }
@@ -256,16 +339,16 @@ uint16 znpEventLoop(uint8 taskId, uint16 events)
     events ^= ZNP_PWRMGR_CONSERVE_EVENT;
   }
 #endif
-  else if (events & ZNP_SECONDARY_INIT_EVENT)
+#if !defined CC2531ZNP
+  else if (events & ZNP_SPI_TIMER_EVENT)
   {
-    npInit();
-    events ^= ZNP_SECONDARY_INIT_EVENT;
+    if (ZNP_CFG1_SPI == znpCfg1)
+    {
+      npSpiTimer();
+    }
+    events ^= ZNP_SPI_TIMER_EVENT;
   }
-  else if (events & MT_AF_EXEC_EVT)
-  {
-    MT_AfExec();
-    events ^= MT_AF_EXEC_EVT;
-  }
+#endif
   else
   {
     events = 0;  /* Discard unknown events. */
@@ -274,6 +357,80 @@ uint16 znpEventLoop(uint8 taskId, uint16 events)
   return ( events );
 }
 
+/**************************************************************************************************
+ * @fn          znpTestRF
+ *
+ * @brief       This function initializes and checks the ZNP RF Test Mode NV items. It is designed
+ *              to be invoked before/instead of MAC radio initialization.
+ *
+ * input parameters
+ *
+ * None.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      None.
+ **************************************************************************************************
+ */
+void znpTestRF(void)
+{
+  uint8 rfTestParms[4] = { 0, 0, 0, 0 };
+
+  if ((SUCCESS != osal_nv_item_init(ZNP_NV_RF_TEST_PARMS, 4, rfTestParms))  ||
+      (SUCCESS != osal_nv_read(ZNP_NV_RF_TEST_PARMS, 0, 4, rfTestParms)) ||
+      (rfTestParms[0] == 0))
+  {
+    return;
+  }
+      
+  // Settings from SmartRF Studio
+  MDMCTRL0 = 0x85;
+  RXCTRL = 0x3F;
+  FSCTRL = 0x5A;
+  FSCAL1 = 0x2B;
+  AGCCTRL1 = 0x11;
+  ADCTEST0 = 0x10;
+  ADCTEST1 = 0x0E;
+  ADCTEST2 = 0x03;
+
+  FRMCTRL0 = 0x43;
+  FRMCTRL1 = 0x00;
+
+  MAC_RADIO_RXTX_OFF();
+  MAC_RADIO_SET_CHANNEL(rfTestParms[1]);
+  MAC_RADIO_SET_TX_POWER(rfTestParms[2]);
+  TX_PWR_TONE_SET(rfTestParms[3]);
+
+  switch (rfTestParms[0])
+  {
+  case 1:  // Rx promiscuous mode.
+    MAC_RADIO_RX_ON();
+    break;
+
+  case 2:  // Un-modulated Tx.
+    TX_PWR_MOD__SET(1);
+    // no break;
+
+  case 3:  // Modulated Tx.
+    // Modulated is default register setting, so no special action.
+
+    // Now turn on Tx power for either mod or un-modulated Tx test.
+    MAC_RADIO_TX_ON();
+    break;
+
+  default:  // Not expected.
+    break;
+  }
+
+  // Clear the RF test mode.
+  (void)osal_memset(rfTestParms, 0, 4);
+  (void)osal_nv_write(ZNP_NV_RF_TEST_PARMS, 0, 4, rfTestParms);
+
+  while (1);  // Spin in RF test mode until a hard reset.
+}
+ 
 /**************************************************************************************************
  * @fn          MT_TransportAlloc
  *
@@ -306,7 +463,7 @@ uint8 *MT_TransportAlloc(uint8 cmd0, uint8 len)
   }
 #endif
 }
-
+ 
 /**************************************************************************************************
  * @fn          MT_TransportSend
  *
@@ -340,71 +497,11 @@ void MT_TransportSend(uint8 *pBuf)
 }
 
 /**************************************************************************************************
- * @fn         npInit
- *
- * @brief      This function is the secondary initialization that resolves conflicts during
- *             osalInitTasks(). For example, since ZNP is the highest priority task, and
- *             specifically because the ZNP task is initialized before the ZDApp task, if znpInit()
- *             registers anything with ZDO_RegisterForZdoCB(), it is wiped out when ZDApp task
- *             initialization invokes ZDApp_InitZdoCBFunc().
- *             There may be other existing or future such races, so try to do all possible
- *             NP initialization here vice in znpInit().
- *
- * input parameters
- *
- * None.
- *
- * output parameters
- *
- * None.
- *
- * @return      None.
- **************************************************************************************************
- */
-static void npInit(void)
-{
-  if (ZNP_CFG1_UART == znpCfg1)
-  {
-    halUARTCfg_t uartConfig;
-
-    uartConfig.configured           = TRUE;
-    uartConfig.baudRate             = ZNP_UART_BAUD;
-    uartConfig.flowControl          = TRUE;
-    uartConfig.flowControlThreshold = HAL_UART_FLOW_THRESHOLD;
-    uartConfig.rx.maxBufSize        = HAL_UART_RX_BUF_SIZE;
-    uartConfig.tx.maxBufSize        = HAL_UART_TX_BUF_SIZE;
-    uartConfig.idleTimeout          = HAL_UART_IDLE_TIMEOUT;
-    uartConfig.intEnable            = TRUE;
-    uartConfig.callBackFunc         = npUartCback;
-    HalUARTOpen(HAL_UART_PORT, &uartConfig);
-    MT_UartRegisterTaskID(znpTaskId);
-  }
-  else
-  {
-    //npSpiInit() is called by hal_spi.c: HalSpiInit().
-  }
-
-  npInitNV();
-  MT_Init();
-#if defined TC_LINKKEY_JOIN
-  zcl_TaskID = znpTaskId;
-#endif
-#if LQI_ADJUST
-  ZMacLqiAdjustMode(LQI_ADJ_MODE1);
-#endif
-#if defined CC2531ZNP
-  (void)osal_pwrmgr_task_state(znpTaskId, PWRMGR_HOLD);
-#endif
-}
-
-/**************************************************************************************************
  * @fn         npInitNV
  *
  * @brief
  *
  * input parameters
- *
- * None.
  *
  * output parameters
  *
@@ -425,7 +522,7 @@ static void npInitNV(void)
   osal_nv_item_init(ZNP_NV_APP_ITEM_5, 16, NULL);
   osal_nv_item_init(ZNP_NV_APP_ITEM_6, 16, NULL);
 }
-
+  
 /**************************************************************************************************
  * @fn          npUartCback
  *
@@ -496,8 +593,11 @@ static void npUartTxReady(void)
 
   if (npUartTxMsg)
   {
-    uint16 len = HalUARTWrite(HAL_UART_PORT, pMsg, npUartTxCnt);
+    uint16 len = MIN(ZNP_TX_MAX, npUartTxCnt);
+
+    len = HalUARTWrite(ZNP_UART_PORT, pMsg, len);
     npUartTxCnt -= len;
+    ZNP_RDY(TRUE);  // Signal to Master that Tx is pending - sleep not ok.
 
     if (npUartTxCnt == 0)
     {
@@ -668,6 +768,113 @@ uint8* npSpiPollCallback(void)
 bool npSpiReadyCallback(void)
 {
   return !OSAL_MSG_Q_EMPTY(&npTxQueue);
+}
+
+/**************************************************************************************************
+ * @fn          port0Isr
+ *
+ * @brief       This function handles the PORT0 interrupt.
+ *
+ * input parameters
+ *
+ * None.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      None.
+ **************************************************************************************************
+ */
+HAL_ISR_FUNCTION(port0Isr, P0INT_VECTOR)
+{
+  // Knowing which pin requires a #define from _hal_uart_dma.c
+  //if (P0IFG & NP_RDYIn_BIT)
+  {
+    if (ZNP_CFG1_UART == znpCfg1)
+    {
+      osal_set_event(znpTaskId, ZNP_UART_TX_READY_EVENT);
+    }
+    else
+    {
+      npSpiMrdyIsr();
+    }
+  }
+
+  P0IFG = 0;
+  P0IF = 0;
+}
+#endif
+
+#if ZNP_RUN_CRC
+/*********************************************************************
+ * @fn      runPoly
+ *
+ * @brief   Run the CRC16 Polynomial calculation over the byte parameter.
+ *
+ * @param   crc - Running CRC calculated so far.
+ * @param   val - Value on which to run the CRC16.
+ *
+ * @return  crc - Updated for the run.
+ */
+static uint16 runPoly(uint16 crc, uint8 val)
+{
+  const uint16 poly = 0x1021;
+  uint8 cnt;
+
+  for (cnt = 0; cnt < 8; cnt++, val <<= 1)
+  {
+    uint8 msb = (crc & 0x8000) ? 1 : 0;
+
+    crc <<= 1;
+    if (val & 0x80)  crc |= 0x0001;
+    if (msb)         crc ^= poly;
+  }
+
+  return crc;
+}
+
+/**************************************************************************************************
+ * @fn          znpCrc
+ *
+ * @brief       This function handles the PORT0 interrupt.
+ *
+ * input parameters
+ *
+ * None.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      None.
+ **************************************************************************************************
+ */
+static void znpCrc(void)
+{
+  preamble_t preamble;
+  uint32 oset;
+  uint16 crc = 0, crc2;
+
+  HalOADRead(dlImagePreambleOffset, (uint8 *)&preamble, sizeof(preamble_t), HAL_OAD_DL);
+
+  // Run the CRC calculation over the downloaded image.
+  for (oset = 0; oset < preamble.len; oset++)
+  {
+    if ((oset < HAL_OAD_CRC_OSET) || (oset >= HAL_OAD_CRC_OSET+4))
+    {
+      uint8 buf;
+      HalOADRead(oset, &buf, 1, HAL_OAD_DL);
+      crc = runPoly(crc, buf);
+    }
+  }
+
+  // IAR note explains that poly must be run with value zero for each byte of crc.
+  crc = runPoly(crc, 0);
+  crc = runPoly(crc, 0);
+
+  HalOADRead(HAL_OAD_CRC_OSET, (uint8 *)&crc2, sizeof(crc2), HAL_OAD_DL);
+  return (crc2 == crc) ? SUCCESS : FAILURE;
 }
 #endif
 

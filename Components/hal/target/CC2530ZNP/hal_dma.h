@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_dma.h
-  Revised:        $Date: 2011-05-31 11:57:28 -0700 (Tue, 31 May 2011) $
-  Revision:       $Revision: 26163 $
+  Revised:        $Date: 2009-03-29 10:51:47 -0700 (Sun, 29 Mar 2009) $
+  Revision:       $Revision: 19585 $
 
   Description:     This file contains the interface to the DMA Service.
 
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -61,13 +61,13 @@ extern "C"
 #define HAL_DMA_SET_ADDR_DESC0( a ) \
   st( \
     DMA0CFGH = (uint8)( (uint16)(a) >> 8 );  \
-    DMA0CFGL = (uint8)( (uint16)(a) & 0xFF );       \
+    DMA0CFGL = (uint8)( (uint16)(a) );       \
   )
 
 #define HAL_DMA_SET_ADDR_DESC1234( a ) \
   st( \
     DMA1CFGH = (uint8)( (uint16)(a) >> 8 );  \
-    DMA1CFGL = (uint8)( (uint16)(a) & 0xFF );       \
+    DMA1CFGL = (uint8)( (uint16)(a) );       \
   )
 
 #define HAL_DMA_GET_DESC0()           &dmaCh0
@@ -82,7 +82,7 @@ extern "C"
 #define HAL_DMA_MAN_TRIGGER( ch )      DMAREQ = (0x01 << (ch))
 #define HAL_DMA_START_CH( ch )         HAL_DMA_MAN_TRIGGER( (ch) )
 
-#define HAL_DMA_CLEAR_IRQ( ch )        DMAIRQ = ~( 1 << (ch) )
+#define HAL_DMA_CLEAR_IRQ( ch )        DMAIRQ &= ~( 1 << (ch) )
 
 #define HAL_DMA_CHECK_IRQ( ch )       (DMAIRQ & ( 1 << (ch) ))
 
@@ -90,21 +90,21 @@ extern "C"
 #define HAL_DMA_SET_SOURCE( pDesc, src ) \
   st( \
     pDesc->srcAddrH = (uint8)((uint16)(src) >> 8); \
-    pDesc->srcAddrL = (uint8)( (uint16)(src) & 0xFF ); \
+    pDesc->srcAddrL = (uint8)(uint16)(src); \
   )
 
 // Macro for quickly setting the destination address of a DMA structure.
 #define HAL_DMA_SET_DEST( pDesc, dst ) \
   st( \
     pDesc->dstAddrH = (uint8)((uint16)(dst) >> 8); \
-    pDesc->dstAddrL = (uint8)( (uint16)(dst) & 0xFF ); \
+    pDesc->dstAddrL = (uint8)(uint16)(dst); \
   )
 
 // Macro for quickly setting the number of bytes to be transferred by the DMA,
 // max length is 0x1FFF.
 #define HAL_DMA_SET_LEN( pDesc, len ) \
   st( \
-    pDesc->xferLenL = (uint8)( (uint16)(len) & 0xFF); \
+    pDesc->xferLenL = (uint8)(uint16)(len); \
     pDesc->xferLenV &= ~HAL_DMA_LEN_H; \
     pDesc->xferLenV |= (uint8)((uint16)(len) >> 8); \
   )

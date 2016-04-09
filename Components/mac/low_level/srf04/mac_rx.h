@@ -6,7 +6,7 @@
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -80,14 +80,6 @@ extern uint8 macRxActive;
 extern uint8 macRxFilter;
 extern uint8 macRxOutgoingAckFlag;
 
-#ifdef PACKET_FILTER_STATS
-  extern uint32 rxCrcFailure;
-  extern uint32 rxCrcSuccess;
-#endif /* PACKET_FILTER_STATS */
-
-#ifdef CC2591_COMPRESSION_WORKAROUND
-  extern void macRxResetRssi(void);
-#endif
 
 /* ------------------------------------------------------------------------------------------------
  *                                         Prototypes

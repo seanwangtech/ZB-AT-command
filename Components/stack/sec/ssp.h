@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       ssp.h
-  Revised:        $Date: 2010-05-11 18:37:17 -0700 (Tue, 11 May 2010) $
-  Revision:       $Revision: 22455 $
+  Revised:        $Date: 2010-01-08 13:24:55 -0800 (Fri, 08 Jan 2010) $
+  Revision:       $Revision: 21463 $
 
   Description:    Security Service Provider (SSP) interface
 
@@ -115,17 +115,14 @@ extern "C"
 #define SSP_MAC_TAGS_SKKE 0
 #define SSP_MAC_TAGS_EA   1
 
-// Error value used when security key NV ID is not available
-#define SEC_NO_KEY_NV_ID        0
-
 /*********************************************************************
  * TYPEDEFS
  */
 
 typedef struct
 {
-  uint8 keySeqNum;
-  uint8 key[SEC_KEY_LEN];
+  byte keySeqNum;
+  byte key[SEC_KEY_LEN];
 } nwkKeyDesc;
 
 typedef struct
@@ -138,20 +135,20 @@ typedef struct
 {
   uint32 inFrmCntr;
   uint32 outFrmCntr;
-  uint8   masterKey[SEC_KEY_LEN];     // optional!!
-  uint8   linkKey[SEC_KEY_LEN];
-  uint8   partnerDevice[Z_EXTADDR_LEN];
+  byte   masterKey[SEC_KEY_LEN];     // optional!!
+  byte   linkKey[SEC_KEY_LEN];
+  byte   partnerDevice[Z_EXTADDR_LEN];
 } linkKeyDesc;
 
 typedef struct
 {
-  uint8 hdrLen;
-  uint8 auxLen;
-  uint8 msgLen;
-  uint8 secLevel;
-  uint8 keyId;
+  byte hdrLen;
+  byte auxLen;
+  byte msgLen;
+  byte secLevel;
+  byte keyId;
   uint32 frameCtr;
-  uint8 *key;
+  byte *key;
 } ssp_ctx;
 
 typedef struct
@@ -178,7 +175,7 @@ typedef struct
   uint8* pdu;      //protocol data unit
   uint8  extAddr[Z_EXTADDR_LEN];
   uint8  keyID;
-  uint16 keyNvId; // NV ID of key: NWK, TCLK or APS
+  uint8* key;
   uint8  keySeqNum;
   uint32 frmCntr;
   uint8  auxLen;
@@ -188,7 +185,10 @@ typedef struct
 /*********************************************************************
  * GLOBAL VARIABLES
  */
+//extern uint8 nwkKeyLoaded;
+//extern nwkKeyDesc nwkActiveKey;
 extern uint32 nwkFrameCounter;
+extern byte zgPreConfigKey[SEC_KEY_LEN];
 
 /*********************************************************************
  * FUNCTIONS
@@ -217,7 +217,7 @@ extern ZStatus_t SSP_GetMacTags( SSP_MacTagData_t* data );
 /*
  * Returns Random Bits
  */
-extern void SSP_GetTrueRand( uint8 len, uint8 *rand );
+extern void SSP_GetTrueRand( byte len, byte *rand );
 
 /*
  * Returns 8*len random bits using AES based mechanism 
@@ -236,28 +236,33 @@ extern void SSP_StoreRandomSeedNV( uint8 *pSeed );
 extern void SSP_ReadNwkActiveKey( nwkActiveKeyItems *items );
 
 /*
- * Get the index for the selected network key in NV
+ * Write the network active key information
  */
-extern uint16 SSP_GetNwkKey( uint8 seqNum );
+extern void SSP_WriteNwkActiveKey( nwkActiveKeyItems *items );
+
+/*
+ * Get the selected network key
+ */
+extern byte *SSP_GetNwkKey( byte seqNum );
 
 /*
  * Secure/Unsecure a network PDU
  */
-extern ZStatus_t SSP_NwkSecurity(uint8 ed_flag, uint8 *msg, uint8 hdrLen, uint8 nsduLen);
+extern ZStatus_t SSP_NwkSecurity(byte ed_flag, byte *msg, byte hdrLen, byte nsduLen);
 
 /*
  * Set the alternate network key
  */
-extern void SSP_UpdateNwkKey( uint8 *key, uint8 keySeqNum );
+extern void SSP_UpdateNwkKey( byte *key, byte keySeqNum );
 
 /*
  * Make the alternate network key as active
  */
-extern void SSP_SwitchNwkKey( uint8 seqNum );
+extern void SSP_SwitchNwkKey( byte seqNum );
 
-extern void SSP_BuildNonce( uint8 *addr, uint32 frameCntr, uint8 secCtrl, uint8 *nonce );
+extern void SSP_BuildNonce( byte *addr, uint32 frameCntr, byte secCtrl, byte *nonce );
 
-extern uint8 SSP_GetMicLen( uint8 securityLevel );
+extern byte SSP_GetMicLen( byte securityLevel );
 
 /*********************************************************************
 *********************************************************************/

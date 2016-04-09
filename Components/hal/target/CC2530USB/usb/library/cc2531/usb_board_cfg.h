@@ -1,14 +1,14 @@
 /**************************************************************************************************
     Filename:       usb_board_cfg.h
-    Revised:        $Date: 2012-04-03 13:22:08 -0700 (Tue, 03 Apr 2012) $
-    Revision:       $Revision: 30009 $
+    Revised:        $Date:$
+    Revision:       $Revision:$
 
     Description:
 
     This file implements the Temperature/Voltage Sample Application.
 
 
-    Copyright 2009-2012 Texas Instruments Incorporated. All rights reserved.
+    Copyright 2009 Texas Instruments Incorporated. All rights reserved.
 
     IMPORTANT: Your use of this Software is limited to those specific rights
     granted under the terms of a software license agreement between the user
@@ -24,8 +24,8 @@
     its documentation for any purpose.
 
     YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-    PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-    INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+    PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+    INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
     NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
     TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
     NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -88,19 +88,11 @@
 #define HAL_USB_PULLUP_DISABLE() \
   MCU_IO_OUTPUT(HAL_BOARD_IO_USB_ENABLE_PORT, HAL_BOARD_IO_USB_ENABLE_PIN, 0)
 
-#if defined HAL_SB_BOOT_CODE
-#define HAL_USB_INT_ENABLE()
-#else
 #define HAL_USB_INT_ENABLE()           st( P2IEN|= 0x20; IEN2|= 0x02; )
-#endif
 #define HAL_USB_INT_DISABLE()          st( P2IEN&= ~0x20; )
 #define HAL_USB_INT_CLEAR()            st( P2IFG= 0; P2IF= 0; )
 
-#if defined HAL_SB_BOOT_CODE
-#define HAL_USB_RESUME_INT_ENABLE()
-#else
 #define HAL_USB_RESUME_INT_ENABLE()    st ( USBCIE |= 0x02; )
-#endif
 #define HAL_USB_RESUME_INT_DISABLE()   st ( USBCIE &= ~0x02; )
 
 #define USBCTRL_PLL_LOCKED             0x80

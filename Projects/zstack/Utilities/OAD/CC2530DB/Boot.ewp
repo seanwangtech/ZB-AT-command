@@ -12,20 +12,20 @@
       <name>General</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>5</version>
+        <version>3</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
           <name>DerivativeDescriptionFile</name>
-          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\CC2530F256.i51</state>
+          <state>$TOOLKIT_DIR$\config\derivatives\Chipcon\CC2530.i51</state>
         </option>
         <option>
           <name>Previous Derivative File</name>
-          <state>$TOOLKIT_DIR$\config\devices\Texas Instruments\CC2530F256.i51</state>
+          <state>$TOOLKIT_DIR$\config\derivatives\Chipcon\CC2530.i51</state>
         </option>
         <option>
           <name>Showed Derivative</name>
-          <state>CC2530F256</state>
+          <state>CC2530</state>
         </option>
         <option>
           <name>CPU Core</name>
@@ -94,11 +94,11 @@
         </option>
         <option>
           <name>Switch Method</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>Mask Value</name>
-          <state>0xFF</state>
+          <state>0x01</state>
         </option>
         <option>
           <name>DPS Address</name>
@@ -110,7 +110,7 @@
         </option>
         <option>
           <name>DPTR Addresses</name>
-          <state></state>
+          <state> -D?DPL1=0x84 -D?DPH1=0x85</state>
         </option>
         <option>
           <name>CodeBankReg</name>
@@ -141,6 +141,16 @@
           <state>0</state>
         </option>
         <option>
+          <name>GRuntimeLibSelect</name>
+          <version>0</version>
+          <state>4</state>
+        </option>
+        <option>
+          <name>GRuntimeLibSelectSlave</name>
+          <version>0</version>
+          <state>4</state>
+        </option>
+        <option>
           <name>RTDescription</name>
           <state>Use the legacy C runtime library.</state>
         </option>
@@ -150,25 +160,25 @@
         </option>
         <option>
           <name>RTLibraryPath</name>
-          <state>$TOOLKIT_DIR$\LIB\CLIB\cl-pli-blxd-1e16x01.r51</state>
+          <state>$TOOLKIT_DIR$\LIB\CLIB\cl-pli-nlxd-1e16x01.r51</state>
         </option>
         <option>
           <name>Input variant</name>
           <version>0</version>
-          <state>2</state>
+          <state>1</state>
         </option>
         <option>
           <name>Input description</name>
-          <state>No float.</state>
+          <state>Full formatting.</state>
         </option>
         <option>
           <name>Output variant</name>
           <version>0</version>
-          <state>3</state>
+          <state>1</state>
         </option>
         <option>
           <name>Output description</name>
-          <state>No float, no field width, no precision.</state>
+          <state>Full formatting.</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -212,51 +222,20 @@
         </option>
         <option>
           <name>CodeBankRegMask</name>
-          <state>0xFF</state>
+          <state>0x07</state>
         </option>
         <option>
           <name>GeneralMisraRules98</name>
           <version>0</version>
           <state>1000111110110101101110011100111111101110011011000101110111101101100111111111111100110011111001110111001111111111111111111111111</state>
         </option>
-        <option>
-          <name>PDATA 8-15 register address</name>
-          <state>0x93</state>
-        </option>
-        <option>
-          <name>PDATA 16-31 register address</name>
-          <state></state>
-        </option>
-        <option>
-          <name>General Far22 Heap Size</name>
-          <state>0xFFF</state>
-        </option>
-        <option>
-          <name>GeneralMisraVer</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>GeneralMisraRules04</name>
-          <version>0</version>
-          <state>111101110010111111111000110111111111111111111111111110010111101111010101111111111111111111111111101111111011111001111011111011111111111111111</state>
-        </option>
-        <option>
-          <name>GRuntimeLibSelect2</name>
-          <version>0</version>
-          <state>3</state>
-        </option>
-        <option>
-          <name>GRuntimeLibSelectSlave2</name>
-          <version>0</version>
-          <state>3</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>ICC8051</name>
-      <archiveVersion>4</archiveVersion>
+      <archiveVersion>3</archiveVersion>
       <data>
-        <version>9</version>
+        <version>6</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -355,7 +334,7 @@
         <option>
           <name>CCAllowList</name>
           <version>1</version>
-          <state>11101</state>
+          <state>11111</state>
         </option>
         <option>
           <name>CCObjUseModuleName</name>
@@ -422,6 +401,10 @@
           <state>1</state>
         </option>
         <option>
+          <name>CCLangSelect</name>
+          <state>0</state>
+        </option>
+        <option>
           <name>NoUBROFMessages</name>
           <state>0</state>
         </option>
@@ -440,15 +423,20 @@
         <option>
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
-          <state>$PROJ_DIR$\Source</state>
+          <state>$PROJ_DIR$\SOURCE</state>
           <state>$PROJ_DIR$\..\..\..\Tools\CC2530DB</state>
-          <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
-          <state>$PROJ_DIR$\..\..\..\..\..\Components\osal\include</state>
+          <state>$PROJ_DIR$\..\..\..\ZMAIN\TI2530DB</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\HAL\INCLUDE</state>
+          <state>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\OSAL\INCLUDE</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
           <state>0</state>
+        </option>
+        <option>
+          <name>CCStdIncludePath</name>
+          <state>$TOOLKIT_DIR$\INC\</state>
+          <state>$TOOLKIT_DIR$\INC\CLIB\</state>
         </option>
         <option>
           <name>CompilerMisraRules98</name>
@@ -480,38 +468,13 @@
           <name>CCOptLevelSlave</name>
           <state>3</state>
         </option>
-        <option>
-          <name>CompilerMisraRules04</name>
-          <version>0</version>
-          <state>111101110010111111111000110111111111111111111111111110010111101111010101111111111111111111111111101111111011111001111011111011111111111111111</state>
-        </option>
-        <option>
-          <name>IccLang</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IccCDialect</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>IccAllowVLA</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IccCppDialect</name>
-          <state>1</state>
-        </option>
-        <option>
-          <name>IccRelaxedFpPrecision</name>
-          <state>0</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>A8051</name>
       <archiveVersion>2</archiveVersion>
       <data>
-        <version>5</version>
+        <version>4</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -616,6 +579,11 @@
           <state>0</state>
         </option>
         <option>
+          <name>AIncludes</name>
+          <state>$TOOLKIT_DIR$\inc\</state>
+          <state>$TOOLKIT_DIR$\src\lib</state>
+        </option>
+        <option>
           <name>ADefines</name>
           <state></state>
         </option>
@@ -655,14 +623,6 @@
           <name>AMaxErrNum</name>
           <state>100</state>
         </option>
-        <option>
-          <name>Ignore standard include paths</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>Include directories</name>
-          <state>$TOOLKIT_DIR$\SRC\LIB</state>
-        </option>
       </data>
     </settings>
     <settings>
@@ -690,7 +650,7 @@
       <name>XLINK</name>
       <archiveVersion>3</archiveVersion>
       <data>
-        <version>17</version>
+        <version>16</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -1001,10 +961,6 @@
           <name>CrcInitialValue</name>
           <state>0x0</state>
         </option>
-        <option>
-          <name>Linker Far22 Heap Size</name>
-          <state>1</state>
-        </option>
       </data>
     </settings>
     <settings>
@@ -1077,10 +1033,10 @@
         <group>
           <name>Includes</name>
           <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_dma.h</name>
+            <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\hal\target\CC2530EB\hal_dma.h</name>
           </file>
           <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_flash.h</name>
+            <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\hal\include\hal_flash.h</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_mcu.h</name>
@@ -1092,7 +1048,7 @@
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_types.h</name>
           </file>
           <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_xnv.h</name>
+            <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\hal\include\hal_xnv.h</name>
           </file>
         </group>
       </group>
@@ -1101,13 +1057,16 @@
   <group>
     <name>Tools</name>
     <file>
+      <name>$PROJ_DIR$\..\..\..\Tools\CC2530DB\oad-boot.xcl</name>
+    </file>
+  </group>
+  <group>
+    <name>ZMain</name>
+    <file>
       <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\chipcon_cstartup.s51</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\source\interrupt_stubs.s51</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\Tools\CC2530DB\oad-boot.xcl</name>
+      <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\interrupt_stubs.s51</name>
     </file>
   </group>
 </project>

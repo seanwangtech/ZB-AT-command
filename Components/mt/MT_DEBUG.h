@@ -1,11 +1,11 @@
 /***************************************************************************************************
   Filename:       MTEL.h
-  Revised:        $Date: 2011-06-07 14:34:55 -0700 (Tue, 07 Jun 2011) $
-  Revision:       $Revision: 26241 $
+  Revised:        $Date: 2008-01-17 12:22:57 -0800 (Thu, 17 Jan 2008) $
+  Revision:       $Revision: 16223 $
 
   Description:
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -52,7 +52,6 @@ extern "C"
 /***************************************************************************************************
  * TYPEDEFs
  ***************************************************************************************************/
-
 typedef struct
 {
   osal_event_hdr_t  hdr;
@@ -71,21 +70,6 @@ typedef struct
   uint8             strLen;
   uint8             *pString;
 } mtDebugStr_t;
-
-typedef struct {
-#ifdef PACKET_FILTER_STATS
-  uint32 nwkInvalidPackets;
-  uint32 rxCrcFailure;
-  uint32 rxCrcSuccess;
-#endif
-  uint8  fsmstat0;
-  uint8  fsmstat1;
-  uint8  macData_rxCount;
-  uint8  macData_directCount;
-  uint8  macMain_state;
-  uint8  macRxActive;
-  uint8  macTxActive;
-} mtDebugMacDataDump_t;
 
 /***************************************************************************************************
  * EXTERNAL FUNCTIONS

@@ -1,11 +1,11 @@
 /***************************************************************************************************
   Filename:       MT.c
-  Revised:        $Date: 2011-06-07 14:34:55 -0700 (Tue, 07 Jun 2011) $
-  Revision:       $Revision: 26241 $
+  Revised:        $Date: 2008-02-12 16:28:45 -0800 (Tue, 12 Feb 2008) $
+  Revision:       $Revision: 16392 $
 
   Description:
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -40,24 +40,16 @@
 /***************************************************************************************************
  * INCLUDES
  ***************************************************************************************************/
-
 #include "ZComDef.h"
 #include "MT.h"
 #include "MT_DEBUG.h"
 #include "MT_UART.h"
-#include "mac_main.h"
-#include "mac_data.h"
-#include "mac_rx.h"
-#include "mac_tx.h"
-#include "nwk_globals.h"
 
 /***************************************************************************************************
  * LOCAL FUNCTIONs
  ***************************************************************************************************/
-
 #if defined (MT_DEBUG_FUNC)
-static void MT_DebugSetThreshold(uint8 *pBuf);
-static void MT_DebugMacDataDump(void);
+void MT_DebugSetThreshold(uint8 *pBuf);
 #endif
 
 #if defined (MT_DEBUG_FUNC)
@@ -80,10 +72,6 @@ uint8 MT_DebugCommandProcessing(uint8 *pBuf)
       MT_DebugSetThreshold(pBuf);
       break;
 
-  case MT_DEBUG_MAC_DATA_DUMP:
-      MT_DebugMacDataDump();
-      break;
-
     default:
       status = MT_RPC_ERR_COMMAND_ID;
       break;
@@ -101,7 +89,7 @@ uint8 MT_DebugCommandProcessing(uint8 *pBuf)
  *
  * @return  void
  ***************************************************************************************************/
-static void MT_DebugSetThreshold(uint8 *pBuf)
+void MT_DebugSetThreshold(uint8 *pBuf)
 {
   uint8 retValue = ZSuccess;
   uint8 cmdId;
@@ -117,52 +105,7 @@ static void MT_DebugSetThreshold(uint8 *pBuf)
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_DBG), cmdId, 1, &retValue);
 }
-
-/***************************************************************************************************
- * @fn      MT_DebugMacDataDump
- *
- * @brief   Process the debug MAC Data Dump request.
- *
- * @param   pBuf - pointer to received buffer
- *
- * @return  void
- ***************************************************************************************************/
-static void MT_DebugMacDataDump(void)
-{
-  uint8 buf[sizeof(mtDebugMacDataDump_t)];
-  uint8 *pBuf = buf;
-
-#ifdef PACKET_FILTER_STATS
-  *pBuf++ = BREAK_UINT32(nwkInvalidPackets, 0);
-  *pBuf++ = BREAK_UINT32(nwkInvalidPackets, 1);
-  *pBuf++ = BREAK_UINT32(nwkInvalidPackets, 2);
-  *pBuf++ = BREAK_UINT32(nwkInvalidPackets, 3);
-  *pBuf++ = BREAK_UINT32(rxCrcFailure, 0);
-  *pBuf++ = BREAK_UINT32(rxCrcFailure, 1);
-  *pBuf++ = BREAK_UINT32(rxCrcFailure, 2);
-  *pBuf++ = BREAK_UINT32(rxCrcFailure, 3);
-  *pBuf++ = BREAK_UINT32(rxCrcSuccess, 0);
-  *pBuf++ = BREAK_UINT32(rxCrcSuccess, 1);
-  *pBuf++ = BREAK_UINT32(rxCrcSuccess, 2);
-  *pBuf++ = BREAK_UINT32(rxCrcSuccess, 3);
-#endif
-#if defined HAL_MCU_CC2530
-  *pBuf++ = FSMSTAT0;
-  *pBuf++ = FSMSTAT1;
-#else
-  *pBuf++ = macSpiReadReg(FSMSTAT0);
-  *pBuf++ = macSpiReadReg(FSMSTAT1);
-#endif
-  *pBuf++ = macData.rxCount;
-  *pBuf++ = macData.directCount;
-  *pBuf++ = macMain.state;
-  *pBuf++ = macRxActive;
-  *pBuf   = macTxActive;
-
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_DBG),
-                                       MT_DEBUG_MAC_DATA_DUMP, sizeof(buf), buf);
-}
-#endif
+#endif /* MT_DEBUG_FUNC */
 
 /***************************************************************************************************
  * @fn      MT_ProcessDebugMsg
@@ -248,6 +191,5 @@ void MT_ProcessDebugStr(mtDebugStr_t *dstr)
     osal_mem_free( msg_ptr );
   }
 }
-
-/**************************************************************************************************
- */
+/***************************************************************************************************
+ ***************************************************************************************************/

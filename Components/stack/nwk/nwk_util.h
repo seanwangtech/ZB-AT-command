@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       nwk_util.h
-  Revised:        $Date: 2011-01-06 16:37:10 -0800 (Thu, 06 Jan 2011) $
-  Revision:       $Revision: 24739 $
+  Revised:        $Date: 2009-12-17 17:45:11 -0800 (Thu, 17 Dec 2009) $
+  Revision:       $Revision: 21367 $
 
   Description:    Network layer utility functions.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -108,7 +108,6 @@ extern "C" {
 #define NWK_FC_SRC_ROUTE    10
 #define NWK_FC_DST_EXTADDR  11
 #define NWK_FC_SRC_EXTADDR  12
-#define NWK_FC_RESERVED     13
 
 // frame control field masks
 #define NWK_FC_FRAME_TYPE_MASK   0x03
@@ -119,22 +118,18 @@ extern "C" {
 #define NWK_FC_SRC_ROUTE_MASK    0x01
 #define NWK_FC_DST_EXTADDR_MASK  0x01
 #define NWK_FC_SRC_EXTADDR_MASK  0x01
-#define NWK_FC_RESERVED_MASK     0x07
 
 // Frame Type sub-field
 #define DATA_FRAME_TYPE           0x00
 #define CMD_FRAME_TYPE            0x01
 #define STUB_NWK_FRAME_TYPE       0x03
-  
-#define NWK_FC_ROUTE_DISC_ENABLED 0x01
 
-// Network command fields
+// nNetwork command fields
 #define NWK_CMD_LEAVE_OPTIONS 1
 #define NWK_CMD_LEAVE_SIZE    2
 #define NWK_CMD_LEAVE_RJ      0x20 // rejoin
 #define NWK_CMD_LEAVE_REQ     0x40 // request(1)/indication(0)
 #define NWK_CMD_LEAVE_RC      0x80 // remove children
-#define NWK_CMD_LEAVE_OPTIONS_RESERVE 0x1F
 
 #define NWK_CMD_REJOIN_REQ_SIZE 2
 #define NWK_CMD_REJOIN_RSP_SIZE 4
@@ -174,11 +169,9 @@ extern "C" {
 #define LS_OPTION_LAST_FRAME                0x40
 #define LS_OPTION_FIRST_FRAME               0x20
 #define LS_OPTION_ENTRY_COUNT_MASK          0x1F
-#define LS_OPTION_RESERVED                  0x80
 
 #define LS_ENTRY_COST_MASK                  0x07
 #define LS_ENTRY_TXCOST_SHIFT               4
-#define LS_ENTRY_RESERVED                   0x88
 
 #define LS_TABLE_SIZE                       3
 
@@ -263,7 +256,7 @@ extern ZStatus_t NLDE_DataReqSend( NLDE_DataReq_t* req );
 /*
  * Send an msdu
  */
-extern ZStatus_t NLDE_SendMsg( uint8* msdu, uint16 nextHopAddr, uint16 macSrcAddr,
+extern ZStatus_t NLDE_SendMsg( uint8* msdu, uint16 nextHopAddr,
                                uint8 msduLength, uint8 nsduHandle,
                                uint16 nsduHandleOptions,
                                nwkDB_UserData_t* ud );
@@ -271,7 +264,7 @@ extern ZStatus_t NLDE_SendMsg( uint8* msdu, uint16 nextHopAddr, uint16 macSrcAdd
 /*
  * Call this function to parse an incoming message.
  */
-extern uint8 NLDE_ParseMsg( byte *buf, byte bufLength, NLDE_FrameFormat_t *ff );
+extern void NLDE_ParseMsg( byte *buf, byte bufLength, NLDE_FrameFormat_t *ff );
 
 /*
  * Updates entry in the neighbor table
@@ -300,7 +293,7 @@ extern ZStatus_t NLME_LeaveCmdSend( NLME_LeaveCmd_t* cmd );
 /*
  * Process the NWK LEAVE cmd
  */
-extern uint8 NLME_LeaveCmdProcess( uint8 handle, NLDE_FrameFormat_t *ff );
+extern void NLME_LeaveCmdProcess( NLDE_FrameFormat_t *ff );
 
 /*
  * Handle NWK commands during MACCB_DATA_CNF_CMD processing
@@ -372,13 +365,13 @@ extern uint8 NLME_ProcessAddressConflictLocal( uint16 addr );
 
 extern ZStatus_t NLDE_CheckForAddrConflict( NLDE_FrameFormat_t *ff );
 extern ZStatus_t NLME_SendNetworkStatus( uint16 dstAddr,
-                            uint16 statusAddr, uint8 statusCode, uint8 forceSeqNum );
+                            uint16 statusAddr, uint8 statusCode );
 
 extern uint8 NLME_ProcessNetworkStatus( NLDE_FrameFormat_t *ff, uint8 handle );
 
 extern void nwkHandleBrokenRoute( nwkDB_t *rec );
 
-extern uint8 NLDE_ParseFrameControl( uint16 fc, NLDE_FrameFormat_t *ff );
+extern void NLDE_ParseFrameControl( uint16 fc, NLDE_FrameFormat_t *ff );
 
 // Functions for addressing schemes
 extern void NLME_AddressConflictAssignNewStochastic( void );
@@ -391,7 +384,7 @@ extern ZStatus_t NLME_SendNetworkReport( uint16 dstAddr, uint8 reportType, uint8
 extern void NLME_ProcessNetworkReport( NLDE_FrameFormat_t *ff );
 extern ZStatus_t NLME_SendNetworkUpdate( uint16 dstAddr, uint8 updateType, uint8 *EPID, 
                                          uint8 updateId, uint16 newPID );
-extern uint8 NLME_ProcessNetworkUpdate( uint8 handle, NLDE_FrameFormat_t *ff );
+extern void NLME_ProcessNetworkUpdate( NLDE_FrameFormat_t *ff );
 extern void nwkAddPanId( uint16 panID );
 extern void nwkProcessPanIdScan( void );
 extern void nwkChangePanID( void );

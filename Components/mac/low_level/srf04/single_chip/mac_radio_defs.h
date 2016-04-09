@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       mac_radio_def.h
-  Revised:        $Date: 2012-03-02 15:52:01 -0800 (Fri, 02 Mar 2012) $
-  Revision:       $Revision: 29608 $
+  Revised:        $Date: 2009-08-19 06:55:19 -0700 (Wed, 19 Aug 2009) $
+  Revision:       $Revision: 20605 $
 
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -53,7 +53,6 @@
 #include "mac_csp_tx.h"
 #include "mac_assert.h"
 #include "mac_high_level.h"
-#include "hal_sleep.h"
 
 
 /* ------------------------------------------------------------------------------------------------
@@ -91,7 +90,6 @@
 
 /* FRMCTRL0 */
 #define FRMCTRL0_RESET_VALUE          0x40
-#define ENERGY_SCAN                   BV(4)
 #define AUTOACK                       BV(5)
 #define RX_MODE(x)                    ((x) << 2)
 #define RX_MODE_INFINITE_RECEPTION    RX_MODE(2)
@@ -103,9 +101,6 @@
 /* FRMFILT0 */
 #define PAN_COORDINATOR               BV(1)
 #define FRAME_FILTER_EN               BV(0)
-
-#define FRAME_VERSION(x)              ((x) << 2)
-#define FRAME_FILTER_MAX_VERSION      FRAME_VERSION(1)
 
 /* SRCMATCH */
 #define PEND_DATAREQ_ONLY             BV(2)
@@ -120,13 +115,7 @@
 #define CORR_THR                      0x14
 
 /* CCACTRL0 */
-#define CCA_THR                       0xFC   /* -4-76=-80dBm when CC2530 operated alone or with CC2591 in LGM */
-#define CCA_THR_HGM                   0x06   /* 6-76=-70dBm when CC2530 operated with CC2591 in HGM */
-#define CCA_THR_MINUS_20              0x38
-
-/* CCACTRL1 */
-#define CCA_OTHER_MODE_11             0x1A
-#define CCA_OTHER_MODE_01             0x0A
+#define CCA_THR                       0xF8
 
 /* FSMSTATE */
 #define FSM_FFCTRL_STATE_RX_INF       31      /* infinite reception state - not documented in datasheet */
@@ -159,25 +148,16 @@
  * ------------------------------------------------------------------------------------------------
  */
 #define MAC_RADIO_CHANNEL_DEFAULT               11
-#define MAC_RADIO_CHANNEL_INVALID               0xFF
-#define MAC_RADIO_TX_POWER_INVALID              0xFF
+#define MAC_RADIO_TX_POWER_DEFAULT              0x32
 
-#define MAC_RADIO_RECEIVER_SENSITIVITY_DBM      -97 /* dBm */
+#define MAC_RADIO_RECEIVER_SENSITIVITY_DBM      -91 /* dBm */
 #define MAC_RADIO_RECEIVER_SATURATION_DBM       10  /* dBm */
-
-/* Reduce RX power consumption current to 20mA at the cost of some sensitivity
- * Note: This feature can be applied to CC2530 and CC2533 only.
- */
-#ifdef FEATURE_CC253X_LOW_POWER_RX
-#undef  HAL_MAC_RSSI_OFFSET
-#define HAL_MAC_RSSI_OFFSET                     -61 /* no unit */
-#endif
 
 /* offset applied to hardware RSSI value to get RF power level in dBm units */
 #define MAC_RADIO_RSSI_OFFSET                   HAL_MAC_RSSI_OFFSET
 
 #if defined MAC_RUNTIME_CC2591 || defined MAC_RUNTIME_CC2590 || \
-    defined HAL_PA_LNA || defined HAL_PA_LNA_CC2590
+  defined HAL_PA_LNA || defined HAL_PA_LNA_CC2590
 # define MAC_RADIO_RSSI_LNA_OFFSET(x)            st(  x += macRadioDefsRssiAdj[macRadioDefsRefTableId&0x0F]; )
 #else
 # define MAC_RADIO_RSSI_LNA_OFFSET(x)
@@ -191,24 +171,6 @@
 #define MAC_RADIO_DEFS_TBL_TXPWR_FIRST_ENTRY   0
 #define MAC_RADIO_DEFS_TBL_TXPWR_LAST_ENTRY    1
 #define MAC_RADIO_DEFS_TBL_TXPWR_ENTRIES       2
-
-/* RF observable control register value to output PA signal */
-#define RFC_OBS_CTRL_PA_PD_INV        0x68
-
-/* RF observable control register value to output LNA signal */
-#define RFC_OBS_CTRL_LNAMIX_PD_INV    0x6A
-
-/* RF observable control register value to output LNA signal 
- * for CC2591 compression workaround. 
- */
-#define RFC_OBS_CTRL_DEMOD_CCA        0x0D
-
-/* OBSSELn register value to select RF observable 0 */
-#define OBSSEL_OBS_CTRL0             0xFB
-
-/* OBSSELn register value to select RF observable 1 */
-#define OBSSEL_OBS_CTRL1             0xFC
-
 
 /* ------------------------------------------------------------------------------------------------
  *                                      Common Radio Macros
@@ -275,30 +237,25 @@
 #define MAC_RADIO_TIMER_CAPTURE()                     macMcuTimerCapture()
 #define MAC_RADIO_TIMER_FORCE_DELAY(x)                macMcuTimerForceDelay(x)
 
-#define MAC_RADIO_TIMER_SLEEP()                       st( T2CTRL &= ~TIMER2_RUN; while(T2CTRL & TIMER2_STATE); )
-#define MAC_RADIO_TIMER_WAKE_UP()                     st( HAL_CLOCK_STABLE(); \
-                                                          T2CTRL |= (TIMER2_RUN | TIMER2_SYNC); \
-                                                          while(!(T2CTRL & TIMER2_STATE)); )
+#define MAC_RADIO_TIMER_SLEEP()                       st(T2CTRL &= ~TIMER2_RUN; while(  T2CTRL & TIMER2_STATE);)
+#define MAC_RADIO_TIMER_WAKE_UP()                     st(T2CTRL |=  TIMER2_RUN; while(!(T2CTRL & TIMER2_STATE));)
 
 #define MAC_RADIO_BACKOFF_COUNT()                     macMcuOverflowCount()
 #define MAC_RADIO_BACKOFF_CAPTURE()                   macMcuOverflowCapture()
 #define MAC_RADIO_BACKOFF_SET_COUNT(x)                macMcuOverflowSetCount(x)
 #define MAC_RADIO_BACKOFF_SET_COMPARE(x)              macMcuOverflowSetCompare(x)
 
-#define MAC_RADIO_BACKOFF_COMPARE_CLEAR_INTERRUPT()    st( T2IRQF  = ~TIMER2_OVF_COMPARE1F; )
+#define MAC_RADIO_BACKOFF_COMPARE_CLEAR_INTERRUPT()    st( T2IRQF &= ~TIMER2_OVF_COMPARE1F;   \
+                                                           T2CTRL |= TIMER2_RUN;              \
+                                                           while( !(T2CTRL & TIMER2_STATE) ); )
 #define MAC_RADIO_BACKOFF_COMPARE_ENABLE_INTERRUPT()   st( T2IRQM |= TIMER2_OVF_COMPARE1M; )
 #define MAC_RADIO_BACKOFF_COMPARE_DISABLE_INTERRUPT()  st( T2IRQM &= ~TIMER2_OVF_COMPARE1M; )
 
-#define MAC_RADIO_BACKOFF_SET_PERIOD(x)               macMcuOverflowSetPeriod(x)
-#define MAC_RADIO_BACKOFF_PERIOD_CLEAR_INTERRUPT()    st( T2IRQF  = ~TIMER2_OVF_PERF; )
-#define MAC_RADIO_BACKOFF_PERIOD_ENABLE_INTERRUPT()   st( T2IRQM |= TIMER2_OVF_PERM; )
-#define MAC_RADIO_BACKOFF_PERIOD_DISABLE_INTERRUPT()  st( T2IRQM &= ~TIMER2_OVF_PERM; )
 
 #define MAC_RADIO_RECORD_MAX_RSSI_START()             macMcuRecordMaxRssiStart()
 #define MAC_RADIO_RECORD_MAX_RSSI_STOP()              macMcuRecordMaxRssiStop()
 
-#define MAC_RADIO_TURN_ON_RX_FRAME_FILTERING()        st( FRMFILT0  = 0; \
-                                                          FRMFILT0 |= (FRAME_FILTER_EN | FRAME_FILTER_MAX_VERSION); )
+#define MAC_RADIO_TURN_ON_RX_FRAME_FILTERING()        st( FRMFILT0 |=  FRAME_FILTER_EN; )
 #define MAC_RADIO_TURN_OFF_RX_FRAME_FILTERING()       st( FRMFILT0 &= ~FRAME_FILTER_EN; )
 
 /*--------Source Matching------------*/
@@ -343,33 +300,6 @@
 #define HAL_PA_LNA_RX_HGM()                           st( P0_7 = 1; )
 #define HAL_PA_LNA_RX_LGM()                           st( P0_7 = 0; )
 
-#ifdef CC2591_COMPRESSION_WORKAROUND
-/* If your PCB reference design is based on CC2530-CC2591EM rev 2.0 or prior, contact TI customer support for details. 
- * Basically, switch the external LNA control from internal LNAMIX to CCA. Note taht this workaround is not 
- * intended for MSP430+CC2520.
- */
-#define COMPRESSION_WORKAROUND_ON()                   st( CCACTRL0      =  CCA_THR_MINUS_20;       \
-                                                          CCACTRL1      =  CCA_OTHER_MODE_01;      \
-                                                          FRMCTRL0     |=  ENERGY_SCAN;            \
-                                                          RFC_OBS_CTRL1 =  RFC_OBS_CTRL_DEMOD_CCA; \
-                                                          OBSSEL4       =  OBSSEL_OBS_CTRL1; )
-
-#define COMPRESSION_WORKAROUND_OFF()                  st( CCACTRL0      =  CCA_THR;                    \
-                                                          CCACTRL1      =  CCA_OTHER_MODE_11;          \
-                                                          FRMCTRL0     &= ~ENERGY_SCAN;                \
-                                                          RFC_OBS_CTRL1 =  RFC_OBS_CTRL_LNAMIX_PD_INV; \
-                                                          OBSSEL4       =  OBSSEL_OBS_CTRL1; ) 
-
-#define COMPRESSION_WORKAROUND_RESET_RSSI()           st( FRMCTRL0     &= ~ENERGY_SCAN;            \
-                                                          asm("NOP");                              \
-                                                          asm("NOP");                              \
-                                                          FRMCTRL0     |=  ENERGY_SCAN; )
-
-#else
-#define COMPRESSION_WORKAROUND_ON()                   /* Nothing */
-#define COMPRESSION_WORKAROUND_OFF()                  /* Nothing */
-#define COMPRESSION_WORKAROUND_RESET_RSSI()           /* Nothing */
-#endif /* CC2591_COMPRESSION_WORKAROUND */
 
 /* ------------------------------------------------------------------------------------------------
  *                                    Common Radio Externs

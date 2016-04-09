@@ -1,31 +1,31 @@
 /**************************************************************************************************
   Filename:       OSAL.c
-  Revised:        $Date: 2011-05-27 09:03:48 -0700 (Fri, 27 May 2011) $
-  Revision:       $Revision: 26134 $
+  Revised:        $Date: 2009-12-04 08:04:20 -0800 (Fri, 04 Dec 2009) $
+  Revision:       $Revision: 21276 $
 
   Description:    This API allows the software components in the Z-stack to be written
                   independently of the specifics of the operating system, kernel or tasking
                   environment (including control loops or connect-to-interrupt systems).
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -36,7 +36,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 /*********************************************************************
@@ -50,17 +50,12 @@
 #include "OSAL_Tasks.h"
 #include "OSAL_Memory.h"
 #include "OSAL_PwrMgr.h"
-#include "OSAL_Clock.h"
+#include "OSAL_Clock.h"   
 
 #include "OnBoard.h"
 
 /* HAL */
 #include "hal_drivers.h"
-
-#ifdef IAR_ARMCM3_LM
-  #include "FreeRTOSConfig.h"
-  #include "osal_task.h"
-#endif
 
 /*********************************************************************
  * MACROS
@@ -92,9 +87,6 @@ osal_msg_q_t osal_qHead;
 /*********************************************************************
  * LOCAL VARIABLES
  */
-
-// Index of active task
-static uint8 activeTaskID = TASK_NO_TASK;
 
 /*********************************************************************
  * LOCAL FUNCTION PROTOTYPES
@@ -162,8 +154,8 @@ void *osal_memcpy( void *dst, const void GENERIC *src, unsigned int len )
 /*********************************************************************
  * @fn      osal_revmemcpy
  *
- * @brief   Generic reverse memory copy.  Starts at the end of the
- *   source buffer, by taking the source address pointer and moving
+ * @brief   Generic reverse memory copy.  Starts at the end of the 
+ *   source buffer, by taking the source address pointer and moving 
  *   pointer ahead "len" bytes, then decrementing the pointer.
  *
  *   Note: This function differs from the standard memcpy(), since
@@ -206,7 +198,7 @@ void *osal_revmemcpy( void *dst, const void GENERIC *src, unsigned int len )
 void *osal_memdup( const void GENERIC *src, unsigned int len )
 {
   uint8 *pDst;
-
+  
   pDst = osal_mem_alloc( len );
   if ( pDst )
   {
@@ -257,7 +249,7 @@ uint8 osal_memcmp( const void GENERIC *src1, const void GENERIC *src2, unsigned 
  * @param   value - what to set each uint8 of the message
  * @param   size - how big
  *
- * @return  pointer to destination buffer
+ * @return  value of next widget, 0 if no widget found
  */
 void *osal_memset( void *dest, uint8 value, int len )
 {
@@ -568,7 +560,7 @@ uint8 *osal_msg_receive( uint8 task_id )
     }
     listHdr = OSAL_MSG_NEXT( listHdr );
   }
-
+  
   // Is there more than one?
   if ( listHdr != NULL )
   {
@@ -631,7 +623,7 @@ osal_event_hdr_t *osal_msg_find(uint8 task_id, uint8 event)
 
     pHdr = OSAL_MSG_NEXT(pHdr);
   }
-
+  
   HAL_EXIT_CRITICAL_SECTION(intState);  // Release interrupts.
 
   return (osal_event_hdr_t *)pHdr;
@@ -835,7 +827,7 @@ uint8 osal_msg_enqueue_max( osal_msg_q_t *q_ptr, void *msg_ptr, uint8 max )
  *
  * @brief
  *
- *    This function is called to set the event flags for a task. The
+ *    This function is called to set the event flags for a task.  The
  *    event passed in is OR'd into the task's event variable.
  *
  * @param   uint8 task_id - receiving tasks ID
@@ -864,11 +856,11 @@ uint8 osal_set_event( uint8 task_id, uint16 event_flag )
  *
  * @brief
  *
- *    This function is called to clear the event flags for a task. The
+ *    This function is called to clear the event flags for a task.  The
  *    event passed in is masked out of the task's event variable.
  *
  * @param   uint8 task_id - receiving tasks ID
- * @param   uint8 event_flag - what event to clear
+ * @param   uint8 event_flag - what event to set
  *
  * @return  SUCCESS, INVALID_TASK
  */
@@ -878,7 +870,7 @@ uint8 osal_clear_event( uint8 task_id, uint16 event_flag )
   {
     halIntState_t   intState;
     HAL_ENTER_CRITICAL_SECTION(intState);    // Hold off interrupts
-    tasksEvents[task_id] &= ~(event_flag);   // Clear the event bit(s)
+    tasksEvents[task_id] &= ~(event_flag);   // clear the event bit(s)
     HAL_EXIT_CRITICAL_SECTION(intState);     // Release interrupts
     return ( SUCCESS );
   }
@@ -1010,8 +1002,11 @@ uint8 osal_init_system( void )
  *
  * @brief
  *
- *   This function is the main loop function of the task system (if
- *   ZBIT and UBIT are not defined). This Function doesn't return.
+ *   This function is the main loop function of the task system.  It
+ *   will look through all task events and call the task_event_processor()
+ *   function for the task with the event.  If there are no events (for
+ *   all tasks), this function puts the processor into Sleep.
+ *   This Function doesn't return.
  *
  * @param   void
  *
@@ -1023,69 +1018,41 @@ void osal_start_system( void )
   for(;;)  // Forever Loop
 #endif
   {
-    osal_run_system();
-  }
-}
+    uint8 idx = 0;
 
-/*********************************************************************
- * @fn      osal_run_system
- *
- * @brief
- *
- *   This function will make one pass through the OSAL taskEvents table
- *   and call the task_event_processor() function for the first task that
- *   is found with at least one event pending. If there are no pending
- *   events (all tasks), this function puts the processor into Sleep.
- *
- * @param   void
- *
- * @return  none
- */
-void osal_run_system( void )
-{
-  uint8 idx = 0;
+    osalTimeUpdate();
+    Hal_ProcessPoll();  // This replaces MT_SerialPoll() and osal_check_timer().
+    
+    do {
+      if (tasksEvents[idx])  // Task is highest priority that is ready.
+      {
+        break;
+      }
+    } while (++idx < tasksCnt);
 
-  osalTimeUpdate();
-  Hal_ProcessPoll();
-
-  do {
-    if (tasksEvents[idx])  // Task is highest priority that is ready.
+    if (idx < tasksCnt)
     {
-      break;
+      uint16 events;
+      halIntState_t intState;
+
+      HAL_ENTER_CRITICAL_SECTION(intState);
+      events = tasksEvents[idx];
+      tasksEvents[idx] = 0;  // Clear the Events for this task.
+      HAL_EXIT_CRITICAL_SECTION(intState);
+
+      events = (tasksArr[idx])( idx, events );
+
+      HAL_ENTER_CRITICAL_SECTION(intState);
+      tasksEvents[idx] |= events;  // Add back unprocessed events to the current task.
+      HAL_EXIT_CRITICAL_SECTION(intState);
     }
-  } while (++idx < tasksCnt);
-
-  if (idx < tasksCnt)
-  {
-    uint16 events;
-    halIntState_t intState;
-
-    HAL_ENTER_CRITICAL_SECTION(intState);
-    events = tasksEvents[idx];
-    tasksEvents[idx] = 0;  // Clear the Events for this task.
-    HAL_EXIT_CRITICAL_SECTION(intState);
-
-    activeTaskID = idx;
-    events = (tasksArr[idx])( idx, events );
-    activeTaskID = TASK_NO_TASK;
-
-    HAL_ENTER_CRITICAL_SECTION(intState);
-    tasksEvents[idx] |= events;  // Add back unprocessed events to the current task.
-    HAL_EXIT_CRITICAL_SECTION(intState);
-  }
 #if defined( POWER_SAVING )
-  else  // Complete pass through all task events with no activity?
-  {
-    osal_pwrmgr_powerconserve();  // Put the processor/system into sleep
-  }
+    else  // Complete pass through all task events with no activity?
+    {
+      osal_pwrmgr_powerconserve();  // Put the processor/system into sleep
+    }
 #endif
-
-  /* Yield in case cooperative scheduling is being used. */
-#if defined (configUSE_PREEMPTION) && (configUSE_PREEMPTION == 0)
-  {
-    osal_task_yield();
   }
-#endif
 }
 
 /*********************************************************************
@@ -1131,56 +1098,5 @@ uint8* osal_buffer_uint24( uint8 *buf, uint24 val )
 
   return buf;
 }
-
 /*********************************************************************
- * @fn      osal_isbufset
- *
- * @brief
- *
- *   Is all of the array elements set to a value?
- *
- * @param   buf - buffer to check
- * @param   val - value to check each array element for
- * @param   len - length to check
- *
- * @return  TRUE if all "val"
- *          FALSE otherwise
- */
-uint8 osal_isbufset( uint8 *buf, uint8 val, uint8 len )
-{
-  uint8 x;
-
-  if ( buf == NULL )
-  {
-    return ( FALSE );
-  }
-
-  for ( x = 0; x < len; x++ )
-  {
-    // Check for non-initialized value
-    if ( buf[x] != val )
-    {
-      return ( FALSE );
-    }
-  }
-  return ( TRUE );
-}
-
-/*********************************************************************
- * @fn      osal_self
- *
- * @brief
- *
- *   This function returns the task ID of the current (active) task.
- *
- * @param   void
- *
- * @return   active task ID or TASK_NO_TASK if no task is active
- */
-uint8 osal_self( void )
-{
-  return ( activeTaskID );
-}
-
-/*********************************************************************
- */
+*********************************************************************/

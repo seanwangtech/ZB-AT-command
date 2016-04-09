@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       nwk_globals.h
-  Revised:        $Date: 2012-01-12 17:54:52 -0800 (Thu, 12 Jan 2012) $
-  Revision:       $Revision: 28926 $
+  Revised:        $Date: 2010-01-17 08:58:03 -0800 (Sun, 17 Jan 2010) $
+  Revision:       $Revision: 21533 $
 
   Description:    User definable Z-Stack parameters.
 
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,7 +34,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef ZGLOBALS_H
@@ -55,7 +55,7 @@ extern "C" {
 #if defined( BUILD_ALL_DEVICES ) && !defined( ZSTACK_DEVICE_BUILD )
   #define ZSTACK_DEVICE_BUILD  (DEVICE_BUILD_COORDINATOR | DEVICE_BUILD_ROUTER | DEVICE_BUILD_ENDDEVICE)
 #endif
-
+  
 // Setup to work with the existing (old) compile flags
 #if !defined ( ZSTACK_DEVICE_BUILD )
   #if defined ( ZDO_COORDINATOR )
@@ -66,7 +66,7 @@ extern "C" {
     #define ZSTACK_DEVICE_BUILD  (DEVICE_BUILD_ENDDEVICE)
   #endif
 #endif
-
+  
 // Use the following to macros to make device type decisions
 #define ZG_BUILD_COORDINATOR_TYPE  (ZSTACK_DEVICE_BUILD & DEVICE_BUILD_COORDINATOR)
 #define ZG_BUILD_RTR_TYPE          (ZSTACK_DEVICE_BUILD & (DEVICE_BUILD_COORDINATOR | DEVICE_BUILD_ROUTER))
@@ -76,36 +76,36 @@ extern "C" {
 
 #if ( ZSTACK_DEVICE_BUILD == DEVICE_BUILD_COORDINATOR )
   #define ZG_DEVICE_COORDINATOR_TYPE 1
-#else
-  #define ZG_DEVICE_COORDINATOR_TYPE (zgDeviceLogicalType == ZG_DEVICETYPE_COORDINATOR)
+#else  
+  #define ZG_DEVICE_COORDINATOR_TYPE (zgDeviceLogicalType == ZG_DEVICETYPE_COORDINATOR)  
 #endif
-
+  
 #if ( ZSTACK_DEVICE_BUILD == (DEVICE_BUILD_ROUTER | DEVICE_BUILD_COORDINATOR) )
   #define ZG_DEVICE_RTR_TYPE 1
-#else
-  #define ZG_DEVICE_RTR_TYPE ((zgDeviceLogicalType == ZG_DEVICETYPE_COORDINATOR) || (zgDeviceLogicalType == ZG_DEVICETYPE_ROUTER))
+#else  
+  #define ZG_DEVICE_RTR_TYPE ((zgDeviceLogicalType == ZG_DEVICETYPE_COORDINATOR) || (zgDeviceLogicalType == ZG_DEVICETYPE_ROUTER))  
 #endif
-
+  
 #if ( ZSTACK_DEVICE_BUILD == DEVICE_BUILD_ENDDEVICE )
   #define ZG_DEVICE_ENDDEVICE_TYPE 1
 #else
-  #define ZG_DEVICE_ENDDEVICE_TYPE (zgDeviceLogicalType == ZG_DEVICETYPE_ENDDEVICE)
-#endif
-
-#define ZG_DEVICE_JOINING_TYPE     ((zgDeviceLogicalType == ZG_DEVICETYPE_ROUTER) || (zgDeviceLogicalType == ZG_DEVICETYPE_ENDDEVICE))
-
-#if ( ZG_BUILD_RTR_TYPE )
+  #define ZG_DEVICE_ENDDEVICE_TYPE (zgDeviceLogicalType == ZG_DEVICETYPE_ENDDEVICE)  
+#endif  
+  
+#define ZG_DEVICE_JOINING_TYPE     ((zgDeviceLogicalType == ZG_DEVICETYPE_ROUTER) || (zgDeviceLogicalType == ZG_DEVICETYPE_ENDDEVICE))  
+  
+#if ( ZG_BUILD_RTR_TYPE )  
   #if ( ZG_BUILD_ENDDEVICE_TYPE )
     #define ZSTACK_ROUTER_BUILD         (ZG_BUILD_RTR_TYPE && ZG_DEVICE_RTR_TYPE)
   #else
     #define ZSTACK_ROUTER_BUILD         1
   #endif
-#else
+#else  
   #define ZSTACK_ROUTER_BUILD           0
 #endif
-
+  
 #if ( ZG_BUILD_ENDDEVICE_TYPE )
-  #if ( ZG_BUILD_RTR_TYPE )
+  #if ( ZG_BUILD_RTR_TYPE )  
     #define ZSTACK_END_DEVICE_BUILD     (ZG_BUILD_ENDDEVICE_TYPE && ZG_DEVICE_ENDDEVICE_TYPE)
   #else
     #define ZSTACK_END_DEVICE_BUILD     1
@@ -113,19 +113,19 @@ extern "C" {
 #else
   #define ZSTACK_END_DEVICE_BUILD       0
 #endif
-
-
+  
+  
 /*********************************************************************
  * CONSTANTS
  */
-
+  
 // Values for ZCD_NV_LOGICAL_TYPE (zgDeviceLogicalType)
 #define ZG_DEVICETYPE_COORDINATOR      0x00
 #define ZG_DEVICETYPE_ROUTER           0x01
 #define ZG_DEVICETYPE_ENDDEVICE        0x02
 
 //#define DEVICE_LOGICAL_TYPE ZG_DEVICETYPE_COORDINATOR
-
+  
 // Default Device Logical Type
 #if !defined ( DEVICE_LOGICAL_TYPE )
   #if ( ZG_BUILD_COORDINATOR_TYPE )
@@ -148,7 +148,7 @@ extern "C" {
 #if !defined ( MAX_DATA_RETRIES )
   #define MAX_DATA_RETRIES         2
 #endif
-
+  
 // NIB parameters
 #if !defined ( MAX_BCAST_RETRIES )
   #define MAX_BCAST_RETRIES        2
@@ -159,27 +159,23 @@ extern "C" {
 #if !defined ( BCAST_DELIVERY_TIME )
   #define BCAST_DELIVERY_TIME      30
 #endif
-
-#if !defined ( ROUTE_DISCOVERY_TIME )
-  #define ROUTE_DISCOVERY_TIME     5
-#endif
-
+ 
 #if !defined ( APS_DEFAULT_MAXBINDING_TIME )
   #define APS_DEFAULT_MAXBINDING_TIME 16000
 #endif
-
-#if !defined ( APS_DEFAULT_NONMEMBER_RADIUS )
-  #define APS_DEFAULT_NONMEMBER_RADIUS   2
-#endif
-
+  
 #if !defined ( APSF_DEFAULT_WINDOW_SIZE )
-  #define APSF_DEFAULT_WINDOW_SIZE       1
+  #define APS_DEFAULT_WINDOW_SIZE        3
 #endif
 
 #if !defined ( APSF_DEFAULT_INTERFRAME_DELAY )
-  #define APSF_DEFAULT_INTERFRAME_DELAY  50
+  #define APS_DEFAULT_INTERFRAME_DELAY   50
 #endif
-
+  
+#if !defined ( APS_DEFAULT_NONMEMBER_RADIUS )
+  #define APS_DEFAULT_NONMEMBER_RADIUS   2
+#endif
+  
 // Concentrator values
 #if !defined ( CONCENTRATOR_ENABLE )
   #define CONCENTRATOR_ENABLE          false // true if concentrator is enabled
@@ -188,20 +184,20 @@ extern "C" {
 #if !defined ( CONCENTRATOR_DISCOVERY_TIME )
   #define CONCENTRATOR_DISCOVERY_TIME  0
 #endif
-
+  
 #if !defined ( CONCENTRATOR_RADIUS )
   #define CONCENTRATOR_RADIUS          0x0a
 #endif
-
+  
 #if !defined ( CONCENTRATOR_ROUTE_CACHE )
   #define CONCENTRATOR_ROUTE_CACHE     false // true if concentrator has route cache
 #endif
 
 // The hop count radius for concentrator route discoveries
 #if !defined ( CONCENTRATOR_RADIUS )
-  #define CONCENTRATOR_RADIUS          0x0a
-#endif
-
+  #define CONCENTRATOR_RADIUS          0x0a  
+#endif 
+  
 #if !defined ( START_DELAY )
   #define START_DELAY                  0x0a
 #endif
@@ -216,12 +212,12 @@ extern "C" {
 #if !defined ( ZG_TRUSTCENTER_ADDR )
   #define ZG_TRUSTCENTER_ADDR            NWK_PAN_COORD_ADDR
 #endif
-
-// Backwards compatible - AMI changed name to SE
+    
+// Backwards compatible - AMI changed name to SE  
 #if defined ( AMI_PROFILE ) || defined ( SE_PROFILE )
 #define TC_LINKKEY_JOIN
 #endif
-
+  
 //--------------------------------------------------------------------
 // Security modes
 //--------------------------------------------------------------------
@@ -290,7 +286,11 @@ extern uint8 zgIndirectMsgTimeout;
 extern uint8 zgSecurityMode;
 extern uint8 zgSecurePermitJoin;
 extern uint16 zgTrustCenterAddr;
-extern uint8 zgRouteDiscoveryTime;
+extern uint32 zgRNGCounter;
+extern uint8 zgCAPublicKey[];
+extern uint8 zgLocalCertificate[];
+extern uint8 zgStaticPrivateKey[];
+extern uint8 zgRemotePublicKey[];
 extern uint8 zgRouteExpiryTime;
 
 extern uint8 zgExtendedPANID[];
@@ -305,9 +305,6 @@ extern uint8 zgConcentratorEnable;
 extern uint8 zgConcentratorDiscoveryTime;
 extern uint8 zgConcentratorRadius;
 extern uint8 zgConcentratorRC;
-extern uint8 zgNwkSrcRtgExpiryTime;
-
-extern uint8 zgRouterOffAssocCleanup;
 
 /*********************************************************************
  * APS GLOBAL VARIABLES
@@ -319,12 +316,15 @@ extern uint8  zgApsAckWaitMultiplier;
 extern uint16 zgApsDefaultMaxBindingTime;
 extern uint8  zgApsUseExtendedPANID[Z_EXTADDR_LEN];
 extern uint8  zgApsUseInsecureJoin;
+extern uint8  zgApscMaxWindowSize;
+extern uint16 zgApsInterframeDelay;
 extern uint8  zgApsNonMemberRadius;
 
 /*********************************************************************
  * SECURITY GLOBAL VARIABLES
  */
 
+extern uint8 zgPreConfigKey[];
 extern uint8 zgPreConfigKeys;
 extern uint8 zgUseDefaultTCLK;
 
@@ -334,7 +334,6 @@ extern uint8 zgUseDefaultTCLK;
 
 extern uint16 zgConfigPANID;
 extern uint8  zgDeviceLogicalType;
-extern uint8  zgNwkMgrMinTransmissions;
 #if !defined MT_TASK
 extern uint8 zgZdoDirectCB;
 #endif
@@ -345,6 +344,7 @@ extern uint8 zgZdoDirectCB;
 
 extern uint8 zgNwkMgrMode;
 
+
 /*********************************************************************
  * FUNCTIONS
  */
@@ -353,6 +353,7 @@ extern uint8 zgNwkMgrMode;
  * Initialize the Z-Stack Globals.
  */
 extern uint8 zgInit( void );
+
 
 /*
  * Initialize the RAM Items table with NV values.
@@ -375,9 +376,10 @@ extern uint8 zgReadStartupOptions( void );
  *                      ZCD_STARTOPT_DEFAULT_CONFIG_STATE
  *                      ZDC_STARTOPT_DEFAULT_NETWORK_STATE
  *
- * Returns - ZSUCCESS if successful
+ * Returns - ZSUCCESS if successful   
  */
 extern uint8 zgWriteStartupOptions( uint8 action, uint8 bitOptions );
+
 
 /*
  *  Set RAM variables from set-NV, if it exist in the zgItemTable

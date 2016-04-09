@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       ZDSecMgr.h
-  Revised:        $Date: 2012-02-16 13:22:48 -0800 (Thu, 16 Feb 2012) $
-  Revision:       $Revision: 29339 $
+  Revised:        $Date: 2009-12-16 15:32:33 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21350 $
 
   Description:    This file contains the interface to the ZigBee Device Security Manager.
 
 
-  Copyright 2005-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,7 +34,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef ZDSECMGR_H
@@ -115,7 +115,7 @@ extern void ZDSecMgrPermitJoiningTimeout( void );
 /******************************************************************************
  * @fn          ZDSecMgrNewDeviceEvent
  *
- * @brief       Process a the new device event, if found reset new device
+ * @brief       Process a the new device event, if found reset new device 
  *              event/timer.
  *
  * @param       none
@@ -262,11 +262,11 @@ extern ZStatus_t ZDSecMgrSwitchNwkKey( uint8 keySeqNum, uint16 dstAddr );
  *
  * @brief       Request an application key with partner.
  *
- * @param       partExtAddr - [in] partner extended address
+ * @param       partNwkAddr - [in] partner network address
  *
  * @return      ZStatus_t
  */
-extern ZStatus_t ZDSecMgrRequestAppKey( uint8 *partExtAddr );
+ZStatus_t ZDSecMgrRequestAppKey( uint16 partNwkAddr );
 
 /******************************************************************************
  * @fn          ZDSecMgrSetupPartner
@@ -315,22 +315,10 @@ extern ZStatus_t ZDSecMgrAddLinkKey( uint16 shortAddr, uint8 *extAddr, uint8 *ke
  * @return      ZStatus_t
  */
 extern ZStatus_t ZDSecMgrDeviceRemoveByExtAddr( uint8 *pAddr );
-
-/******************************************************************************
- * @fn          ZDSecMgrAddrClear
- *
- * @brief       Clear security bit from Address Manager for specific device.
- *
- * @param       extAddr - [in] EXT address
- *
- * @return      ZStatus_t
- */
-extern ZStatus_t ZDSecMgrAddrClear( uint8* extAddr );
-
 /******************************************************************************
  * @fn          ZDSecMgrInitNV
  *
- * @brief       Initialize the SecMgr entry data in NV with all values set to 0
+ * @brief       Initialize the SecMgr entry data in NV.
  *
  * @param       none
  *
@@ -338,16 +326,6 @@ extern ZStatus_t ZDSecMgrAddrClear( uint8* extAddr );
  */
 extern uint8 ZDSecMgrInitNV( void );
 
-/*********************************************************************
- * @fn          ZDSecMgrSetDefaultNV
- *
- * @brief       Write the defaults to NV for Entry table and for APS key data table
- *
- * @param       none
- *
- * @return      none
- */
-extern void ZDSecMgrSetDefaultNV( void );
 
 /******************************************************************************
  * @fn          ZDSecMgrAPSRemove
@@ -362,6 +340,7 @@ extern void ZDSecMgrSetDefaultNV( void );
  */
 ZStatus_t ZDSecMgrAPSRemove( uint16 nwkAddr, uint8 *extAddr, uint16 parentAddr );
 
+
 /******************************************************************************
  * @fn          ZDSecMgrAuthenticationCheck
  *
@@ -369,7 +348,7 @@ ZStatus_t ZDSecMgrAPSRemove( uint16 nwkAddr, uint8 *extAddr, uint16 parentAddr )
  *
  * @param       shortAddr - [in] short address
  *
- * @return      uint8 - TRUE @ authenticated
+ * @return      uint8 - TRUE @ authenticated 
  *                      FALSE @ not authenticated
  */
 
@@ -387,6 +366,7 @@ uint8 ZDSecMgrAuthenticationCheck( uint16 shortAddr );
  */
 extern ZStatus_t APSME_TCLinkKeySync( uint16 srcAddr, SSP_Info_t* si );
 
+
 /******************************************************************************
  * @fn          APSME_TCLinkKeyLoad
  *
@@ -399,85 +379,6 @@ extern ZStatus_t APSME_TCLinkKeySync( uint16 srcAddr, SSP_Info_t* si );
  */
 extern ZStatus_t APSME_TCLinkKeyLoad( uint16 dstAddr, SSP_Info_t* si );
 
-/*********************************************************************
- * @fn          ZDSecMgrReadKeyFromNv
- *
- * @brief       Looks for a specific key in NV based on Index value
- *
- * @param   keyNvId - Index of key to look in NV
- *                    valid values are:
- *                    ZCD_NV_NWK_ACTIVE_KEY_INFO
- *                    ZCD_NV_NWK_ALTERN_KEY_INFO
- *                    ZCD_NV_TCLK_TABLE_START + <offset_in_table>
- *                    ZCD_NV_APS_LINK_KEY_DATA_START + <offset_in_table>
- *                    ZCD_NV_MASTER_KEY_DATA_START + <offset_in_table>
- *                    ZCD_NV_PRECFGKEY
- *
- * @param  *keyinfo - Data is read into this buffer.
- *
- * @return  SUCCESS if NV data was copied to the keyinfo parameter .
- *          Otherwise, NV_OPER_FAILED for failure.
- */
-extern ZStatus_t ZDSecMgrReadKeyFromNv(uint16 keyNvId, void *keyinfo);
-
-/******************************************************************************
- * @fn          ZDSecMgrInitNVKeyTables
- *
- * @brief       Initialize the NV table for All keys: NWK, Master, TCLK and APS
- *
- * @param       setDefault - TRUE to set default values
- *
- * @return      none
- */
-extern void ZDSecMgrInitNVKeyTables(uint8 setDefault);
-
-/******************************************************************************
- * @fn          ZDSecMgrSaveApsLinkKey
- *
- * @brief       Save APS Link Key to NV. It will loop through all the keys
- *              to see which one to save.
- *
- * @param       none
- *
- * @return      none
- */
-extern void ZDSecMgrSaveApsLinkKey(void);
-
-/******************************************************************************
- * @fn          ZDSecMgrSaveTCLinkKey
- *
- * @brief       Save TC Link Key to NV. It will loop through all the keys
- *              to see which one to save.
- *
- * @param       none
- *
- * @return      none
- */
-extern void ZDSecMgrSaveTCLinkKey(void);
-
-/******************************************************************************
- * @fn          ZDSecMgrClearNVKeyValues
- *
- * @brief       If NV_RESTORE is enabled and the status of the network needs
- *              default values this fuction clears ZCD_NV_NWKKEY,
- *              ZCD_NV_NWK_ACTIVE_KEY_INFO and ZCD_NV_NWK_ALTERN_KEY_INFO link
- *
- * @param       none
- *
- * @return      none
- */
-extern void ZDSecMgrClearNVKeyValues(void);
-
-/******************************************************************************
- * @fn          ZDSecMgrFallbackNwkKey
- *
- * @brief       Use the ZBA fallback network key.
- *
- * @param       none
- *
- * @return      none
- */
-extern void ZDSecMgrFallbackNwkKey( void );
 
 /******************************************************************************
 ******************************************************************************/

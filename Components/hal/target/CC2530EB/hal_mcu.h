@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_mcu.h
-  Revised:        $Date: 2012-03-29 12:09:02 -0700 (Thu, 29 Mar 2012) $
-  Revision:       $Revision: 29943 $
+  Revised:        $Date: 2009-03-18 10:57:06 -0700 (Wed, 18 Mar 2009) $
+  Revision:       $Revision: 19445 $
 
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -104,18 +104,6 @@ typedef unsigned char halIntState_t;
 #define HAL_EXIT_CRITICAL_SECTION(x)    st( EA = x; )
 #define HAL_CRITICAL_STATEMENT(x)       st( halIntState_t _s; HAL_ENTER_CRITICAL_SECTION(_s); x; HAL_EXIT_CRITICAL_SECTION(_s); )
 
-#ifdef __IAR_SYSTEMS_ICC__
-  /* IAR library uses XCH instruction with EA. It may cause the higher priority interrupt to be 
-   * locked out, therefore, may increase interrupt latency.  It may also create a lockup condition. 
-   * This workaround should only be used with 8051 using IAR compiler. When IAR fixes this by 
-   * removing XCH usage in its library, compile the following macros to null to disable them.
-   */
-  #define HAL_ENTER_ISR()               { halIntState_t _isrIntState = EA; HAL_ENABLE_INTERRUPTS();
-  #define HAL_EXIT_ISR()                  EA = _isrIntState; }
-#else
-  #define HAL_ENTER_ISR()     
-  #define HAL_EXIT_ISR()      
-#endif /* __IAR_SYSTEMS_ICC__ */
 
 /* ------------------------------------------------------------------------------------------------
  *                                        Reset Macro
@@ -172,17 +160,11 @@ typedef unsigned char halIntState_t;
                                 * loads the 24-bit compare value and 1 when the sleep
                                 * timer is ready to start loading a newcompare value. */
 
+/* All ISR that are used to wake up the chip shall have this macro called */
 #ifdef POWER_SAVING
-extern volatile __data uint8 halSleepPconValue;
-
-/* Any ISR that is used to wake up the chip shall call this macro. This prevents the race condition
- * when the PCON IDLE bit is set after such a critical ISR fires during the prep for sleep.
- */
-#define CLEAR_SLEEP_MODE()        st( halSleepPconValue = 0; )
-#define ALLOW_SLEEP_MODE()        st( halSleepPconValue = PCON_IDLE; )
+  #define CLEAR_SLEEP_MODE() st(SLEEPCMD &= ~PMODE;)  /* Wake up to Power Mode 0 */
 #else
-#define CLEAR_SLEEP_MODE()
-#define ALLOW_SLEEP_MODE()
+  #define CLEAR_SLEEP_MODE()
 #endif
 
 /**************************************************************************************************

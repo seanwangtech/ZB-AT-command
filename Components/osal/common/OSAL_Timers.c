@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       OSAL_Timers.c
-  Revised:        $Date: 2010-09-17 16:25:30 -0700 (Fri, 17 Sep 2010) $
-  Revision:       $Revision: 23835 $
+  Revised:        $Date: 2009-11-09 20:57:31 -0800 (Mon, 09 Nov 2009) $
+  Revision:       $Revision: 21110 $
 
   Description:    OSAL Timer definition and manipulation functions.
 

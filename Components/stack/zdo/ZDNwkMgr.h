@@ -6,7 +6,7 @@
   Description:    This file contains the interface to the ZigBee Network Manager.
 
 
-  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -64,10 +64,8 @@ extern "C"
 // Energy level threshold
 #define ZDNWKMGR_ACCEPTABLE_ENERGY_LEVEL  0x1E
 
-// Minimum transmissions attempted for Channel Interference detection
-#if !defined ( ZDNWKMGR_MIN_TRANSMISSIONS )
-  #define ZDNWKMGR_MIN_TRANSMISSIONS      20
-#endif
+// Minimum transmissions attempted
+#define ZDNWKMGR_MIN_TRANSMISSIONS        20
 
 // Minimum transmit failure rate for Channel Interference detection
 #define ZDNWKMGR_CI_TX_FAILURE            25

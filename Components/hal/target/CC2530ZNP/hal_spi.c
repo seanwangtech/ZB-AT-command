@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       hal_spi.c
-  Revised:        $Date: 2010-08-10 19:12:51 -0700 (Tue, 10 Aug 2010) $
-  Revision:       $Revision: 23375 $
+  Revised:        $Date:$
+  Revision:       $Revision:$
 
   Description:    This file contains the interface to the HAL SPI.
 

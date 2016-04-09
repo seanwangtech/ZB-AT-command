@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       simplemeter_data.c
-  Revised:        $Date: 2011-11-21 16:13:57 -0800 (Mon, 21 Nov 2011) $
-  Revision:       $Revision: 28440 $
+  Revised:        $Date: 2009-12-16 11:26:16 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21343 $
 
   Description:    File that contains attribute and simple descriptor
                   definitions for the Simple Meter
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -112,8 +112,6 @@ int8 simpleMeterPowerFactor = 0x01;
 UTCTime simpleMeterSnapshotTime = 0x00;
 UTCTime simpleMeterMaxDemandDeliverdTime = 0x00;
 UTCTime simpleMeterMaxDemandReceivedTime = 0x00;
-uint8 simpleMeterDefaultUpdatePeriod = 0x1E;
-uint8 simpleMeterFastPollUpdatePeriod = 0x05;
 
 // Simple Metering Cluster - Meter Status Attributes
 uint8 simpleMeterStatus = 0x12;
@@ -125,18 +123,15 @@ uint24 simpleMeterDivisor = 0x01;
 uint8 simpleMeterSummationFormating = 0x01;
 uint8 simpleMeterDemandFormatting = 0x01;
 uint8 simpleMeterHistoricalConsumptionFormatting = 0x01;
-uint8 simpleMeterDeviceType = 0x00;
 
 // Simple Metering Cluster - SimpleMeter Historical Consumption Attributes
-int24 simpleMeterInstanteneousDemand = 0x01;
+uint24 simpleMeterInstanteneousDemand = 0x01;
 uint24 simpleMeterCurrentdayConsumptionDelivered = 0x01;
 uint24 simpleMeterCurrentdayConsumptionReceived = 0x01;
 uint24 simpleMeterPreviousdayConsumptionDelivered = 0x01;
 uint24 simpleMeterPreviousdayConsumtpionReceived = 0x01;
-UTCTime simpleMeterCurPartProfileIntStartTimeDelivered = 0x1000;
-UTCTime simpleMeterCurPartProfileIntStartTimeReceived  = 0x2000;
-uint24 simpleMeterCurPartProfileIntValueDelivered = 0x0001;
-uint24 simpleMeterCurPartProfileIntValueReceived  = 0x0002;
+UTCTime simpleMeterCurrentPartialProfileIntervalStartTime = 0x1000;
+uint24 simpleMeterCurrentPartialProfileIntervalValue = 0x0001;
 uint8 simpleMeterMaxNumberOfPeriodsDelivered = 0x01;
 
 // Key Establishment
@@ -400,7 +395,7 @@ CONST zclAttrRec_t simpleMeterAttrs[SIMPLEMETER_MAX_ATTRIBUTES] =
       ATTRID_SE_CURRENT_TIER6_SUMMATION_DELIVERED,
       ZCL_DATATYPE_UINT48,
       ACCESS_CONTROL_READ,
-      (void *)simpleMeterCurrentTier6SummationDelivered
+      (void *)simpleMeterCurrentTier5SummationDelivered
     }
   },
   {
@@ -409,7 +404,7 @@ CONST zclAttrRec_t simpleMeterAttrs[SIMPLEMETER_MAX_ATTRIBUTES] =
       ATTRID_SE_CURRENT_TIER6_SUMMATION_RECEIVED,
       ZCL_DATATYPE_UINT48,
       ACCESS_CONTROL_READ,
-      (void *)simpleMeterCurrentTier6SummationReceived
+      (void *)simpleMeterCurrentTier5SummationReceived
     }
   },
   {
@@ -464,24 +459,6 @@ CONST zclAttrRec_t simpleMeterAttrs[SIMPLEMETER_MAX_ATTRIBUTES] =
       ZCL_DATATYPE_UTC,
       ACCESS_CONTROL_READ,
       (void *)&simpleMeterMaxDemandReceivedTime
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-    {  // Attribute record
-      ATTRID_SE_DEFAULT_UPDATE_PERIOD,
-      ZCL_DATATYPE_UINT8,
-      ACCESS_CONTROL_READ,
-      (void *)&simpleMeterDefaultUpdatePeriod
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-    {  // Attribute record
-      ATTRID_SE_FAST_POLL_UPDATE_PERIOD,
-      ZCL_DATATYPE_UINT8,
-      ACCESS_CONTROL_READ,
-      (void *)&simpleMeterFastPollUpdatePeriod
     }
   },
   {
@@ -551,17 +528,8 @@ CONST zclAttrRec_t simpleMeterAttrs[SIMPLEMETER_MAX_ATTRIBUTES] =
   {
     ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
     {  // Attribute record
-      ATTRID_SE_METERING_DEVICE_TYPE,
-      ZCL_DATATYPE_BITMAP8,
-      ACCESS_CONTROL_READ,
-      (void *)&simpleMeterDeviceType
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-    {  // Attribute record
       ATTRID_SE_INSTANTANEOUS_DEMAND,
-      ZCL_DATATYPE_INT24,
+      ZCL_DATATYPE_UINT24,
       ACCESS_CONTROL_READ,
       (void *)&simpleMeterInstanteneousDemand
     }
@@ -603,39 +571,22 @@ CONST zclAttrRec_t simpleMeterAttrs[SIMPLEMETER_MAX_ATTRIBUTES] =
     }
   },
   {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,       
+    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
     {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_START_TIME_DELIVERED,    
-      ZCL_DATATYPE_UTC,                       
-      ACCESS_CONTROL_READ,                       
-      (void *)&simpleMeterCurPartProfileIntStartTimeDelivered  
+      ATTRID_SE_CURRENT_PARTIAL_PROFILE_INTERVAL_START_TIME,
+      ZCL_DATATYPE_UTC,
+      ACCESS_CONTROL_READ,
+      (void *)&simpleMeterCurrentPartialProfileIntervalStartTime
     }
   },
+
   {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,       
+    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
     {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_START_TIME_RECEIVED,    
-      ZCL_DATATYPE_UTC,                       
-      ACCESS_CONTROL_READ,                       
-      (void *)&simpleMeterCurPartProfileIntStartTimeReceived  
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,       
-    {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_VALUE_DELIVERED,    
-      ZCL_DATATYPE_UINT24,                       
-      ACCESS_CONTROL_READ,                       
-      (void *)&simpleMeterCurPartProfileIntValueDelivered  
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,       
-    {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_VALUE_RECEIVED,    
-      ZCL_DATATYPE_UINT24,                       
-      ACCESS_CONTROL_READ,                       
-      (void *)&simpleMeterCurPartProfileIntValueReceived  
+      ATTRID_SE_CURRENT_PARTIAL_PROFILE_INTERVAL_VALUE,
+      ZCL_DATATYPE_UINT24,
+      ACCESS_CONTROL_READ,
+      (void *)&simpleMeterCurrentPartialProfileIntervalValue
     }
   },
 

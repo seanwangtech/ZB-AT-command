@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       MT_ZDO.h
-  Revised:        $Date: 2012-02-16 16:04:32 -0800 (Thu, 16 Feb 2012) $
-  Revision:       $Revision: 29348 $
+  Revised:        $Date: 2009-11-09 20:03:17 -0800 (Mon, 09 Nov 2009) $
+  Revision:       $Revision: 21106 $
 
 
   Description:    MonitorTest functions for the ZDO layer.
 
 
-  Copyright 2004-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -67,7 +67,7 @@ extern uint32 _zdoCallbackSub;
  * EXTERNAL FUNCTIONS
  ***************************************************************************************************/
 
-/*
+/* 
  *  MT ZDO initialization
  */
 extern void MT_ZdoInit(void);

@@ -1,23 +1,23 @@
 /**************************************************************************************************
   Filename:       OnBoard.h
-  Revised:        $Date: 2012-03-29 12:09:02 -0700 (Thu, 29 Mar 2012) $
-  Revision:       $Revision: 29943 $
+  Revised:        $Date: 2009-04-23 10:46:00 -0700 (Thu, 23 Apr 2009) $
+  Revision:       $Revision: 19822 $
 
   Description:    Defines stuff for EVALuation boards
-  Notes:          This file targets the Chipcon CC2530/31ZNP
+  Notes:          This file targets the Chipcon CC2530
 
 
-  Copyright 2005-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -75,7 +75,16 @@ extern uint8 aExtendedAddress[8];
   Timer4 interrupts @ 1.0 msecs using 1/128 pre-scaler
   TICK_COUNT = (CPUMHZ / 128) / 1000
 */
-#define TICK_COUNT  1  // 32 Mhz Output Compare Count
+#ifdef CPU_16MHZ
+  #define TICK_COUNT  1  // 16 Mhz Output Compare Count
+  #define RETUNE_THRESHOLD 1  // Threshold for power saving algorithm
+#elif defined CPU32MHZ
+  #define TICK_COUNT  1  // 32 Mhz Output Compare Count
+  #define RETUNE_THRESHOLD 1  // Threshold for power saving algorithm
+#endif
+
+/* OSAL Timer define */
+#define OSAL_TIMER  HAL_TIMER_2
 
 /* CC2430 DEFINITIONS */
 
@@ -141,6 +150,15 @@ extern uint8 znpCfg1;
  * MACROS
  */
 
+// DB peripheral VDD control
+#ifdef CC2430DB
+  #define INIT_DBIO() { P1DIR |= GPIO_2; P1_2 = 0; }
+  #define STOP_DBIO() { P1_2 = 1; }
+#else // CC2430BB or CC2430EB
+  #define INIT_DBIO()
+  #define STOP_DBIO()
+#endif
+
 // These Key definitions are unique to this development system.
 // They are used to bypass functions when starting up the device.
 #define SW_BYPASS_NV    HAL_KEY_SW_5  // Bypass Network layer NV restore
@@ -179,23 +197,9 @@ extern uint8 znpCfg1;
 #define MT_UART_THRESHOLD   (MT_UART_RX_BUFF_MAX / 2)
 #define MT_UART_IDLE_TIMEOUT 2
 
-#define HAL_UART_PORT              0
-// SOC defines the ideal sizes in the individual _hal_uart_dma/isr.c modules.
-#define HAL_UART_FLOW_THRESHOLD    0
-#define HAL_UART_RX_BUF_SIZE       0
-#define HAL_UART_TX_BUF_SIZE       0
-#define HAL_UART_IDLE_TIMEOUT      0
-
 // Restart system from absolute beginning
 // Disables interrupts, forces WatchDog reset
-#define SystemReset()       \
-{                           \
-  HAL_DISABLE_INTERRUPTS(); \
-  HAL_SYSTEM_RESET();       \
-}
-
-#define SystemResetSoft()  Onboard_soft_reset()
-
+#define SystemReset()  HAL_SYSTEM_RESET()
 /* Reset reason for reset indication */
 #define ResetReason() ((SLEEPSTA >> 3) & 0x03)
 
@@ -213,30 +217,12 @@ extern uint8 znpCfg1;
 
 #ifdef __IAR_SYSTEMS_ICC__
 // Internal (MCU) Stack addresses
-#define CSTACK_BEG ((uint8 const *)(_Pragma("segment=\"XSTACK\"") __segment_begin("XSTACK")))
-#define CSTACK_END ((uint8 const *)(_Pragma("segment=\"XSTACK\"") __segment_end("XSTACK"))-1)
+#define XSTACK_BEG ((uint8 const *)(_Pragma("segment=\"XSTACK\"") __segment_begin("XSTACK")))
+#define XSTACK_END ((uint8 const *)(_Pragma("segment=\"XSTACK\"") __segment_end("XSTACK"))-1)
 // Stack Initialization Value
 #define STACK_INIT_VALUE  0xCD
 #else
 #error Check compiler compatibility.
-#endif
-
-#if !defined MAXMEMHEAP
-// Empirical number - compile the project to see what XDATA is left un-used and give it to the HEAP
-// TC_LINKKEY_JOIN brings in the bigger demand for ZDSECMGR_TC_DEVICE_MAX=16 vice 1.
-#if defined CC2531ZNP
-#if defined TC_LINKKEY_JOIN
-#define MAXMEMHEAP  3230
-#else
-#define MAXMEMHEAP  3400
-#endif
-#else
-#if defined TC_LINKKEY_JOIN
-#define MAXMEMHEAP  2600
-#else
-#define MAXMEMHEAP  2770
-#endif
-#endif
 #endif
 
 #define KEY_CHANGE_SHIFT_IDX 1
@@ -256,9 +242,13 @@ extern uint8 znpCfg1;
 typedef struct
 {
   osal_event_hdr_t hdr;
-  uint8 state; // shift
-  uint8 keys;  // keys
+  uint8             state; // shift
+  uint8             keys;  // keys
 } keyChange_t;
+
+/*********************************************************************
+ * TYPEDEFS
+ */
 
 /*********************************************************************
  * FUNCTIONS
@@ -285,13 +275,13 @@ typedef struct
   /*
    * Send "Key Pressed" message to application
    */
-  extern uint8 OnBoard_SendKeys( uint8 keys, uint8 shift );
+  extern uint8 OnBoard_SendKeys(  uint8 keys, uint8 shift);
 
 /* LCD Emulation/Control Functions */
   /*
    * Convert an interger to an ascii string
    */
-  extern void _itoa( uint16 num, uint8 *buf, uint8 radix );
+  extern void _itoa(uint16 num, uint8 *buf, uint8 radix);
 
 
   extern void Dimmer( uint8 lvl );
@@ -337,11 +327,6 @@ typedef struct
    * Board specific micro-second wait
    */
   extern void Onboard_wait( uint16 timeout );
-
-  /*
-   * Board specific soft reset.
-   */
-  extern __near_func void Onboard_soft_reset( void );
 
 /*********************************************************************
 *********************************************************************/

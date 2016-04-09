@@ -48,6 +48,13 @@
  *
  *                 ...
  *
+ * string3Desc:    ; String descriptor: Serial number (the last descriptor)
+ *                 DB string3DescEnd - string3Desc;
+ *                 DB DESC_TYPE_STRING  ; bDescriptorType
+ *                 DB '1', 0;
+ *                 DB '2', 0;
+ *                 DB '3', 0;
+ * string3DescEnd:
  * usbDescEnd:
  * \endcode
  * @{
@@ -78,7 +85,7 @@ void __code *usbdpFindNext(uint8 wantedType, uint8 haltAtType);
 USB_DEVICE_DESCRIPTOR __code* usbdpGetDeviceDesc(void);
 USB_CONFIGURATION_DESCRIPTOR __code* usbdpGetConfigurationDesc(uint8 cfgValue, uint8 cfgIndex);
 USB_INTERFACE_DESCRIPTOR __code* usbdpGetInterfaceDesc(uint8 cfgValue, uint8 intNumber, uint8 altSetting);
-USB_STRING_DESCRIPTOR* usbdpGetStringDesc(uint8 strIndex);
+USB_STRING_DESCRIPTOR __code* usbdpGetStringDesc(uint8 strIndex);
 //-------------------------------------------------------------------------------------------------------
 
 
@@ -86,7 +93,7 @@ USB_STRING_DESCRIPTOR* usbdpGetStringDesc(uint8 strIndex);
 
 /*
 +------------------------------------------------------------------------------
-|  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+|  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 |
 |  IMPORTANT: Your use of this Software is limited to those specific rights
 |  granted under the terms of a software license agreement between the user who

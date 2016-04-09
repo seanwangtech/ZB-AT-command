@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       zmac_internal.h
-  Revised:        $Date: 2011-02-28 16:59:59 -0800 (Mon, 28 Feb 2011) $
-  Revision:       $Revision: 25230 $
+  Revised:        $Date: 2007-10-29 15:40:09 -0700 (Mon, 29 Oct 2007) $
+  Revision:       $Revision: 15809 $
 
   Description:    This file contains the ZStack MAC Porting Layer.
 
 
-  Copyright 2005-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -112,27 +112,6 @@ enum
   ZMacChannel                           = MAC_LOGICAL_CHANNEL,
   ZMacExtAddr                           = MAC_EXTENDED_ADDRESS,
   ZMacAltBE                             = MAC_ALT_BE,
-  ZMacDeviceBeaconOrder                 = MAC_DEVICE_BEACON_ORDER,
-  ZMacPhyTransmitPowerSigned            = MAC_PHY_TRANSMIT_POWER_SIGNED,
-
-#ifdef MAC_SECURITY
-  ZMacKeyTable                          = MAC_KEY_TABLE,
-  ZMacKeyTableEntries                   = MAC_KEY_TABLE_ENTRIES,
-  ZMacDeviceTable                       = MAC_DEVICE_TABLE,
-  ZMacDeviceTableEntries                = MAC_DEVICE_TABLE_ENTRIES,
-  ZMacSecurityLevelTable                = MAC_SECURITY_LEVEL_TABLE,
-
-  ZMacSecurityLevelTableEntries         = MAC_SECURITY_LEVEL_TABLE_ENTRIES,
-  ZMacFrameCounter                      = MAC_FRAME_COUNTER,
-  ZMacAutoRequestSecurityLevel          = MAC_AUTO_REQUEST_SECURITY_LEVEL,
-  ZMacAutoRequestKeyIdMode              = MAC_AUTO_REQUEST_KEY_ID_MODE,
-  ZMacAutoRequestKeySource              = MAC_AUTO_REQUEST_KEY_SOURCE,
-
-  ZMacAutoRequestKeyIndex               = MAC_AUTO_REQUEST_KEY_INDEX,
-  ZMacDefaultKeySource                  = MAC_DEFAULT_KEY_SOURCE,
-  ZMacPanCoordExtendedAddress           = MAC_PAN_COORD_EXTENDED_ADDRESS,
-  ZMacPanCoordShortAddress              = MAC_PAN_COORD_SHORT_ADDRESS,
-#endif /* MAC_SECURITY */
 
   // Junk
   ZMacACLDefaultSecurityMaterialLength  = 0,     // not implemented

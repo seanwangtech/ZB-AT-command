@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       OSAL_Memory.h
-  Revised:        $Date: 2010-07-28 08:42:48 -0700 (Wed, 28 Jul 2010) $
-  Revision:       $Revision: 23160 $
+  Revised:        $Date: 2009-07-14 08:43:23 -0700 (Tue, 14 Jul 2009) $
+  Revision:       $Revision: 20305 $
     
   Description:    This module defines the OSAL memory control functions. 
     
@@ -89,22 +89,12 @@ extern "C"
  /*
   * Allocate a block of memory.
   */
-#ifdef DPRINTF_OSALHEAPTRACE
-  void *osal_mem_alloc_dbg( uint16 size, const char *fname, unsigned lnum );
-#define osal_mem_alloc(_size ) osal_mem_alloc_dbg(_size, __FILE__, __LINE__)
-#else /* DPRINTF_OSALHEAPTRACE */
-  void *osal_mem_alloc( uint16 size );
-#endif /* DPRINTF_OSALHEAPTRACE */
+  ONLY NULL_OK void *osal_mem_alloc( uint16 size );
 
  /*
   * Free a block of memory.
   */
-#ifdef DPRINTF_OSALHEAPTRACE
-  void osal_mem_free_dbg( void *ptr, const char *fname, unsigned lnum );
-#define osal_mem_free(_ptr ) osal_mem_free_dbg(_ptr, __FILE__, __LINE__)
-#else /* DPRINTF_OSALHEAPTRACE */
-  void osal_mem_free( void *ptr );
-#endif /* DPRINTF_OSALHEAPTRACE */
+  void osal_mem_free( ONLY void *ptr );
 
 #if ( OSALMEM_METRICS )
  /*

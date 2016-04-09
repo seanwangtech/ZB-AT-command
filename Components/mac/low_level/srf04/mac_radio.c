@@ -6,7 +6,7 @@
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -111,9 +111,9 @@ MAC_INTERNAL_API void macRadioInit(void)
 {
   /* variable initialization for this module */
   reqChannel    = MAC_RADIO_CHANNEL_DEFAULT;
-  macPhyChannel = MAC_RADIO_CHANNEL_INVALID;
-  reqTxPower    = MAC_RADIO_TX_POWER_INVALID;
-  macPhyTxPower = MAC_RADIO_TX_POWER_INVALID;
+  macPhyChannel = MAC_RADIO_CHANNEL_DEFAULT;
+  reqTxPower    = MAC_RADIO_TX_POWER_DEFAULT;
+  macPhyTxPower = MAC_RADIO_TX_POWER_DEFAULT;
 }
 
 
@@ -229,14 +229,13 @@ MAC_INTERNAL_API void macRadioSetIEEEAddr(uint8 * pIEEEAddr)
  *                        for it, txPower is the raw register value). If PA/LNA is installed
  *                        then txPower becomes positive dBm.
  *
- * @return      The minus dBm for power actually set according to what is possible according to
-                the build and run-time configuration set.
+ * @return      none
  **************************************************************************************************
  */
 #ifndef HAL_MAC_USE_REGISTER_POWER_VALUES
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-MAC_INTERNAL_API uint8 macRadioSetTxPower(uint8 txPower)
+MAC_INTERNAL_API void macRadioSetTxPower(uint8 txPower)
 {
   halIntState_t  s;
 #if defined MAC_RUNTIME_CC2591 || defined MAC_RUNTIME_CC2590
@@ -282,14 +281,12 @@ MAC_INTERNAL_API uint8 macRadioSetTxPower(uint8 txPower)
 
   /* update the radio power setting */
   macRadioUpdateTxPower();
-
-  return txPower;
 }
 
 #else
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-MAC_INTERNAL_API uint8 macRadioSetTxPower(uint8 txPower)
+MAC_INTERNAL_API void macRadioSetTxPower(uint8 txPower)
 {
   halIntState_t  s;
 
@@ -300,8 +297,6 @@ MAC_INTERNAL_API uint8 macRadioSetTxPower(uint8 txPower)
 
   /* update the radio power setting */
   macRadioUpdateTxPower();
-
-  return txPower;
 }
 
 #endif
@@ -354,8 +349,7 @@ MAC_INTERNAL_API void macRadioUpdateTxPower(void)
  *
  * @brief       Set radio channel.
  *
- * @param       channel - channel number, valid range is 11 through 26. Allow
- *              channels 27 and 28 for some Japanese customers.
+ * @param       channel - channel number, valid range is 11 through 26
  *
  * @return      none
  **************************************************************************************************
@@ -493,9 +487,6 @@ MAC_INTERNAL_API void macRadioStopScan(void)
  */
 void macRadioEnergyDetectStart(void)
 {
-  /* Energy Detection Scan should be run with CC2591 compresson workaround off */
-  COMPRESSION_WORKAROUND_OFF();
-
   MAC_RADIO_RECORD_MAX_RSSI_START();
 }
 
@@ -519,9 +510,6 @@ uint8 macRadioEnergyDetectStop(void)
   rssiDbm = MAC_RADIO_RECORD_MAX_RSSI_STOP() + MAC_RADIO_RSSI_OFFSET;
   MAC_RADIO_RSSI_LNA_OFFSET(rssiDbm);
   energyDetectMeasurement = radioComputeED(rssiDbm);
-
-  /* Trun on CC2591 compresson workaround */
-  COMPRESSION_WORKAROUND_ON();
 
   return(energyDetectMeasurement);
 }

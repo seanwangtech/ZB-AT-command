@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_sleep.h
-  Revised:        $Date: 2012-03-02 15:52:01 -0800 (Fri, 02 Mar 2012) $
-  Revision:       $Revision: 29608 $
+  Revised:        $Date: 2007-11-01 08:43:49 -0700 (Thu, 01 Nov 2007) $
+  Revision:       $Revision: 15820 $
 
   Description:    This file contains the interface to the power management service.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -63,16 +63,6 @@ extern void halSleepWait(uint16 duration);
  * Used in hal_drivers, AN044 - DELAY EXTERNAL INTERRUPTS
  */
 extern void halRestoreSleepLevel( void );
-
-/*
- * Used by the interrupt routines to exit from sleep.
- */
-extern void halSleepExit(void);
-
-/*
- * Set the max sleep loop time lesser than the T2 rollover period.
- */
-extern void halSetMaxSleepLoopTime(uint32 rolloverTime);
 
 /*********************************************************************
 *********************************************************************/

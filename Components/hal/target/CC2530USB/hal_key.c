@@ -6,7 +6,7 @@
   Description: This file contains the interface to the H/W Key driver.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -271,8 +271,6 @@ uint8 HalKeyExitSleep ( void )
  */
 HAL_ISR_FUNCTION( usbKeyISR, P1INT_VECTOR )
 {
-  HAL_ENTER_ISR();
-
   if (P1IFG & PUSH1_BV)
   {
     isrKeys |= HAL_KEY_SW_1;
@@ -285,8 +283,6 @@ HAL_ISR_FUNCTION( usbKeyISR, P1INT_VECTOR )
 
   HAL_KEY_CLR_INT();
   (void)osal_set_event(Hal_TaskID, HAL_KEY_EVENT);
-
-  HAL_EXIT_ISR();
 }
 
 /**************************************************************************************************

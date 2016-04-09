@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       APS.h
-  Revised:        $Date: 2011-01-05 14:07:16 -0800 (Wed, 05 Jan 2011) $
-  Revision:       $Revision: 24730 $
+  Revised:        $Date: 2009-03-19 13:41:00 -0700 (Thu, 19 Mar 2009) $
+  Revision:       $Revision: 19470 $
 
   Description:    Primitives of the Application Support Sub Layer Task functions.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -74,7 +74,6 @@ typedef struct
   NLDE_Signal_t sig;
   byte SecurityUse;
   uint32 timestamp;
-  uint8 nwkSeqNum;
   aps_FrameFormat_t aff;
 } apsInMsg_t;
 

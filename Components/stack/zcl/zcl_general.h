@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       zcl_general.h
-  Revised:        $Date: 2011-12-14 16:30:16 -0800 (Wed, 14 Dec 2011) $
-  Revision:       $Revision: 28678 $
+  Revised:        $Date: 2009-04-06 09:08:36 -0700 (Mon, 06 Apr 2009) $
+  Revision:       $Revision: 19702 $
 
   Description:    This file contains the ZCL General definitions.
 
 
-  Copyright 2006-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2008 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,7 +34,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef ZCL_GENERAL_H
@@ -91,9 +91,7 @@ extern "C"
 
 /*** Physical Environment Attribute values ***/
 #define PHY_UNSPECIFIED_ENV                               0x00
-#define PHY_MIRROR_CAPACITY_ENV                           0x01
-
-// Specified per Profile 0x01-0x7F
+  // Specified per Profile 0x01-0x7F
 #define PHY_UNKNOWN_ENV                                   0xFF
 
 /*** Device Enable Attribute values ***/
@@ -314,30 +312,19 @@ extern "C"
 #define COMMAND_ALARMS_RESET_ALL                          0x01
 #define COMMAND_ALARMS_GET                                0x02
 #define COMMAND_ALARMS_RESET_LOG                          0x03
-#define COMMAND_ALARMS_PUBLISH_EVENT_LOG                  0x04
 
 #define COMMAND_ALARMS_ALARM                              0x00
 #define COMMAND_ALARMS_GET_RSP                            0x01
-#define COMMAND_ALARMS_GET_EVENT_LOG                      0x02
 
 /*******************************/
 /*** Time Cluster Attributes ***/
 /*******************************/
 #define ATTRID_TIME_TIME                                  0x00
 #define ATTRID_TIME_STATUS                                0x01
-#define ATTRID_TIME_ZONE                                  0x02
-#define ATTRID_TIME_DST_START                             0x03
-#define ATTRID_TIME_DST_END                               0x04
-#define ATTRID_TIME_DST_SHIFT                             0x05
-#define ATTRID_TIME_STANDARD_TIME                         0x06
-#define ATTRID_TIME_LOCAL_TIME                            0x07
-#define ATTRID_TIME_LAST_SET_TIME                         0x08
-#define ATTRID_TIME_VALID_UNTIL_TIME                      0x09
 
 /*** TimeStatus Attribute bits ***/
 #define TIME_STATUS_MASTER                                0x01
 #define TIME_STATUS_SYNCH                                 0x02
-#define TIME_STATUS_MASTER_ZONE_DST                       0x04
 
 /*****************************/
 /*** Time Cluster Commands ***/
@@ -389,493 +376,6 @@ extern "C"
 #define COMMAND_LOCATION_COMPACT_DATA_NOTIF                0x03
 #define COMMAND_LOCATION_RSSI_PING                         0x04
 
-/**********************************************************/
-/*** Input, Output and Value (Basic) Cluster Attributes ***/
-/**********************************************************/
-#define ATTRID_IOV_BASIC_ACTIVE_TEXT                        0x0004
-#define ATTRID_IOV_BASIC_STATE_TEXT                         0x000E
-#define ATTRID_IOV_BASIC_DESCRIPTION                        0x001C
-#define ATTRID_IOV_BASIC_INACTIVE_TEXT                      0x002E
-#define ATTRID_IOV_BASIC_MAX_PRESENT_VALUE                  0x0041
-#define ATTRID_IOV_BASIC_MIN_OFF_TIME                       0x0042
-#define ATTRID_IOV_BASIC_MIM_ON_TIME                        0x0043
-#define ATTRID_IOV_BASIC_MIN_PRESENT_VALUE                  0x0045
-#define ATTRID_IOV_BASIC_NUM_OF_STATES                      0x004A
-#define ATTRID_IOV_BASIC_OUT_OF_SERVICE                     0x0051
-#define ATTRID_IOV_BASIC_POLARITY                           0x0054
-#define ATTRID_IOV_BASIC_PRESENT_VALUE                      0x0055
-#define ATTRID_IOV_BASIC_PRIORITY_ARRAY                     0x0057
-#define ATTRID_IOV_BASIC_RELIABILITY                        0x0067
-#define ATTRID_IOV_BASIC_RELINQUISH_DEFAULT                 0x0068
-#define ATTRID_IOV_BASIC_RESOLUTION                         0x006A
-#define ATTRID_IOV_BASIC_STATUS_FLAG                        0x006F
-#define ATTRID_IOV_BASIC_ENGINEERING_UNITS                  0x0075
-#define ATTRID_IOV_BASIC_APP_TYPE                           0x0100
-
-/*** StatusFlags attribute bits ***/
-#define STATUS_FLAGS_IN_ALARM                               0x01
-#define STATUS_FLAGS_FAULT                                  0x02
-#define STATUS_FLAGS_OVERRIDDEN                             0x04
-#define STATUS_FLAGS_OUT_OF_SERVICE                         0x08
-
-/*** Reliability attribute types ***/
-#define RELIABILITY_NO_FAULT_DETECTED                       0x00
-#define RELIABILITY_NO_SENSOR                               0x01
-#define RELIABILITY_OVER_RANGE                              0x02
-#define RELIABILITY_UNDER_RANGE                             0x03
-#define RELIABILITY_OPEN_LOOP                               0x04
-#define RELIABILITY_SHORTED_LOOP                            0x05
-#define RELIABILITY_NO_OUTPUT                               0x06
-#define RELIABILITY_UNRELIABLE_OTHER                        0x07
-#define RELIABILITY_PROCESS_ERROR                           0x08
-#define RELIABILITY_MULTI_STATE_FAULT                       0x09
-#define RELIABILITY_CONFIG_ERROR                            0x0A
-
-/*** EngineeringUnits attribute values ***/
-// Values 0x0000 to 0x00fe are reserved for the list of engineering units with
-// corresponding values specified in Clause 21 of the BACnet standard.
-
-#define ENGINEERING_UNITS_OTHER                             0x00FF
-
-// Values 0x0100 to 0xffff are available for proprietary use.
-
-/*** Polarity attribute values ***/
-#define POLARITY_NORMAL                                     0x00
-#define POLARITY_REVERSE                                    0x01
-
-/*** ApplicationType attribute bits ***/
-// ApplicationType is subdivided into Group, Type and an Index number.
-
-// Application Group = Bits 24 - 31. An indication of the cluster this
-// attribute is part of.
-#define APP_GROUP                                           0xFF000000
-
-// Application Type = Bits 16 - 23. For Analog clusters, the physical
-// quantity that the Present Value attribute of the cluster represents.
-// For Binary and Multistate clusters, the application usage domain.
-#define APP_TYPE                                            0x00FF0000
-
-// Application Index = Bits 0 - 15. The specific application usage of
-// the cluster
-#define APP_INDEX                                           0x0000FFFF
-
-/*** Application Groups ***/
-#define APP_GROUP_AI                                        0x00 // Analog Input
-#define APP_GROUP_AO                                        0x01 // Analog Output
-#define APP_GROUP_AV                                        0x02 // Analog Value
-#define APP_GROUP_BI                                        0x03 // Binary Input
-#define APP_GROUP_BO                                        0x04 // Binary Output
-#define APP_GROUP_BV                                        0x05 // Binary Value
-#define APP_GROUP_MI                                        0x0D // Multistate Input
-#define APP_GROUP_MO                                        0x0E // Multistate Output
-#define APP_GROUP_MV                                        0x13 // Multistate Value
-
-/*** Application Types ***/
-
-// Analog Input (AI) Types:
-//   Group = 0x00.
-//   Types = 0x00 - 0x0E.
-//   Types 0x0F to 0xFE are reserved, Type = 0xFF indicates other.
-#define APP_TYPE_AI_TEMP_C                                  0x00 // Temperature in degrees C
-#define APP_TYPE_AI_HUMIDITY_PERCENT                        0x01 // Relative humidity in %
-#define APP_TYPE_AI_PRESSURE_PASCAL                         0x02 // Pressure in Pascal
-#define APP_TYPE_AI_FLOW_LIT_SEC                            0x03 // Flow in liters/second
-#define APP_TYPE_AI_PERCENT                                 0x04 // Percentage %
-#define APP_TYPE_AI_PARTS_PER_MIL                           0x05 // Parts per Million PPM
-#define APP_TYPE_AI_ROTATION_SPEED                          0x06 // Rotational Speed in RPM
-#define APP_TYPE_AI_CURRENT_AMPS                            0x07 // Current in Amps
-#define APP_TYPE_AI_FREQUENCY_HZ                            0x08 // Frequency in Hz
-#define APP_TYPE_AI_PWR_WATTS                               0x09 // Power in Watts
-#define APP_TYPE_AI_PWR_KW                                  0x0A // Power in kW
-#define APP_TYPE_AI_ENERGY_KWH                              0x0B // Energy in kWH
-#define APP_TYPE_AI_COUNT                                   0x0C // Count - Unitless
-#define APP_TYPE_AI_ENTHALPY_KJ_KG                          0x0D // Enthalpy in KJoules/Kg
-#define APP_TYPE_AI_TIME_SEC                                0x0E // Time in Seconds
-
-// Analog Output (AO) Types:
-//   Group = 0x01.
-//   Types = 0x00 - 0x0E.
-//   Types 0x0F to 0xFE are reserved, Type = 0xFF indicates other.
-#define APP_TYPE_AO_TEMP_C                                  0x00 // Temperature in degrees C
-#define APP_TYPE_AO_HUMIDITY_PERCENT                        0x01 // Relative Humidity in %
-#define APP_TYPE_AO_PRESSURE_PASCAL                         0x02 // Pressure in Pascal
-#define APP_TYPE_AO_FLOW_LIT_SEC                            0x03 // Flow in liters/second
-#define APP_TYPE_AO_PERCENT                                 0x04 // Percentage %
-#define APP_TYPE_AO_PARTS_PER_MIL                           0x05 // Parts per Million PPM
-#define APP_TYPE_AO_ROTATION_SPEED                          0x06 // Rotational Speed in RPM
-#define APP_TYPE_AO_CURRENT_AMPS                            0x07 // Current in Amps
-#define APP_TYPE_AO_FREQUENCY_HZ                            0x08 // Frequency in Hz
-#define APP_TYPE_AO_PWR_WATTS                               0x09 // Power in Watts
-#define APP_TYPE_AO_PWR_KW                                  0x0A // Power in kW
-#define APP_TYPE_AO_ENERGY_KWH                              0x0B // Energy in kWH
-#define APP_TYPE_AO_COUNT                                   0x0C // Count - Unitless
-#define APP_TYPE_AO_ENTHALPY_KJ_KG                          0x0D // Enthalpy in KJoules/Kg
-#define APP_TYPE_AO_TIME_SEC                                0x0E // Time in Seconds
-
-// Analog Value (AV) Types:
-//   Group = 0x02.
-//   Types = 0x00 - 0x03.
-//   Types 0x04 to 0xFE are reserved, Type = 0xFF indicates other.
-#define APP_TYPE_AV_TEMP_C                                  0x00 // Temperature in Degrees C
-#define APP_TYPE_AV_AREA_SQ_METER                           0x01 // Area in Square Metres
-#define APP_TYPE_AV_MULTIPLIER_NUM                          0x02 // Multiplier - Number
-#define APP_TYPE_AV_FLOW_LIT_SEC                            0x03 // Flow in Litres/Second
-
-// Binary Input (BI) Types:
-//   Group = 0x03.
-//   Types = 0x00 - 0x01.
-//   Types 0x02 to 0xFE are reserved, Type = 0xFF indicates other.
-//   Present Value = 0 represents False, Off, Normal
-//   Present Value = 1 represents True, On, Alarm
-#define APP_TYPE_BI_DOMAIN_HVAC                             0x00 // Application Domain HVAC
-#define APP_TYPE_BI_DOMAIN_SEC                              0x01 // Application Domain Security
-
-// Binary Output (BO) Types:
-//   Group = 0x04.
-//   Types = 0x00 - 0x01.
-//   Types 0x02 to 0xFE are reserved, Type = 0xFF indicates other.
-//   Present Value = 0 represents False, Off, Normal
-//   Present Value = 1 represents True, On, Alarm
-#define APP_TYPE_BO_DOMAIN_HVAC                             0x00 // Application Domain HVAC
-#define APP_TYPE_BO_DOMAIN_SEC                              0x02 // Application Domain Security
-
-// Binary Value (BV) Types:
-//   Group = 0x05.
-//   Type = 0x00.
-//   Types 0x01 to 0xFE are reserved, Type = 0xFF indicates other.
-//   Present Value = 0 represents False, Off, Normal
-//   Present Value = 1 represents True, On, Alarm
-#define APP_TYPE_BV                                         0x00 // Type = 0x00
-
-// Multistate Input (MI) Types:
-//   Group = 0x0D.
-//   Type = 0x00.
-//   Types 0x01 to 0xFE are reserved, Type = 0xFF indicates other.
-#define APP_TYPE_MI_DOMAIN_HVAC                             0x00 // Application Domain HVAC
-
-// Multistate Output (MO) Types:
-//   Group = 0x0E.
-//   Type = 0x00.
-//   Types 0x01 to 0xFE are reserved, Type = 0xFF indicates other.
-#define APP_TYPE_MO_DOMAIN_HVAC                             0x00 // Application Domain HVAC
-
-// Multistate Value (MV) Types:
-//   Group = 0x13.
-//   Type = 0x00.
-//   Types 0x01 to 0xFE are reserved, Type = 0xFF indicates other.
-#define APP_TYPE_MV_DOMAIN_HVAC                             0x00 // Application Domain HVAC
-
-/*** Application Indexes ***/
-
-// Analog Input (AI) Indexes
-//   Group = 0x00.
-
-// AI Temperature in degrees C Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x003C.
-//   Indexed 0x003D - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_TEMP_2_PIPE_ENTER_WATER                0x00 // 2 Pipe Entering Water Temperature AI
-
-// AI Relative humidity in % Indexes:
-//   Type = 0x01.
-//   Indexes = 0x0000 - 0x0008.
-//   Indexed 0x0009 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_HUMIDITY_DISCHARGE                     0x00 // Discharge Humidity AI
-
-// AI Pressure in Pascal Indexes:
-//   Type = 0x02.
-//   Indexes = 0x0000 - 0x001E.
-//   Indexed 0x001F - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_PRESSURE_BOIL_PUMP_DIFF                0x00 // Boiler Pump Differential Pressure AI
-
-// AI Flow in liters/second Indexes:
-//   Type = 0x03.
-//   Indexes = 0x0000 - 0x0015.
-//   Indexed 0x0016 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_FLOW_CHILLED_WATER                     0x00 // Chilled Water Flow AI
-
-// AI Percentage % Indexes:
-//   Type = 0x04.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_PERCENT_CHILLER_FULL_LOAD_AMP          0x00 // Chiller % Full Load Amperage AI
-
-// AI Parts per Million PPM Indexes:
-//   Type = 0x05.
-//   Indexes = 0x0000 - 0x0001.
-//   Indexed 0x0002 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_PARTS_RETURN_CO2                       0x00 // Return Carbon Dioxide AI
-
-// AI Rotational Speed in RPM Indexes:
-//   Type = 0x06.
-//   Indexes = 0x0000 - 0x0007.
-//   Indexed 0x0008 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_ROTATION_EXHAUST_FAN_REMOTE            0x00 // Exhaust Fan Remote Speed AI
-
-// AI Current in Amps Indexes:
-//   Type = 0x07.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_CURRENT_AMPS_CHILLER                   0x00 // Chiller Amps AI
-
-// AI Frequency in Hz Indexes:
-//   Type = 0x08.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_FREQUENCY_SPEED_DRIVE_OUTPUT           0x00 // Variable Speed Drive Output Frequency AI
-
-// AI Power in Watts Indexes:
-//   Type = 0x09.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_PWR_WATTS_CONSUMPTION                  0x00 // Power Consumption AI
-
-// AI Power in kW Indexes:
-//   Type = 0x0A.
-//   Indexes = 0x0000 - 0x0001.
-//   Indexed 0x0002 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_PWR_KW_ABSOLUTE                        0x00 // Absolute Power AI
-
-// AI Energy in kWH Indexes:
-//   Type = 0x0B.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_ENERGY_KWH_SPEED_DRIVE                 0x00 // Variable Speed Drive Kilowatt Hours AI
-
-// AI Count - Unitless Indexes:
-//   Type = 0x0C.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_COUNT                                  0x00 // Count
-
-// AI Enthalpy in KJoules/Kg Indexes:
-//   Type = 0x0D.
-//   Indexes = 0x0000 - 0x0002.
-//   Indexed 0x0003 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_ENTHALPY_OUTDOOR_AIR                   0x00 // Outdoor Air Enthalpy AI
-
-// AI Time in Seconds Indexes:
-//   Type = 0x0E.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AI_TIME_RELATIVE                          0x00 // Relative time AI
-
-
-// Analog Output (AO) types
-//   Group = 0x01.
-
-// AO Temperature in degrees C Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x0009.
-//   Indexed 0x000A - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AO_TEMP_BOILER                            0x00 // Boiler AO
-
-// AO Relative Humidity in % Indexes:
-//   Type = 0x01.
-//   Indexes = 0x0000 - 0x0001.
-//   Indexed 0x0002 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AO_HUMIDITY_HUMIDIFICATION                0x00 // Humidification AO
-
-// AO Pressure in Pascal Indexes:
-//   Type = 0x02.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Flow in liters/second Indexes:
-//   Type = 0x03.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Percentage % Indexes:
-//   Type = 0x04.
-//   Indexes = 0x0000 - 0x002D.
-//   Indexed 0x002E - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AO_PERCENT_FACE_BYPASS_DAMPER             0x00 // Face & Bypass Damper AO
-
-// AO Parts per Million PPM Indexes:
-//   Type = 0x05.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AO_PARTS_SPACE_CO2_LIMIT                  0x00 // Space Carbon Dioxide limit AO
-
-// AO Rotational Speed in RPM Indexes:
-//   Type = 0x06.
-//   Indexes = 0x0000 - 0x0004.
-//   Indexed 0x0005 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AO_ROTATION_EXHAUST_FAN_SPEED             0x00 // Exhaust Fan Speed AO
-
-// AO Current in Amps Indexes:
-//   Type = 0x07.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Frequency in Hz Indexes:
-//   Type = 0x08.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Power in Watts Indexes:
-//   Type = 0x09.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Power in kW Indexes:
-//   Type = 0x0A.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Energy in kWH Indexes:
-//   Type = 0x0B.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Count - Unitless Indexes:
-//   Type = 0x0C.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Enthalpy in KJoules/Kg Indexes:
-//   Type = 0x0D.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// AO Time in Seconds Indexes:
-//   Type = 0x0E.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AO_TIME_RELATIVE                          0x00 // Relative time AO
-
-
-// Analog Value (AV) types
-//   Group = 0x02.
-
-// AV Temperature in Degrees C Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x000F.
-//   Indexed 0x0010 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AV_TEMP_SETPOINT_OFFSET                   0x00 // Setpoint Offset AV
-
-// AV Area in Square Metres Indexes:
-//   Type = 0x01.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AV_AREA_DUCT                              0x00 // Duct Area AV
-
-// AV Multiplier - Number Indexes:
-//   Type = 0x02.
-//   Index = 0x0000.
-//   Indexed 0x0001 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AV_MULTIPLIER_GAIN                        0x00 // Gain multiplier AV
-
-// AV Flow in Litres/Second Indexes:
-//   Type = 0x03.
-//   Indexes = 0x0000 - 0x0005.
-//   Indexed 0x0006 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_AV_FLOW_MIN_AIR                           0x00 // Minimum Air Flow AV
-
-
-// Binary Input (BI) types
-//   Group = 0x03.
-
-// BI Application Domain HVAC Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x0094.
-//   Indexed 0x0095 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_BI_DOMAIN_HVAC_2_PIPE_PUMP_STAT           0x00 // 2 Pipe Pump Status BI
-
-// BI Application Domain Security Indexes:
-//   Type = 0x01.
-//   Indexes = 0x0000 - 0x0008.
-//   Indexed 0x0009 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_BI_DOMAIN_SEC_GLASS_BREAK_DETECT          0x00 // Glass Breakage Detection
-
-
-// Binary Output (BO) types
-//   Group = 0x04.
-
-// BO Application Domain HVAC Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x0076.
-//   Indexed 0x0078 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_BO_DOMAIN_HVAC_2_PIPE_CIR_PUMP            0x00 // 2 Pipe Circulation Pump BO
-
-// BO Application Domain Security Indexes:
-//   Type = 0x02.
-//   Indexes = 0x0000 - 0x0003.
-//   Indexed 0x0004 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_BO_DOMAIN_SEC_ARM_DISARM_CMD              0x00 // Arm Disarm Command BO
-
-
-// Binary Value (BV) types
-//   Group = 0x05.
-
-// BV Type Indexes:
-//   Type = 0x00.
-//   Indexed 0x0000 - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-
-// Multistate Input (MI) types
-//   Group = 0x0D.
-
-// MI Application Domain HVAC Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x000B.
-//   Indexed 0x000C - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_MI_DOMAIN_HVAC_OFF_ON_AUTO                0x00 // Off, On, Auto
-
-
-// Multistate Output (MO)types
-//   Group = 0x0E.
-
-// MO Application Domain HVAC Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x000B.
-//   Indexed 0x000C - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_MO_DOMAIN_HVAC_OFF_ON_AUTO                0x00 // Off, On, Auto
-
-
-// Multistate Value (MV) types
-//   Group = 0x13.
-
-// MV Application Domain HVAC Indexes:
-//   Type = 0x00.
-//   Indexes = 0x0000 - 0x000B.
-//   Indexed 0x000C - 0x01FF are reserved, 0x0200 - 0xFFFE are Vendor
-//   defined, Index = 0xFFFF indicates other.
-#define APP_INDEX_MV_DOMAIN_HVAC_OFF_ON_AUTO                0x00 // Off, On, Auto
-
-
 // The maximum number of characters to allow in a scene's name
 // remember that the first byte is the length
 #define ZCL_GEN_SCENE_NAME_LEN                           16
@@ -884,10 +384,8 @@ extern "C"
 //   2 + 1 + 1 for On/Off cluster (onOff attibute)
 //   2 + 1 + 1 for Level Control cluster (currentLevel attribute)
 //   2 + 1 + 4 for Color Control cluster (currentX/currentY attributes)
-//   2 + 1 + 1 for Door Lock cluster (Lock State attribute)
-//   2 + 1 + 2 for Window Covering cluster (LiftPercentage/TiltPercentage attributes)
-#define ZCL_GEN_SCENE_EXT_LEN                            24
-
+#define ZCL_GEN_SCENE_EXT_LEN                            15
+  
 // The maximum number of entries in the Scene table
 #define ZCL_GEN_MAX_SCENES                               16
 
@@ -913,32 +411,6 @@ typedef struct
   uint16 clusterID;       // The id of the cluster whose attribute generated this alarm
   uint32 timeStamp;       // The time at which the alarm occured
 } zclGeneral_Alarm_t;
-
-// The format of the Get Event Log Command
-typedef struct
-{
-  uint8  logID;     // Log to be queried
-  uint32 startTime; // Start time of events
-  uint32 endTime;   // End time of events
-  uint8  numEvents; // Max number of events requested
-} zclGetEventLog_t;
-
-// The format of the Publish Event Log Command Sub Log Payload
-typedef struct
-{
-  uint8  eventId;   // event ID (i.e., associated event configuration attribute ID)
-  uint32 eventTime; // UTC time event occured
-} zclEventLogPayload_t;
-
-// The format of the Publish Event Log Command
-typedef struct
-{
-  uint8                logID;      // Log to be queried
-  uint8                cmdIndex;   // Command index to count payload fragments
-  uint8                totalCmds;  // Total number of responses expected
-  uint8                numSubLogs; // Number of sub log payloads
-  zclEventLogPayload_t *pLogs;     // Sub log payloads (series of events)
-} zclPublishEventLog_t;
 
 /*** RSSI Location Cluster Data Types ***/
 // Set Absolute Location Command format
@@ -1044,7 +516,7 @@ typedef struct
 typedef struct
 {
   uint8 moveMode;  // move mode which is either LEVEL_MOVE_STOP, LEVEL_MOVE_UP,
-                   // LEVEL_MOVE_ON_AND_UP, LEVEL_MOVE_DOWN, or LEVEL_MOVE_DOWN_AND_OFF
+                   // LEVEL_MOVE_ON_AND_UP, LEVEL_MOVE_DOWN, or LEVEL_MOVE_DOWN_AND_OFF 
   uint8 rate;      // rate of movement in steps per second
   uint8 withOnOff; // with On/off command
 } zclLCMove_t;
@@ -1052,7 +524,7 @@ typedef struct
 typedef struct
 {
   uint8  stepMode;       // step mode which is either LEVEL_STEP_UP, LEVEL_STEP_ON_AND_UP,
-                         // LEVEL_STEP_DOWN, or LEVEL_STEP_DOWN_AND_OFF
+                         // LEVEL_STEP_DOWN, or LEVEL_STEP_DOWN_AND_OFF 
   uint8  amount;         // number of levels to step
   uint16 transitionTime; // time, in 1/10ths of a second, to take to perform the step
   uint8  withOnOff;      // with On/off command
@@ -1133,8 +605,8 @@ typedef struct
     uint8                  locationType; // location type (only applicable to COMMAND_LOCATION_RSSI_PING)
   } un;
 } zclLocationRsp_t;
-
-// This callback is called to process an incoming Reset to Factory Defaults
+                                     
+// This callback is called to process an incoming Reset to Factory Defaults 
 // command. On receipt of this command, the device resets all the attributes
 // of all its clusters to their factory defaults.
 typedef void (*zclGCB_BasicReset_t)( void );
@@ -1162,14 +634,14 @@ typedef void (*zclGCB_LevelControlMoveToLevel_t)( zclLCMoveToLevel_t *pCmd );
 
 // This callback is called to process a Level Control - Move command
 //   moveMode - move mode which is either LEVEL_MOVE_STOP, LEVEL_MOVE_UP,
-//              LEVEL_MOVE_ON_AND_UP, LEVEL_MOVE_DOWN, or LEVEL_MOVE_DOWN_AND_OFF
+//              LEVEL_MOVE_ON_AND_UP, LEVEL_MOVE_DOWN, or LEVEL_MOVE_DOWN_AND_OFF 
 //   rate - rate of movement in steps per second.
 //   withOnOff - with On/off command
 typedef void (*zclGCB_LevelControlMove_t)( zclLCMove_t *pCmd );
 
 // This callback is called to process a Level Control - Step command
 //   stepMode - step mode which is either LEVEL_STEP_UP, LEVEL_STEP_ON_AND_UP,
-//              LEVEL_STEP_DOWN, or LEVEL_STEP_DOWN_AND_OFF
+//              LEVEL_STEP_DOWN, or LEVEL_STEP_DOWN_AND_OFF 
 //   amount - number of levels to step
 //   transitionTime - time, in 1/10ths of a second, to take to perform the step
 //   withOnOff - with On/off command
@@ -1232,17 +704,6 @@ typedef void (*zclGCB_SceneRsp_t)( zclSceneRsp_t *pRsp );
 //               COMMAND_ALARMS_GET_RSP)
 typedef void (*zclGCB_Alarm_t)( zclAlarm_t *pAlarm );
 
-// This callback is called to process an incoming Alarm Get Event Log command.
-//   srcAddr - requestor's address
-//   pEventLog - pointer to Get Event Log Command
-typedef void (*zclGCB_GetEventLog_t)( uint8 srcEP, afAddrType_t *srcAddr, 
-                                      zclGetEventLog_t *pEventLog, uint8 seqNum );
-
-// This callback is called to process an incoming Alarm Publish Event Log command.
-//   srcAddr - responder's address
-//   pEventLog - pointer to Publish Event Log Command
-typedef void (*zclGCB_PublishEventLog_t)( afAddrType_t *srcAddr, zclPublishEventLog_t *pEventLog );
-
 // This callback is called to to process an incoming RSSI Location command.
 //   srcAddr - requestor's address
 //   cmdID - COMMAND_LOCATION_SET_ABSOLUTE, COMMAND_LOCATION_SET_DEV_CFG,
@@ -1283,10 +744,6 @@ typedef struct
   zclGCB_SceneRecallReq_t           pfnSceneRecallReq;            // Scene Recall Request command
   zclGCB_SceneRsp_t                 pfnSceneRsp;                  // Scene Response command
   zclGCB_Alarm_t                    pfnAlarm;                     // Alarm (Response) commands
-#ifdef SE_UK_EXT
-  zclGCB_GetEventLog_t              pfnGetEventLog;               // Get Event Log command
-  zclGCB_PublishEventLog_t          pfnPublishEventLog;           // Publish Event Log command
-#endif
   zclGCB_Location_t                 pfnLocation;                  // RSSI Location command
   zclGCB_LocationRsp_t              pfnLocationRsp;               // RSSI Location Response command
 } zclGeneral_AppCallbacks_t;
@@ -1485,7 +942,7 @@ typedef struct
  *  Use like:
  *      ZStatus_t zclGeneral_SendLevelControlMoveRequest( uint8 srcEP, afAddrType_t *dstAddr, uint8 moveMode, uint8 rate, uint8 disableDefaultRsp, uint8 seqNum )
  */
-#define zclGeneral_SendLevelControlMove(a,b,c,d,e,f) zclGeneral_SendLevelControlMoveRequest( (a), (b), COMMAND_LEVEL_MOVE, (c), (d), (e), (f) )
+#define zclGeneral_SendLevelControlMove(a,b,c,d,e,f) zclGeneral_SendLevelControlMoveRequest( (a), (b), COMMAND_LEVEL_MOVE, (c), (d), (e), (f) ) 
 
 
 /*
@@ -1514,7 +971,7 @@ typedef struct
  *  Use like:
  *      ZStatus_t zclGeneral_SendLevelControlMoveWithOnOff( uint8 srcEP, afAddrType_t *dstAddr, uint8 moveMode, uint8 rate, uint8 disableDefaultRsp, uint8 seqNum )
  */
-#define zclGeneral_SendLevelControlMoveWithOnOff(a,b,c,d,e,f) zclGeneral_SendLevelControlMoveRequest( (a), (b), COMMAND_LEVEL_MOVE_WITH_ON_OFF, (c), (d), (e), (f) )
+#define zclGeneral_SendLevelControlMoveWithOnOff(a,b,c,d,e,f) zclGeneral_SendLevelControlMoveRequest( (a), (b), COMMAND_LEVEL_MOVE_WITH_ON_OFF, (c), (d), (e), (f) ) 
 
 
 /*
@@ -1617,7 +1074,7 @@ extern ZStatus_t zclGeneral_RegisterCmdCallbacks( uint8 endpoint, zclGeneral_App
  *      transitionTime - how long to take to get to the level (in seconds).
  */
 extern ZStatus_t zclGeneral_SendLevelControlMoveToLevelRequest( uint8 srcEP, afAddrType_t *dstAddr,
-                                                         uint8 cmd, uint8 level, uint16 transTime,
+                                                         uint8 cmd, uint8 level, uint16 transTime, 
                                                          uint8 disableDefaultRsp, uint8 seqNum );
 
 /*
@@ -1628,7 +1085,7 @@ extern ZStatus_t zclGeneral_SendLevelControlMoveToLevelRequest( uint8 srcEP, afA
  *      rate - number of steps to take per second
  */
 extern ZStatus_t zclGeneral_SendLevelControlMoveRequest( uint8 srcEP, afAddrType_t *dstAddr,
-                                                  uint8 cmd, uint8 moveMode, uint8 rate,
+                                                  uint8 cmd, uint8 moveMode, uint8 rate, 
                                                   uint8 disableDefaultRsp, uint8 seqNum );
 
 /*
@@ -1658,14 +1115,14 @@ extern ZStatus_t zclGeneral_SendGroupResponse( uint8 srcEP, afAddrType_t *dstAdd
  * Call to send Group Response Command
  */
 extern ZStatus_t zclGeneral_SendGroupViewResponse( uint8 srcEP, afAddrType_t *dstAddr,
-                                                   uint8 status, aps_Group_t *grp,
+                                                   uint8 status, aps_Group_t *grp, 
                                                    uint8 disableDefaultRsp, uint8 seqNum );
 
 /*
  * Call to send Group Membership Command
  */
 extern ZStatus_t zclGeneral_SendGroupGetMembershipRequest( uint8 srcEP, afAddrType_t *dstAddr,
-                                     uint8 cmd, uint8 rspCmd, uint8 direction, uint8 capacity,
+                                     uint8 cmd, uint8 rspCmd, uint8 direction, uint8 capacity, 
                                      uint8 grpCnt, uint16 *grpList, uint8 disableDefaultRsp, uint8 seqNum );
 #endif // ZCL_GROUPS
 
@@ -1706,15 +1163,10 @@ extern uint8 zclGeneral_CountScenes( uint8 endpoint );
 extern uint8 zclGeneral_CountAllScenes( void );
 
 /*
- * Read callback function for the Scene Count attribute.
- */
-extern ZStatus_t zclGeneral_ReadSceneCountCB( uint16 clusterId, uint16 attrId, 
-                                              uint8 oper, uint8 *pValue, uint16 *pLen );
-/*
  * Add Scene Request message
  */
 extern ZStatus_t zclGeneral_SendAddScene( uint8 srcEP, afAddrType_t *dstAddr,
-                                          zclGeneral_Scene_t *scene,
+                                          zclGeneral_Scene_t *scene, 
                                           uint8 disableDefaultRsp, uint8 seqNum );
 /*
  * Send a Scene command (request) - not Scene Add
@@ -1751,7 +1203,7 @@ extern ZStatus_t zclGeneral_SendSceneGetMembershipResponse( uint8 srcEP, afAddrT
  * Send a Group command (request) - not Group Add or Remove All
  */
 extern ZStatus_t zclGeneral_SendGroupRequest( uint8 srcEP, afAddrType_t *dstAddr,
-                                              uint8 cmd, uint16 groupID,
+                                              uint8 cmd, uint16 groupID, 
                                               uint8 disableDefaultRsp, uint8 seqNum );
 
 /*
@@ -1769,7 +1221,7 @@ extern ZStatus_t zclGeneral_SendAddGroupRequest( uint8 srcEP, afAddrType_t *dstA
 /*
  * Send a Identify message
  */
-extern ZStatus_t zclGeneral_SendIdentify( uint8 srcEP, afAddrType_t *dstAddr,
+extern ZStatus_t zclGeneral_SendIdentify( uint8 srcEP, afAddrType_t *dstAddr, 
                                uint16 identifyTime, uint8 disableDefaultRsp, uint8 seqNum );
 /*
  * Send a Identify Query Response message
@@ -1792,18 +1244,6 @@ extern ZStatus_t zclGeneral_SendAlarmRequest( uint8 srcEP, afAddrType_t *dstAddr
 extern ZStatus_t zclGeneral_SendAlarmGetRespnose( uint8 srcEP, afAddrType_t *dstAddr,
                                      uint8 status, uint8 alarmCode, uint16 clusterID,
                                      uint32 timeStamp, uint8 disableDefaultRsp, uint8 seqNum );
-/*
- * Send out an Alarm Get Event Log Command
- */
-ZStatus_t zclGeneral_SendAlarmGetEventLog( uint8 srcEP, afAddrType_t *dstAddr,
-                                           zclGetEventLog_t *pEventLog,
-                                           uint8 disableDefaultRsp, uint8 seqNum );
-/*
- * Send out an an Alarm Publish Event Log Command
- */
-extern ZStatus_t zclGeneral_SendAlarmPublishEventLog( uint8 srcEP, afAddrType_t *dstAddr,
-                                                      zclPublishEventLog_t *pEventLog,
-                                                      uint8 disableDefaultRsp, uint8 seqNum );
 #endif // ZCL_ALARMS
 
 #ifdef ZCL_LOCATION
@@ -1811,14 +1251,14 @@ extern ZStatus_t zclGeneral_SendAlarmPublishEventLog( uint8 srcEP, afAddrType_t 
  * Send a Set Absolute Location message
  */
 extern ZStatus_t zclGeneral_SendLocationSetAbsolute( uint8 srcEP, afAddrType_t *dstAddr,
-                                                     zclLocationAbsolute_t *absLoc,
+                                                     zclLocationAbsolute_t *absLoc, 
                                                      uint8 disableDefaultRsp, uint8 seqNum );
 
 /*
  * Send a Set Device Configuration message
  */
 extern ZStatus_t zclGeneral_SendLocationSetDevCfg( uint8 srcEP, afAddrType_t *dstAddr,
-                                                   zclLocationDevCfg_t *devCfg,
+                                                   zclLocationDevCfg_t *devCfg, 
                                                    uint8 disableDefaultRsp, uint8 seqNum );
 
 /*
@@ -1831,14 +1271,14 @@ extern ZStatus_t zclGeneral_SendLocationGetDevCfg( uint8 srcEP, afAddrType_t *ds
  * Send a Get Location Data message
  */
 extern ZStatus_t zclGeneral_SendLocationGetData( uint8 srcEP, afAddrType_t *dstAddr,
-                                                 zclLocationGetData_t *locData,
+                                                 zclLocationGetData_t *locData, 
                                                  uint8 disableDefaultRsp, uint8 seqNum );
 
 /*
  * Send a Set Device Configuration Response message
  */
 extern ZStatus_t zclGeneral_SendLocationDevCfgResponse( uint8 srcEP, afAddrType_t *dstAddr,
-                                                        zclLocationDevCfgRsp_t *devCfg,
+                                                        zclLocationDevCfgRsp_t *devCfg, 
                                                         uint8 disableDefaultRsp, uint8 seqNum );
 
 /*

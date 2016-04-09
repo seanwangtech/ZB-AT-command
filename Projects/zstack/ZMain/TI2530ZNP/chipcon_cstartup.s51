@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       chipcon_cstartup.s51
-  Revised:        $Date: 2010-01-28 17:00:06 -0800 (Thu, 28 Jan 2010) $
-  Revision:       $Revision: 21615 $
+  Revised:        $Date: 2007-07-06 10:42:24 -0700 (Fri, 06 Jul 2007) $
+  Revision:       $Revision: 13579 $
 
   Description:    Contains the code executed before the C/EC++ "main"
                   function is called. The code is designed to run on any

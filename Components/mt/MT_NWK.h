@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       MT_NWK.h
-  Revised:        $Date: 2010-02-04 14:28:44 -0800 (Thu, 04 Feb 2010) $
-  Revision:       $Revision: 21656 $
+  Revised:        $Date: 2008-10-09 10:30:34 -0700 (Thu, 09 Oct 2008) $
+  Revision:       $Revision: 18234 $
 
   Description:    MonitorTest functions for the NWK layer.
 
 
-  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -120,7 +120,7 @@ extern void nwk_MTCallbackSubJoinConfirm(uint16 PanId, ZStatus_t Status);
  * Process the callback subscription for NLME-INIT-COORD.indication
  */
 extern void nwk_MTCallbackSubJoinIndication(uint16 ShortAddress, byte *ExtendedAddress,
-                                            byte CapabilityFlags);
+                                            byte CapabilityInformation);
 
 /*
  * Process the callback subscription for NLME-LEAVE.confirm

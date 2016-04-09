@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       nwk_bufs.h
-  Revised:        $Date: 2010-10-19 12:38:16 -0700 (Tue, 19 Oct 2010) $
-  Revision:       $Revision: 24150 $
+  Revised:        $Date: 2009-12-18 14:36:20 -0800 (Fri, 18 Dec 2009) $
+  Revision:       $Revision: 21379 $
 
   Description:    Network buffer utility functions.
 
 
-  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -105,7 +105,6 @@ typedef struct
   byte state;              // state of buffer
   byte retries;            // number of retries
   nwkDB_UserData_t ud; // user data
-  uint16 macSrcAddr;        // original MAC src address
 } nwkDB_t;
 
 typedef uint8 (*nwkDB_FindMatchCB_t)( nwkDB_t* db, void* mf );

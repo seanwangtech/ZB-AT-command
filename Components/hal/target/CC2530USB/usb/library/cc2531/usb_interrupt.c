@@ -48,7 +48,7 @@ void usbirqInit(uint16 irqMask)
  * Clears the P2 interrupt flag and converts all USB interrupt flags into events.
  * The interrupt also lets \ref usbsuspEnter() break from the suspend loop.
  */
-#if defined HAL_SB_BOOT_CODE
+#if defined HAL_USB_BOOT_CODE
 void usbirqHandler(void)
 #else
 #pragma vector=P2INT_VECTOR

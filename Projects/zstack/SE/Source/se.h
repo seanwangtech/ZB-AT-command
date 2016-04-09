@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       se.h
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2007-11-16 10:54:05 -0800 (Fri, 16 Nov 2007) $
+  Revision:       $Revision: 15941 $
 
   Description:    This file contains the Advanced Metering Initiative (SE)
                   Profile definitions.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -23,8 +23,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -35,7 +35,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef SE_H
@@ -67,7 +67,6 @@ extern "C"
 #define ZCL_SE_DEVICEID_LOAD_CTRL_EXTENSION                    0x0504
 #define ZCL_SE_DEVICEID_SMART_APPLIANCE                        0x0505
 #define ZCL_SE_DEVICEID_PREPAY_TERMINAL                        0x0506
-#define ZCL_SE_DEVICEID_PHYSICAL                               0x0507
 
 /*********************************************************************
  * MACROS
@@ -94,5 +93,5 @@ extern void zclSE_Init( SimpleDescriptionFormat_t *simpleDesc );
 #endif
 
 #endif /* ZCL_SE_H */
-
+  
 

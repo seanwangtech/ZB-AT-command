@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       simplemeter.h
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2009-12-16 11:26:16 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21343 $
 
   Description:    Header file for the Simple Meter functionality
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -55,7 +55,7 @@ extern "C"
  */
 #define SIMPLEMETER_ENDPOINT                 0x09
 
-#define SIMPLEMETER_MAX_ATTRIBUTES           55
+#define SIMPLEMETER_MAX_ATTRIBUTES           50
 
 #define SIMPLEMETER_MAX_OPTIONS              2
 
@@ -68,7 +68,6 @@ extern "C"
 #define SIMPLEMETER_UPDATE_TIME_EVT                0x0002
 #define SIMPLEMETER_KEY_ESTABLISHMENT_REQUEST_EVT  0x0004
 #define SIMPLEMETER_REPORT_ATTRIBUTE_EVT           0x0008
-#define SIMPLEMETER_CONNECTED_EVT                  0x0010
 
 /*********************************************************************
  * MACROS

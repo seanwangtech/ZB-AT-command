@@ -1,12 +1,13 @@
 /**************************************************************************************************
   Filename:       MT_SAPI.c
-  Revised:        $Date: 2010-05-25 10:12:39 -0700 (Tue, 25 May 2010) $
-  Revision:       $Revision: 22614 $
+  Revised:        $Date: 2009-08-10 08:18:52 -0700 (Mon, 10 Aug 2009) $
+  Revision:       $Revision: 20522 $
+
 
   Description:    MonitorTest functions for the Simple API.
 
 
-  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -53,9 +54,11 @@
 /***************************************************************************************************
  * GLOBAL VARIABLES
  ***************************************************************************************************/
+
 #if defined ( MT_SAPI_CB_FUNC )
 uint16 _sapiCallbackSub;
 #endif
+
 
 /***************************************************************************************************
  * LOCAL FUNCTIONS
@@ -76,11 +79,13 @@ void MT_SapiAppRegister(uint8 *pBuf);
 /***************************************************************************************************
  * @fn      MT_sapiCommandProcessing
  *
- * @brief   Process all the SAPI commands that are issued by test tool
+ * @brief
+ *
+ *   Process all the SAPI commands that are issued by test tool
  *
  * @param   pBuf - pointer to received buffer
  *
- * @return  MT_RPC_SUCCESS if command processed, MT_RPC_ERR_COMMAND_ID if not.
+ * @return  none
  ***************************************************************************************************/
 uint8 MT_SapiCommandProcessing(uint8 *pBuf)
 {
@@ -159,7 +164,7 @@ void MT_SapiSystemReset(uint8 *pBuf)
  *
  * @brief       Process SAPI Start
  *
- * @param       pBuf - pointer to received buffer
+ * @param
  *
  * @return      none
  ***************************************************************************************************/
@@ -175,7 +180,7 @@ void MT_SapiStart(uint8 *pBuf)
  *
  * @brief       Process SAPI App Register
  *
- * @param       pBuf - pointer to received buffer
+ * @param
  *
  * @return      none
  ***************************************************************************************************/
@@ -202,7 +207,7 @@ void MT_SapiAppRegister(uint8 *pBuf)
 
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_SAPI),
-                                       MT_SAPI_APP_REGISTER_REQ, 1, &ret);
+                                                        MT_SAPI_APP_REGISTER_REQ, 1, &ret);
 }
 /***************************************************************************************************
  * @fn          MT_SapiBindDevice
@@ -239,7 +244,7 @@ void MT_SapiBindDevice(uint8 *pBuf)
  *
  * @brief       Process SAPI Allow Bind
  *
- * @param       pBuf - pointer to received buffer
+ * @param
  *
  * @return      none
  ***************************************************************************************************/
@@ -293,6 +298,7 @@ void MT_SapiSendData(uint8 *pBuf)
 
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_SAPI), cmdId, 0, NULL);
+
 }
 
 /***************************************************************************************************
@@ -306,55 +312,47 @@ void MT_SapiSendData(uint8 *pBuf)
  ***************************************************************************************************/
 void MT_SapiReadCfg(uint8 *pBuf)
 {
-  uint8 len, retStatus;
-  uint8 cfgId, cmdId;
+  uint8 i, retStatus, cmdId;
   uint8 *pRetBuf;
 
-  /* Parse header */
+  /* parse header */
   cmdId = pBuf[MT_RPC_POS_CMD1];
-  cfgId = pBuf[MT_RPC_POS_DAT0];
+  pBuf += MT_RPC_FRAME_HDR_SZ;
 
-  /* Length of item in NV memory */
-  len = (uint8)osal_nv_item_len(cfgId);
+  i = (uint8)osal_nv_item_len(pBuf[0]);
 
-  pRetBuf = osal_mem_alloc(len+3);
-  if (pRetBuf != NULL)
+  pRetBuf = osal_mem_alloc(i+3);
+
+  if (pBuf)
   {
-    if (len && ((cfgId != ZCD_NV_NIB) && (cfgId != ZCD_NV_DEVICE_LIST) &&
-                (cfgId != ZCD_NV_ADDRMGR) && (cfgId != ZCD_NV_NWKKEY)))
+    /* Config ID */
+    pRetBuf[1] = pBuf[0];
+
+    /* Len */
+    pRetBuf[2] = i;
+
+    if (i && ((i != ZCD_NV_NIB) && (i != ZCD_NV_DEVICE_LIST) &&
+        (i != ZCD_NV_ADDRMGR) && (i != ZCD_NV_NWKKEY)))
     {
-      if ((zb_ReadConfiguration(cfgId, len, pRetBuf+3)) == ZSUCCESS)
-      {
+      if ((zb_ReadConfiguration(pBuf[0], i, pRetBuf+3)) == ZSUCCESS)
         retStatus = ZSuccess;
-      }
       else
-      {
         retStatus = ZFailure;
-      }
     }
     else
     {
       retStatus = ZInvalidParameter;
     }
 
-    if (retStatus != ZSuccess)
-    {
-       /* Don't return garbage with error */
-       len = 0;
-    }
-
-    /* Status */
+    /* status */
     pRetBuf[0] = retStatus;
-    /* Config ID */
-    pRetBuf[1] = cfgId;
-    /* NV item length */
-    pRetBuf[2] = len;
 
     /* Build and send back the response */
-    MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_SAPI), cmdId, len+3, pRetBuf );
+    MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_SAPI), cmdId, i+3, pRetBuf );
 
     osal_mem_free(pRetBuf);
   }
+
 }
 
 /***************************************************************************************************
@@ -370,7 +368,7 @@ void MT_SapiWriteCfg(uint8 *pBuf)
 {
   uint8 retValue, cmdId;
 
-  /* Parse header */
+  /* parse header */
   cmdId = pBuf[MT_RPC_POS_CMD1];
   pBuf += MT_RPC_FRAME_HDR_SZ;
 
@@ -378,13 +376,9 @@ void MT_SapiWriteCfg(uint8 *pBuf)
       (pBuf[0] != ZCD_NV_ADDRMGR) && (pBuf[0] != ZCD_NV_NWKKEY))
   {
     if ((zb_WriteConfiguration(pBuf[0], pBuf[1], &pBuf[2])) == ZSUCCESS)
-    {
       retValue = ZSuccess;
-    }
     else
-    {
       retValue = ZFailure;
-    }
   }
   else
   {
@@ -465,7 +459,7 @@ void MT_SapiPermitJoin(uint8 *pBuf)
 
   /* parse header */
   cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
+ pBuf += MT_RPC_FRAME_HDR_SZ;
 
   retValue = (zb_PermitJoiningRequest(BUILD_UINT16(pBuf[0], pBuf[1]), pBuf[2]));
 
@@ -476,6 +470,7 @@ void MT_SapiPermitJoin(uint8 *pBuf)
 #endif  /* MT_SAPI_FUNC */
 
 #if defined ( MT_SAPI_CB_FUNC )
+
 /***************************************************************************************************
  * @fn          zb_MTCallbackStartConfirm
  *
@@ -615,7 +610,10 @@ void zb_MTCallbackReceiveDataIndication( uint16 source, uint16 command, uint16 l
     osal_mem_free( memPtr );
   }
 }
+
 #endif  /* MT_SAPI_CB_FUNC */
+
+
 
 /***************************************************************************************************
  ***************************************************************************************************/

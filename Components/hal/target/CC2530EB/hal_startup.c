@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       hal_startup.c
-  Revised:        $Date: 2010-01-28 16:31:53 -0800 (Thu, 28 Jan 2010) $
-  Revision:       $Revision: 21613 $
+  Revised:        $Date: 2008-12-04 09:18:49 -0700 (Thu, 04 Dec 2008) $
+  Revision:       $Revision: 15820 $
 
   Description:    Contains code that needs to run before main()
 

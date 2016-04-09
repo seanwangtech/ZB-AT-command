@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       APSMEDE.h
-  Revised:        $Date: 2011-04-18 16:30:05 -0700 (Mon, 18 Apr 2011) $
-  Revision:       $Revision: 25757 $
+  Revised:        $Date: 2009-12-17 17:33:23 -0800 (Thu, 17 Dec 2009) $
+  Revision:       $Revision: 21366 $
 
   Description:    Primitives of the Application Support Sub Layer Data Entity (APSDE) and
                   Management Entity (APSME).
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -23,8 +23,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -35,7 +35,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef APSMEDE_H
@@ -83,7 +83,6 @@ extern "C" {
 #define APS_XFC_FRAG_MASK           0x03
 #define APS_XFC_FIRST_FRAG          0x01
 #define APS_XFC_FRAGMENT            0x02
-#define APS_XFC_RESERVED            0xFC
 
 #define APS_FRAME_CTRL_FIELD_LEN     0x01
 #define APS_DSTEP_ID_FIELD_LEN       0x01
@@ -104,7 +103,6 @@ extern "C" {
 #define APS_TX_OPTIONS_PERMIT_FRAGMENT  0x08u
 #define APS_TX_OPTIONS_SKIP_ROUTING     0x10u
 #define APS_TX_OPTIONS_FIRST_FRAGMENT   0x20u
-#define APS_TX_OPTIONS_PREPROCESS       0x40u
 
 // APSDE header fields
 #define APS_HDR_FC 0
@@ -200,7 +198,7 @@ extern "C" {
 #define APSME_EA_DATA_TEXT       18
 #define APSME_EA_DATA_LEN        22
 
-// APSME_AuthenticateReq_t::action types
+// APSME_AuthenticateReq_t::action types 
 #define APSME_EA_INITIATE 0x00
 #define APSME_EA_ACCEPT   0x01
 #define APSME_EA_REJECT   0x02
@@ -214,18 +212,6 @@ extern "C" {
 
 // APSME Coordinator/Trust Center NWK addresses
 #define APSME_TRUSTCENTER_NWKADDR  NWK_PAN_COORD_ADDR
-
-#if !defined( MAX_APS_FRAMECOUNTER_CHANGES )
-  // The number of times the frame counter can change before
-  // saving to NV
-  #define MAX_APS_FRAMECOUNTER_CHANGES    1000
-#endif
-
-#if !defined( MAX_TCLK_FRAMECOUNTER_CHANGES )
-  // The number of times the frame counter can change before
-  // saving to NV
-  #define MAX_TCLK_FRAMECOUNTER_CHANGES    10
-#endif
 
 /******************************************************************************
  * TYPEDEFS
@@ -374,7 +360,7 @@ typedef struct
   uint8                initiator;
   uint8                apsSecure;
   uint8                nwkSecure;
-  APSDE_FrameTunnel_t* tunnel;
+  APSDE_FrameTunnel_t* tunnel; 
 } APSME_TransportKeyReq_t;
 
 typedef struct
@@ -463,7 +449,7 @@ typedef struct
 {
   uint8 initiator;
   uint8 partExtAddr[Z_EXTADDR_LEN];
-  uint8 status;
+  uint8 status;  
 } APSME_AuthenticateCfm_t;
 
 // APS Incoming Command Packet
@@ -477,9 +463,16 @@ typedef struct
   uint8            nwkSecure;
 } APSME_CmdPkt_t;
 
+// APS Key Data Types
+//typedef struct
+//{
+//  uint16 di;
+//  uint8* masterKey;
+//} APSME_MasterKeyData_t;
+
 typedef struct
 {
-  uint8  key[SEC_KEY_LEN];
+  uint8* key;
   uint32 txFrmCntr;
   uint32 rxFrmCntr;
 } APSME_LinkKeyData_t;
@@ -552,30 +545,10 @@ typedef struct
   uint32 rxFrmCntr;
 } APSME_TCLinkKey_t;
 
-typedef struct
-{
-  uint32 txFrmCntr;
-  uint32 rxFrmCntr;
-  uint8  pendingFlag;
-} APSME_ApsLinkKeyFrmCntr_t;
-
-typedef struct
-{
-  uint32 txFrmCntr;
-  uint32 rxFrmCntr;
-  uint8  pendingFlag;
-} APSME_TCLinkKeyFrmCntr_t;
-
-// Function pointer prototype to preprocess messages before calling NWK layer
-typedef void (*apsPreProcessDataReq_t)( APSDE_FrameBlk_t *blk );
-
 /******************************************************************************
  * GLOBAL VARIABLES
  */
-// Store Frame Counters in RAM and update NV periodically
-extern APSME_ApsLinkKeyFrmCntr_t ApsLinkKeyFrmCntr[];
-extern APSME_TCLinkKeyFrmCntr_t TCLinkKeyFrmCntr[];
-
+extern uint16 TCshortAddr;
 /******************************************************************************
  * APS Data Service
  *   APSDE-DATA
@@ -603,9 +576,8 @@ extern void APSDE_DataCnf( APSDE_DataCnf_t* cnf );
  * This function indicates the transfer of a data PDU (ASDU) from the
  * APS sub-layer to the local application layer entity.
  */
-extern void APSDE_DataIndication( aps_FrameFormat_t *aff, zAddrType_t *SrcAddress,
-                                uint16 SrcPanId, NLDE_Signal_t *sig, uint8 nwkSeqNum,
-                                byte SecurityUse, uint32 timestamp );
+extern void APSDE_DataIndication( aps_FrameFormat_t *aff, zAddrType_t *SrcAddress, uint16 SrcPanId,
+                                NLDE_Signal_t *sig, byte SecurityUse, uint32 timestamp );
 
 /******************************************************************************
  * APS Management Service
@@ -620,7 +592,7 @@ extern void APSDE_DataIndication( aps_FrameFormat_t *aff, zAddrType_t *SrcAddres
  * NOTE: The APSME-BIND.confirm is returned by this function and is not a
  *       seperate callback function.
  */
-extern ZStatus_t APSME_BindRequest( byte SrcEndpInt, uint16 ClusterId,
+extern ZStatus_t APSME_BindRequest( byte SrcEndpInt, uint16 ClusterId, 
                                    zAddrType_t *DstAddr, byte DstEndpInt);
 
 /*
@@ -673,13 +645,6 @@ extern void APSME_BindConfirm( zAddrType_t CoorAddr,ZStatus_t Status,
                            uint16 SrcAddr, byte SrcEndpInt, byte ObjectId,
                            uint16 DstAddr, byte DstEndpInt);
 #endif  // NOT IMPLEMENTED
-
-/*
- * Set the Preprocess function pointer.  The APS Layer will call this function
- * right before calling APSDE_FrameSend() [setup function that calls NLDE_DataReq()].
- */
-extern void APSDE_SetPreProcessFnp( apsPreProcessDataReq_t pfnCB );
-
 
 /******************************************************************************
  * APS Incoming Command Packet Handler
@@ -863,32 +828,28 @@ extern void APSME_AuthenticateCfm( APSME_AuthenticateCfm_t* cfm );
  *
  *   APSME_MasterKeyGet
  *   APSME_LinkKeySet
- *   APSME_LinkKeyNVIdGet
+ *   APSME_LinkKeyDataGet
  *   APSME_KeyFwdToChild
  */
 
 /*
  * APSME_MasterKeyExtGet stub.
  */
-extern ZStatus_t APSME_MasterKeyGet( uint8*  extAddr, uint16* pKeyNvId );
+extern ZStatus_t APSME_MasterKeyGet( uint8*  extAddr, uint8** key );
 
 /*
- * APSME_LinkKeySet stub.
+ * APSME_LinkKeyDataGet stub.
  */
 extern ZStatus_t APSME_LinkKeySet( uint8* extAddr, uint8* key );
 
 /*
- * APSME_LinkKeyNVIdGet stub.
+ * APSME_LinkKeyDataGet stub.
  */
-extern ZStatus_t APSME_LinkKeyNVIdGet(uint8* extAddr, uint16 *pKeyNvId);
+extern ZStatus_t APSME_LinkKeyDataGet( uint8*                extAddr,
+                                       APSME_LinkKeyData_t** data );
 
 /*
- * APSME_IsLinkKeyValid stub.
- */
-extern uint8 APSME_IsLinkKeyValid(uint8* extAddr);
-
-/*
- * APSME_KeyFwdToChild stub.
+ * APSME_FwdKeyToChild stub.
  */
 extern uint8 APSME_KeyFwdToChild( APSME_TransportKeyInd_t* ind );
 

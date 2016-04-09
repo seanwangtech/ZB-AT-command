@@ -6,7 +6,7 @@
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -101,7 +101,7 @@ MAC_INTERNAL_API void macRadioSetPanCoordinator(uint8 panCoordinator);
 MAC_INTERNAL_API void macRadioSetPanID(uint16 panID);
 MAC_INTERNAL_API void macRadioSetShortAddr(uint16 shortAddr);
 MAC_INTERNAL_API void macRadioSetIEEEAddr(uint8 * pIEEEAddr);
-MAC_INTERNAL_API uint8 macRadioSetTxPower(uint8 txPower);
+MAC_INTERNAL_API void macRadioSetTxPower(uint8 txPower);
 MAC_INTERNAL_API void macRadioSetChannel(uint8 channel);
 MAC_INTERNAL_API void macRadioStartScan(uint8 scanType);
 MAC_INTERNAL_API void macRadioStopScan(void);

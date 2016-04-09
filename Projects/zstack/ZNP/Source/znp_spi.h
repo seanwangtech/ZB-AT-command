@@ -1,14 +1,14 @@
 /**************************************************************************************************
   Filename:       znp_spi.h
-  Revised:        $Date: 2010-07-28 18:42:54 -0700 (Wed, 28 Jul 2010) $
-  Revision:       $Revision: 23203 $
+  Revised:        $Date: 2010-01-17 08:58:03 -0800 (Sun, 17 Jan 2010) $
+  Revision:       $Revision: 21533 $
 
   Description:
 
   This file contains the declaration to the H/W ZNP SPI driver.
 
 
-  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -58,6 +58,19 @@ extern "C" {
  * ------------------------------------------------------------------------------------------------
  */
 
+#define NP_SPI_BUF_LEN   256
+#define NP_SPI_BUF_MAX   253
+
+#define NP_UART_RX_MAX   128
+#define NP_UART_TX_MAX   128
+
+#define NP_CSR_MODE      BV(5)  /*  CSR_SLAVE */
+
+#define NP_RDYIn_BIT     BV(3)
+#define NP_RDYIn         P0_3
+#define NP_RDYOut        P0_4
+#define NP_RDYOut_BIT    BV(4)
+
 /* ------------------------------------------------------------------------------------------------
  *                                           Typedefs
  * ------------------------------------------------------------------------------------------------
@@ -104,6 +117,25 @@ extern void npSpiInit(void);
  **************************************************************************************************
  */
 extern void npSpiMonitor(void);
+
+/**************************************************************************************************
+ * @fn          npSpiTimer
+ *
+ * @brief       This function times out a zombie Rx/Tx DMA transfer due to a H/W glitch that
+ *              results in no generation of a DMA ISR.
+ *
+ * input parameters
+ *
+ * None.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      None.
+ **************************************************************************************************
+ */
+extern void npSpiTimer(void);
 
 /**************************************************************************************************
  * @fn          npSpiRxIsr

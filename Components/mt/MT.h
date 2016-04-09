@@ -1,28 +1,28 @@
-/******************************************************************************
-  Filename:       MT.h
-  Revised:        $Date: 2012-02-14 16:13:32 -0800 (Tue, 14 Feb 2012) $
-  Revision:       $Revision: 29289 $
+/*********************************************************************
+    Filename:       MT.h
+    Revised:        $Date: 2010-01-05 11:16:22 -0800 (Tue, 05 Jan 2010) $
+    Revision:       $Revision: 21433 $
 
-  Description:    MonitorTest command and response definitions.
+    Description:    MonitorTest Event Loop functions.  Everything in the
+                    MonitorTest Task (except the serial driver).
 
-
-  Copyright 2007-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -35,7 +35,7 @@
 
   Should you have any questions regarding your right to use this Software,
   contact Texas Instruments Incorporated at www.TI.com.
-******************************************************************************/
+*********************************************************************/
 #ifndef MT_H
 #define MT_H
 
@@ -59,12 +59,11 @@ extern "C"
  * CONSTANTS
  ***************************************************************************************************/
 //Special definitions for ZTOOL (Zigbee 0.7 release)
-#define ZTEST_DEFAULT_PARAM_LEN              0x10  //( 16 Bytes)
-#define ZTEST_DEFAULT_ADDR_LEN               0x08  //(  8 Bytes)
-#define ZTEST_DEFAULT_DATA_LEN               0x66  //(102 Bytes)
-#define ZTEST_DEFAULT_AF_DATA_LEN            0x20  //( 32 Bytes) - AF
-#define ZTEST_DEFAULT_SEC_LEN                0x0B
-#define ZTEST_DEFAULT_SEC_PARAM_LEN          0x1C  //( 28 Bytes)
+#define ZTEST_DEFAULT_PARAM_LEN    0x10      //( 16 Bytes)
+#define ZTEST_DEFAULT_ADDR_LEN     0x08      //(  8 Bytes)
+#define ZTEST_DEFAULT_DATA_LEN     0x66      //(102 Bytes) - MAC,NWK
+#define ZTEST_DEFAULT_AF_DATA_LEN  0x20      //( 32 Bytes) - AF
+#define ZTEST_DEFAULT_SEC_LEN      0x0B
 
 /***************************************************************************************************
  * SYS COMMANDS
@@ -89,11 +88,6 @@ extern "C"
 #define MT_SYS_ADC_READ                      0x0D
 #define MT_SYS_GPIO                          0x0E
 #define MT_SYS_STACK_TUNE                    0x0F
-#define MT_SYS_SET_TIME                      0x10
-#define MT_SYS_GET_TIME                      0x11
-#define MT_SYS_OSAL_NV_DELETE                0x12
-#define MT_SYS_OSAL_NV_LENGTH                0x13
-#define MT_SYS_SET_TX_POWER                  0x14
 
 /* AREQ to host */
 #define MT_SYS_RESET_IND                     0x80
@@ -118,10 +112,12 @@ extern "C"
 #define MT_MAC_POLL_REQ                      0x0d
 #define MT_MAC_PURGE_REQ                     0x0e
 #define MT_MAC_SET_RX_GAIN_REQ               0x0f
-
-/* Security PIB SREQ */
-#define MT_MAC_SECURITY_GET_REQ              0x10
-#define MT_MAC_SECURITY_SET_REQ              0x11
+#define MT_MAC_SRC_MATCH_ENABLE              0x10
+#define MT_MAC_SRC_MATCH_ADD_ENTRY           0x11
+#define MT_MAC_SRC_MATCH_DEL_ENTRY           0x12
+#define MT_MAC_SRC_MATCH_CHECK_SRC_ADDR      0x13
+#define MT_MAC_SRC_MATCH_ACK_ALL_PENDING     0x14
+#define MT_MAC_SRC_MATCH_CHECK_ALL_PENDING   0x15
 
 /* AREQ from Host */
 #define MT_MAC_ASSOCIATE_RSP                 0x50
@@ -192,9 +188,6 @@ extern "C"
 #define MT_AF_DATA_REQUEST_SRCRTG            0x03
 
 #define MT_AF_INTER_PAN_CTL                  0x10
-#define MT_AF_DATA_STORE                     0x11
-#define MT_AF_DATA_RETRIEVE                  0x12
-#define MT_AF_APSF_CONFIG_SET                0x13
 
 /* AREQ to host */
 #define MT_AF_DATA_CONFIRM                   0x80
@@ -221,13 +214,11 @@ extern "C"
 #define MT_ZDO_END_DEV_BIND_REQ              0x20
 #define MT_ZDO_BIND_REQ                      0x21
 #define MT_ZDO_UNBIND_REQ                    0x22
-
+  
 #define MT_ZDO_SET_LINK_KEY                  0x23
 #define MT_ZDO_REMOVE_LINK_KEY               0x24
 #define MT_ZDO_GET_LINK_KEY                  0x25
-#define MT_ZDO_NWK_DISCOVERY_REQ             0x26
-#define MT_ZDO_JOIN_REQ                      0x27
-
+  
 #define MT_ZDO_MGMT_NWKDISC_REQ              0x30
 #define MT_ZDO_MGMT_LQI_REQ                  0x31
 #define MT_ZDO_MGMT_RTG_REQ                  0x32
@@ -255,11 +246,12 @@ extern "C"
 #define MT_ZDO_ACTIVE_EP_RSP              /* 0x85 */ ((uint8)Active_EP_req | 0x80)
 #define MT_ZDO_MATCH_DESC_RSP             /* 0x86 */ ((uint8)Match_Desc_req | 0x80)
 
-#define MT_ZDO_COMPLEX_DESC_RSP              0x87
-#define MT_ZDO_USER_DESC_RSP                 0x88
+#define MT_ZDO_COMPLEX_DESC_RSP           /* 0x90 */ ((uint8)Complex_Desc_req | 0x80)
+#define MT_ZDO_USER_DESC_RSP              /* 0x91 */ ((uint8)User_Desc_req | 0x80)
 //                                        /* 0x92 */ ((uint8)Discovery_Cache_req | 0x80)
-#define MT_ZDO_USER_DESC_CONF                0x89
-#define MT_ZDO_SERVER_DISC_RSP               0x8A
+#define MT_ZDO_END_DEVICE_ANNCE_IND       /* 0x93 */ ((uint8)Device_annce | 0x80)
+#define MT_ZDO_USER_DESC_CONF             /* 0x94 */ ((uint8)User_Desc_set | 0x80)
+#define MT_ZDO_SERVER_DISC_RSP            /* 0x95 */ ((uint8)Server_Discovery_req | 0x80)
 
 #define MT_ZDO_END_DEVICE_BIND_RSP        /* 0xA0 */ ((uint8)End_Device_Bind_req | 0x80)
 #define MT_ZDO_BIND_RSP                   /* 0xA1 */ ((uint8)Bind_req | 0x80)
@@ -275,16 +267,11 @@ extern "C"
 
 //                                        /* 0xB8 */ ((uint8)Mgmt_NWK_Update_req | 0x80)
 
-#define MT_ZDO_STATE_CHANGE_IND              0xC0
-#define MT_ZDO_END_DEVICE_ANNCE_IND          0xC1
+#define MT_ZDO_AREQ_NOT_CID                  0xC0 /* Mark the start of the non-ZDO CId AREQs. */
+#define MT_ZDO_STATUS_ERROR_RSP           /* 0xC0 */ ((uint8)MtZdoDef_rsp | 0x80)
+#define MT_ZDO_STATE_CHANGE_IND              0xC1
 #define MT_ZDO_MATCH_DESC_RSP_SENT           0xC2
-#define MT_ZDO_STATUS_ERROR_RSP              0xC3
-#define MT_ZDO_SRC_RTG_IND                   0xC4
-#define MT_ZDO_BEACON_NOTIFY_IND             0xC5
-#define MT_ZDO_JOIN_CNF                      0xC6
-#define MT_ZDO_NWK_DISCOVERY_CNF             0xC7
-#define MT_ZDO_CONCENTRATOR_IND_CB           0xC8
-#define MT_ZDO_LEAVE_IND                     0xC9
+#define MT_ZDO_SRC_RTG_IND                   0xC3
 
 #define MT_ZDO_MSG_CB_INCOMING               0xFF
 
@@ -338,24 +325,15 @@ extern "C"
 #define MT_UTIL_TIME_ALIVE                   0x09
 #define MT_UTIL_LED_CONTROL                  0x0A
 
-#define MT_UTIL_TEST_LOOPBACK                0x10
-#define MT_UTIL_DATA_REQ                     0x11
-
-#define MT_UTIL_SRC_MATCH_ENABLE             0x20
-#define MT_UTIL_SRC_MATCH_ADD_ENTRY          0x21
-#define MT_UTIL_SRC_MATCH_DEL_ENTRY          0x22
-#define MT_UTIL_SRC_MATCH_CHECK_SRC_ADDR     0x23
-#define MT_UTIL_SRC_MATCH_ACK_ALL_PENDING    0x24
-#define MT_UTIL_SRC_MATCH_CHECK_ALL_PENDING  0x25
+#define MT_UTIL_TEST_LOOPBACK                0x10  // TODO
+#define MT_UTIL_TEST_CRC                     0x11  // TODO
 
 #define MT_UTIL_ADDRMGR_EXT_ADDR_LOOKUP      0x40
 #define MT_UTIL_ADDRMGR_NWK_ADDR_LOOKUP      0x41
 #define MT_UTIL_APSME_LINK_KEY_DATA_GET      0x44
-#define MT_UTIL_APSME_LINK_KEY_NV_ID_GET     0x45
 #define MT_UTIL_ASSOC_COUNT                  0x48
 #define MT_UTIL_ASSOC_FIND_DEVICE            0x49
 #define MT_UTIL_ASSOC_GET_WITH_ADDRESS       0x4A
-#define MT_UTIL_APSME_REQUEST_KEY_CMD        0x4B
 
 #define MT_UTIL_ZCL_KEY_EST_INIT_EST         0x80
 #define MT_UTIL_ZCL_KEY_EST_SIGN             0x81
@@ -371,8 +349,6 @@ extern "C"
 /* SREQ/SRSP: */
 #define MT_DEBUG_SET_THRESHOLD               0x00
 
-#define MT_DEBUG_MAC_DATA_DUMP               0x10
-
 /* AREQ */
 #define MT_DEBUG_MSG                         0x80
 
@@ -387,16 +363,6 @@ extern "C"
 /* SRSP */
 #define MT_APP_RSP                           0x80
 
-/***************************************************************************************************
-* FILE SYSTEM COMMANDS
-***************************************************************************************************/
-#define MT_OTA_FILE_READ_REQ                  0x00
-#define MT_OTA_NEXT_IMG_REQ                   0x01
-
-#define MT_OTA_FILE_READ_RSP                  0x80
-#define MT_OTA_NEXT_IMG_RSP                   0x81
-#define MT_OTA_STATUS_IND                     0x82
-
 /*
  *  Definitions to allow conditional compiling -
  *  To use these in an embedded environment include them as a compiler
@@ -404,25 +370,14 @@ extern "C"
  */
 
 /* Task Event IDs - bit masks */
-#define MT_ZTOOL_SERIAL_RCV_CHAR        0x0001
-#define MT_ZTOOL_SERIAL_RCV_BUFFER_FULL 0x0002
-#define MT_SERIAL_ZTOOL_XMT_READY       0x0004
-#define MT_ZAPP_SERIAL_RCV_CHAR         MT_ZTOOL_SERIAL_RCV_CHAR
-#define MT_ZAPP_SERIAL_RCV_BUFFER_FULL  MT_ZTOOL_SERIAL_RCV_BUFFER_FULL
-#define MT_SERIAL_ZAPP_XMT_READY        MT_SERIAL_ZTOOL_XMT_READY
-#define MT_AF_EXEC_EVT                  0x0008
-#define MT_SECONDARY_INIT_EVENT         0x0010
-
-#define MT_MSG_SEQUENCE_EVT             0x0040
-#define MT_KEYPRESS_POLL_EVT            0x0080
-
-/* SYS_OSAL_EVENT ID's */
-#define MT_SYS_OSAL_EVENT_0             0x0800
-#define MT_SYS_OSAL_EVENT_1             0x0400
-#define MT_SYS_OSAL_EVENT_2             0x0200
-#define MT_SYS_OSAL_EVENT_3             0x0100
-#define MT_SYS_OSAL_EVENT_MASK (MT_SYS_OSAL_EVENT_0 | MT_SYS_OSAL_EVENT_1 | \
-                                MT_SYS_OSAL_EVENT_2 | MT_SYS_OSAL_EVENT_3)
+#define MT_ZTOOL_SERIAL_RCV_CHAR          0x0001
+#define MT_ZAPP_SERIAL_RCV_CHAR           0x0002
+#define MT_ZTOOL_SERIAL_RCV_BUFFER_FULL   0x0004
+#define MT_ZAPP_SERIAL_RCV_BUFFER_FULL    0x0008
+#define MT_SERIAL_ZTOOL_XMT_READY         0x0010
+#define MT_SERIAL_ZAPP_XMT_READY          0x0020
+#define MT_MSG_SEQUENCE_EVT               0x0040
+#define MT_KEYPRESS_POLL_EVT              0x0080
 
 /* Message Command IDs */
 #define CMD_SERIAL_MSG                  0x01
@@ -510,6 +465,26 @@ extern "C"
 #define AF_APP_FLAGS_MASK          0x0F
 #define AF_TRANSTYPE_MASK          0x0F
 #define AF_TRANSDATATYPE_MASK      0x0F
+
+/* Defines for the semi-precision structure */
+#define AF_SEMI_PREC_SIGN          0x8000
+#define AF_SEMI_PREC_EXPONENT      0x7C00
+#define AF_SEMI_PREC_MANTISSA      0x03FF
+#define AF_SEMI_PREC_SIGN_OFFSET   0x0F
+#define AF_SEMI_PREC_EXP_OFFSET    0x0A
+
+/* Defines for the application commands accessed by MT */
+#define SRC_CHANGE_STATE            0x0000
+#define DRC_TOGGLE_STATE            0x0001
+#define DRC_TOGGLE_PRESET           0x0002
+#define OS_TOGGLE_STATE             0x0003
+#define SLC_RCV_SET_ONOFF           0x0004
+#define DLC_RCV_SET_ONOFF           0x0005
+#define DLC_RCV_SET_DIMBRIGHT       0x0006
+#define DLC_RCV_SET_PRESET          0x0007
+#define LSM_TOGGLE_STATE            0x0008
+
+#define DRC_DIMBRIGHT               0x0009
 
 #define TGEN_START									0x000a
 #define TGEN_STOP										0x000b
@@ -659,6 +634,14 @@ extern "C"
   #define MT_CAP_ZOAD 0x0000
 #endif
 
+/* SYS_OSAL_EVENT ID */
+#define MT_SYS_OSAL_EVENT_0     0x0800
+#define MT_SYS_OSAL_EVENT_1     0x0400
+#define MT_SYS_OSAL_EVENT_2     0x0200
+#define MT_SYS_OSAL_EVENT_3     0x0100
+#define MT_SYS_OSAL_EVENT_MASK (MT_SYS_OSAL_EVENT_0 | MT_SYS_OSAL_EVENT_1 | \
+                                MT_SYS_OSAL_EVENT_2 | MT_SYS_OSAL_EVENT_3)
+
 /* ZNP NV items, 1-4 2-bytes each, 5-6 16-bytes each */
 #define ZNP_NV_APP_ITEM_1       0x0F01
 #define ZNP_NV_APP_ITEM_2       0x0F02
@@ -716,6 +699,7 @@ extern void MT_RadioCommandProcessing( uint16 cmd_id , byte len , byte *pData );
  */
 extern void MT_PhyCommandProcessing( uint16 cmd_id , byte len , byte *pData );
 
+
 /*
  * MonitorTest function to copy a uint16 array to a byte array, little endian.
  */
@@ -732,9 +716,9 @@ extern void MT_ReverseBytes( byte *pData, byte len );
 extern void MTProcessAppRspMsg(byte *pData, byte len);
 
 /*
- * Secondary initialization of MT.
+ * Initialize MT
  */
-extern void MT_Init(void);
+extern void MT_Init(uint8 taskID);
 
 /*
  * Process incoming commands

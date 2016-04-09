@@ -10,85 +10,11 @@
 /// @{
 #define USBDESCRIPTORPARSER_C ///< Modifies the behavior of "EXTERN" in usb_descriptor_parser.h
 #include "usb_firmware_library_headers.h"
-#include "hal_flash.h"
-
-#if !defined Z_EXTADDR_LEN
-#define Z_EXTADDR_LEN    8
-#endif
 
 //-------------------------------------------------------------------------------------------------------
 // USBDP internal module data
 static USBDP_DATA __xdata usbdpData; ///< USBDP internal module data
 
-//-------------------------------------------------------------------------------------------------------
-// String descriptors (2-byte unicode data).
-
-// Language ID.
-static const uint8 languageId[4] = {
-  4,
-  DESC_TYPE_STRING,
-  0x09, 0x04  /* US-EN */
-};
-
-// Manufacturer.
-static const uint8 manufacturer[36] = {
-  36,
-  DESC_TYPE_STRING,
-  'T', 0,
-  'e', 0,
-  'x', 0,
-  'a', 0,
-  's', 0,
-  ' ', 0,
-  'I', 0,
-  'n', 0,
-  's', 0,
-  't', 0,
-  'r', 0,
-  'u', 0,
-  'm', 0,
-  'e', 0,
-  'n', 0,
-  't', 0,
-  's', 0
-};
-
-// Product.
-static const uint8 product[36] = {
-  36,
-  DESC_TYPE_STRING,
-  'T', 0,
-  'I', 0,
-  ' ', 0,
-  'C', 0,
-  'C', 0,
-  '2', 0,
-  '5', 0,
-  '3', 0,
-  '1', 0,
-  ' ', 0,
-  'U', 0,
-  'S', 0,
-  'B', 0,
-  ' ', 0,
-  'C', 0,
-  'D', 0,
-  'C', 0
-};
-
-// Serial Number.
-static uint8 serialNumber[42] = {
-  0,  // Initializing to zero vice 42 is the indication to usbdpGetStringDesc() to fill w/ IEEE.
-  DESC_TYPE_STRING,
-  // Setup for using the 16 nibbles of the hex representation of the IEEE address.
-  '_', 0,
-  '_', 0,
-  '0', 0,
-  'X', 0,
-};
-
-const uint8 hexDigit[16] = {
-  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
 /** \brief	Initializes a search
 *
@@ -258,81 +184,31 @@ USB_INTERFACE_DESCRIPTOR __code* usbdpGetInterfaceDesc(uint8 cfgValue, uint8 int
 * \return
 *     A pointer to the \ref USB_INTERFACE_DESCRIPTOR, or \c NULL if it was not found.
 */
-USB_STRING_DESCRIPTOR* usbdpGetStringDesc(uint8 strIndex)
+USB_STRING_DESCRIPTOR __code* usbdpGetStringDesc(uint8 strIndex)
 {
-  USB_STRING_DESCRIPTOR *pStringDesc = NULL;
+   USB_STRING_DESCRIPTOR __code *pStringDesc;
+   usbdpInit();
 
 #ifdef MS_EXT_C_ID
-  /* TODO: Find the Microsoft OS String Descriptor?
-  usbdpInit();
-
-  if (strIndex == 0xEE){
-    // Find the Microsoft OS String Descriptor
-    do{
-      pStringDesc = usbdpFindNext(DESC_TYPE_STRING, 0);
-    }while (pStringDesc != NULL && pStringDesc->bLength != 18);
-  } else
-  */
+    if (strIndex == 0xEE){
+        // Find the Microsoft OS String Descriptor
+        do{
+            pStringDesc = usbdpFindNext(DESC_TYPE_STRING, 0);
+        }while (pStringDesc != NULL && pStringDesc->bLength != 18);
+    } else
 #endif
-  {
-    switch (strIndex)
     {
-    case 0:
-      pStringDesc = (USB_STRING_DESCRIPTOR *)languageId;
-      break;
-
-    case 1:
-      pStringDesc = (USB_STRING_DESCRIPTOR *)manufacturer;
-      break;
-
-    case 2:
-      pStringDesc = (USB_STRING_DESCRIPTOR *)product;
-      break;
-
-    case 3:
-      if (serialNumber[0] == 0)
-      {
-#if (defined HAL_SB_BOOT_CODE || defined CC253X_MACNP)
-        #include <string.h>
-        uint8 nullAddr[Z_EXTADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-        uint8 aExtendedAddress[8];
-
-        // Attempt to read the extended address from the location on the lock bits page
-        // where the programming tools know to reserve it.
-        HalFlashRead(HAL_FLASH_IEEE_PAGE, HAL_FLASH_IEEE_OSET, aExtendedAddress, Z_EXTADDR_LEN);
-
-        if (!memcmp(aExtendedAddress, nullAddr, Z_EXTADDR_LEN))
-        {
-          // Attempt to read the extended address from the designated location in the Info Page.
-          (void)memcpy(aExtendedAddress, (uint8 *)(P_INFOPAGE+HAL_INFOP_IEEE_OSET), Z_EXTADDR_LEN);
-        }
-#else
-        extern uint8 aExtendedAddress[Z_EXTADDR_LEN];
-#endif
-        // Load the 16 nibbles of the hex representation of the IEEE address into the serialNumber
-        // string in big-endian (i.e. human-readable) order.
-        for (uint8 idx = sizeof(serialNumber)-2, cnt = 0; cnt < Z_EXTADDR_LEN; cnt++, idx -= 4)
-        {
-          serialNumber[idx]   = hexDigit[aExtendedAddress[cnt] & 0x0F];
-          serialNumber[idx-2] = hexDigit[aExtendedAddress[cnt] / 16];
-        }
-        serialNumber[0] = sizeof(serialNumber);
-      }
-      pStringDesc = (USB_STRING_DESCRIPTOR *)serialNumber;
-      break;
-
-    default:
-      break;
+        // Search strIndex+1 times
+        do {
+            pStringDesc = usbdpFindNext(DESC_TYPE_STRING, 0);
+        } while (strIndex--);
     }
-  }
-
-  return pStringDesc;
-}
+   return pStringDesc;
+} // usbdpGetStringDesc
 /// @}
-
 /*
 +------------------------------------------------------------------------------
-|  Copyright 2004-2012 Texas Instruments Incorporated. All rights reserved.
+|  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 |
 |  IMPORTANT: Your use of this Software is limited to those specific rights
 |  granted under the terms of a software license agreement between the user who

@@ -6,7 +6,7 @@
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -54,8 +54,7 @@ MAC_INTERNAL_API void macBackoffTimerInit(void);
 MAC_INTERNAL_API void macBackoffTimerReset(void);
 MAC_INTERNAL_API uint32 macBackoffTimerCapture(void);
 MAC_INTERNAL_API void macBackoffTimerCompareIsr(void);
-MAC_INTERNAL_API void macBackoffTimerPeriodIsr(void);
-MAC_INTERNAL_API uint32 macGetBackOffTimerRollover(void);
+
 
 /**************************************************************************************************
  */

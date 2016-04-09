@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       hal_drivers.h
-  Revised:        $Date: 2010-10-05 11:47:04 -0700 (Tue, 05 Oct 2010) $
-  Revision:       $Revision: 23996 $
+  Revised:        $Date: 2007-11-01 08:43:49 -0700 (Thu, 01 Nov 2007) $
+  Revision:       $Revision: 15820 $
 
   Description:    This file contains the interface to the Drivers service.
 
@@ -22,7 +22,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -62,9 +62,6 @@ extern "C"
 #define HAL_KEY_EVENT         0x0001
 #define HAL_LED_BLINK_EVENT   0x0002
 #define HAL_SLEEP_TIMER_EVENT 0x0004
-#define PERIOD_RSSI_RESET_EVT 0x0008
-
-#define PERIOD_RSSI_RESET_TIMEOUT           10
 
 /**************************************************************************************************
  * TYPEDEFS

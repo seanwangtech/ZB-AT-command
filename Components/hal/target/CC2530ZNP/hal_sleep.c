@@ -1,22 +1,22 @@
 /**************************************************************************************************
   Filename:       hal_sleep.c
-  Revised:        $Date: 2012-03-07 11:55:12 -0800 (Wed, 07 Mar 2012) $
-  Revision:       $Revision: 29664 $
+  Revised:        $Date: 2009-12-31 18:28:34 -0800 (Thu, 31 Dec 2009) $
+  Revision:       $Revision: 21422 $
 
   Description:    This module contains the HAL power management procedures for the CC2530.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -57,7 +57,6 @@
 #include "hal_assert.h"
 #include "mac_mcu.h"
 #include "ZGlobals.h"
-#include "hal_uart.h"
 
 #if !defined ZG_BUILD_ENDDEVICE_TYPE
 #define ZG_BUILD_ENDDEVICE_TYPE FALSE
@@ -98,7 +97,7 @@
  *   Round it to 510 seconds or 510000 ms
  */
 #define MAX_SLEEP_TIME                   510000             /* maximum time to sleep allowed by ST */
-#define TICKS_SUBTRACTED                 2
+
 
 /* minimum time to sleep, this macro is to:
  * 1. avoid thrashing in-and-out of sleep with short OSAL timer (~2ms)
@@ -117,25 +116,24 @@ void halSetSleepMode(void);
 /* This value is used to adjust the sleep timer compare value such that the sleep timer
  * compare takes into account the amount of processing time spent in function halSleep().
  * The first value is determined by measuring the number of sleep timer ticks it from
- * the beginning of the function to entering sleep mode or more precisely, when
- * MAC_PwrNextTimeout() is called.  The second value is determined by measuring the number
- * of sleep timer ticks from exit of sleep mode to the call to MAC_PwrOnReq() where the
- * MAC timer is restarted.
+ * the beginning of the function to entering sleep mode.  The second value is determined
+ * by measuring the number of sleep timer ticks from exit of sleep mode to the call to
+ * osal_adjust_timers().
  */
-#define HAL_SLEEP_ADJ_TICKS   (11 + 12)
+#define HAL_SLEEP_ADJ_TICKS   (7 + 10)
 
 #ifndef HAL_SLEEP_DEBUG_POWER_MODE
 /* set CC2530 power mode; always use PM2 */
-#define HAL_SLEEP_PREP_POWER_MODE(mode)     st( SLEEPCMD &= ~PMODE; /* clear mode bits */    \
-                                                SLEEPCMD |= mode;   /* set mode bits   */    \
-                                                while (!(STLOAD & LDRDY));                   \
-                                                halSleepPconValue = PCON_IDLE;               \
-                                              )
-#define HAL_SLEEP_SET_POWER_MODE()          halSetSleepMode()
+#define HAL_SLEEP_SET_POWER_MODE(mode)       st( SLEEPCMD &= ~PMODE; /* clear mode bits */    \
+                                                 SLEEPCMD |= mode;   /* set mode bits   */    \
+                                                 while (!(STLOAD & LDRDY));                   \
+                                                 {                                            \
+                                                   halSetSleepMode();                         \
+                                                 }                                            \
+                                               )
 #else
 /* Debug: don't set power mode, just block until sleep timer interrupt */
-#define HAL_SLEEP_PREP_POWER_MODE(mode)     /* nothing */
-#define HAL_SLEEP_SET_POWER_MODE()          st( while(halSleepInt == FALSE); \
+#define HAL_SLEEP_SET_POWER_MODE(mode)      st( while(halSleepInt == FALSE); \
                                                 halSleepInt = FALSE;         \
                                                 HAL_DISABLE_INTERRUPTS();    \
                                               )
@@ -181,15 +179,6 @@ void halSetSleepMode(void);
 #define UINT32_NDX3   0
 #endif
 
-static uint32 maxSleepLoopTime =  HAL_SLEEP_MS_TO_320US(MAX_SLEEP_TIME);
-
-/* ------------------------------------------------------------------------------------------------
- *                                        Global Variables
- * ------------------------------------------------------------------------------------------------
- */
-/* PCON register value to program when setting power mode */
-volatile __data uint8 halSleepPconValue = PCON_IDLE;
-
 /* ------------------------------------------------------------------------------------------------
  *                                        Local Variables
  * ------------------------------------------------------------------------------------------------
@@ -198,6 +187,12 @@ volatile __data uint8 halSleepPconValue = PCON_IDLE;
 /* HAL power management mode is set according to the power management state.
  */
 static uint8 halPwrMgtMode = HAL_SLEEP_OFF;
+
+/* stores the sleep timer count upon entering sleep */
+static uint32 halSleepTimerStart;
+
+/* stores the accumulated sleep time */
+static uint32 halAccumulatedSleepTime;
 
 #ifdef HAL_SLEEP_DEBUG_POWER_MODE
 static bool halSleepInt = FALSE;
@@ -209,6 +204,7 @@ static bool halSleepInt = FALSE;
  */
 
 void halSleepSetTimer(uint32 timeout);
+uint32 HalTimerElapsed( void );
 
 /**************************************************************************************************
  * @fn          halSleep
@@ -230,36 +226,8 @@ void halSleepSetTimer(uint32 timeout);
  */
 void halSetSleepMode(void)
 {
-  PCON = halSleepPconValue;
-  asm("NOP");
-}
-
-/**************************************************************************************************
- * @fn          halSetMaxSleepLoopTime
- *
- * @brief       This function is to used to setup the maximum sleep loop time. This sleep loop time 
- *              should be lesser than T2 rollover so that a maximum of only one rollover occurs 
- *              when cc2530 is in sleep. This function should be called whenever rolloverTime is 
- *              changed using the function macBackoffTimerSetRollover(macTimerRollover);
- *
- * input parameters
- *
- * @param       rolloverTime.
- *
- * output parameters
- *
- * None.
- *
- * @return      None.
- **************************************************************************************************
- */
-void halSetMaxSleepLoopTime(uint32 rolloverTime)
-{
-  if( rolloverTime > HAL_SLEEP_MS_TO_320US(MAX_SLEEP_TIME) )
-  {
-    maxSleepLoopTime = HAL_SLEEP_MS_TO_320US(MAX_SLEEP_TIME);
-  }
-  maxSleepLoopTime = (rolloverTime - TICKS_SUBTRACTED);
+  PCON = PCON_IDLE;
+  HAL_DISABLE_INTERRUPTS();
 }
 
 /**************************************************************************************************
@@ -283,6 +251,8 @@ void halSleep( uint16 osal_timeout )
 {
   uint32        timeout;
   uint32        macTimeout = 0;
+
+  halAccumulatedSleepTime = 0;
 
   /* get next OSAL timer expiration converted to 320 usec units */
   timeout = HAL_SLEEP_MS_TO_320US(osal_timeout);
@@ -325,12 +295,8 @@ void halSleep( uint16 osal_timeout )
     HAL_DISABLE_INTERRUPTS();
 
     /* always use "deep sleep" to turn off radio VREG on CC2530 */
-    if (halSleepPconValue != 0 && MAC_PwrOffReq(MAC_PWR_SLEEP_DEEP) == MAC_SUCCESS)
+    if (MAC_PwrOffReq(MAC_PWR_SLEEP_DEEP) == MAC_SUCCESS)
     {
-      /* The PCON value is not zero. There is no interrupt overriding the 
-       * sleep decision. Also, the radio granted the sleep request.
-       */
-
 #if ((defined HAL_KEY) && (HAL_KEY == TRUE))
       /* get peripherals ready for sleep */
       HalKeyEnterSleep();
@@ -342,11 +308,6 @@ void halSleep( uint16 osal_timeout )
       /* use this to turn LEDs off during sleep */
       HalLedEnterSleep();
 #endif
-
-      if(timeout > maxSleepLoopTime)
-      {
-        timeout = maxSleepLoopTime;
-      }  
 
       /* enable sleep timer interrupt */
       if (timeout != 0)
@@ -383,29 +344,23 @@ void halSleep( uint16 osal_timeout )
         HalUARTSuspend();
       }
 
-      /* Prep CC2530 power mode */
-      HAL_SLEEP_PREP_POWER_MODE(halPwrMgtMode);
-
       /* save interrupt enable registers and disable all interrupts */
       HAL_SLEEP_IE_BACKUP_AND_DISABLE(ien0, ien1, ien2);
       HAL_ENABLE_INTERRUPTS();
 
-      /* set CC2530 power mode, interrupt is disabled after this function
-       * Note that an ISR (that could wake up from power mode) which runs
-       * between the previous instruction enabling interrupts and before
-       * power mode is set would switch the halSleepPconValue so that
-       * power mode shall not be entered in such a case. 
-       */
-      HAL_SLEEP_SET_POWER_MODE();
+      /* set CC2530 power mode, interrupt is disabled after this function */
+      HAL_SLEEP_SET_POWER_MODE(halPwrMgtMode);
 
-      /* Disable interrupt immediately */
-      HAL_DISABLE_INTERRUPTS();
+      /* the interrupt is disabled - see halSetSleepMode() */
 
       /* restore interrupt enable registers */
       HAL_SLEEP_IE_RESTORE(ien0, ien1, ien2);
 
       /* disable sleep timer interrupt */
       HAL_SLEEP_TIMER_DISABLE_INT();
+
+      /* Calculate timer elasped */
+      halAccumulatedSleepTime += (HalTimerElapsed() / TICK_COUNT);
 
       if (ZNP_CFG1_UART == znpCfg1)
       {
@@ -441,9 +396,6 @@ void halSleep( uint16 osal_timeout )
     }
     else
     {
-      /* An interrupt may have changed the sleep decision. Do not sleep at all. Turn on
-       * the interrupt, exit normally, and the next sleep will be allowed.
-       */
       HAL_ENABLE_INTERRUPTS();
     }
   }
@@ -479,6 +431,9 @@ void halSleepSetTimer(uint32 timeout)
   ((uint8 *) &ticks)[UINT32_NDX2] = ST2;
   ((uint8 *) &ticks)[UINT32_NDX3] = 0;
 
+  /* store value for later */
+  halSleepTimerStart = ticks;
+
   /* Compute sleep timer compare value.  The ratio of 32 kHz ticks to 320 usec ticks
    * is 32768/3125 = 10.48576.  This is nearly 671/64 = 10.484375.
    */
@@ -497,7 +452,6 @@ void halSleepSetTimer(uint32 timeout)
  * @fn          TimerElapsed
  *
  * @brief       Determine the number of OSAL timer ticks elapsed during sleep.
- *              Deprecated for CC2530 and CC2430 SoC.
  *
  * input parameters
  *
@@ -512,8 +466,81 @@ void halSleepSetTimer(uint32 timeout)
  */
 uint32 TimerElapsed( void )
 {
-  /* Stubs */
-  return (0);
+  return ( halAccumulatedSleepTime );
+}
+
+/**************************************************************************************************
+ * @fn          HalTimerElapsed
+ *
+ * @brief       Determine the number of OSAL timer ticks elapsed during sleep.  This function
+ *              relies on OSAL macro TICK_COUNT to be set to 1; then ticks are calculated in
+ *              units of msec.
+ *
+ * input parameters
+ *
+ * @param       None.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      Number of timer ticks elapsed during sleep.
+ **************************************************************************************************
+ */
+uint32 HalTimerElapsed( void )
+{
+  uint32 ticks;
+
+  /* read the sleep timer; ST0 must be read first */
+  ((uint8 *) &ticks)[UINT32_NDX0] = ST0;
+  ((uint8 *) &ticks)[UINT32_NDX1] = ST1;
+  ((uint8 *) &ticks)[UINT32_NDX2] = ST2;
+
+  /* set bit 24 to handle wraparound */
+  ((uint8 *) &ticks)[UINT32_NDX3] = 0x01;
+
+  /* calculate elapsed time */
+  ticks -= halSleepTimerStart;
+
+  /* add back the processing time spent in function halSleep() */
+  ticks += HAL_SLEEP_ADJ_TICKS;
+
+  /* mask off excess if no wraparound */
+  ticks &= 0x00FFFFFF;
+
+  /* Convert elapsed time in milliseconds with round.  1000/32768 = 125/4096 */
+  return ( ((ticks * 125) + 4095) / 4096 );
+}
+
+/**************************************************************************************************
+ * @fn          halSleepWait
+ *
+ * @brief       Perform a blocking wait.
+ *
+ * input parameters
+ *
+ * @param       duration - Duration of wait in microseconds.
+ *
+ * output parameters
+ *
+ * None.
+ *
+ * @return      None.
+ **************************************************************************************************
+ */
+void halSleepWait(uint16 duration)
+{
+  while (duration--)
+  {
+    asm("NOP");
+    asm("NOP");
+    asm("NOP");
+    asm("NOP");
+    asm("NOP");
+    asm("NOP");
+    asm("NOP");
+    asm("NOP");
+  }
 }
 
 /**************************************************************************************************
@@ -555,14 +582,11 @@ void halRestoreSleepLevel( void )
  */
 HAL_ISR_FUNCTION(halSleepTimerIsr, ST_VECTOR)
 {
-  HAL_ENTER_ISR();
   HAL_SLEEP_TIMER_CLEAR_INT();
+  CLEAR_SLEEP_MODE();
 
 #ifdef HAL_SLEEP_DEBUG_POWER_MODE
   halSleepInt = TRUE;
 #endif
-  
-  CLEAR_SLEEP_MODE();
-  HAL_EXIT_ISR();
 }
 

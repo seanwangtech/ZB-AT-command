@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       ZDObject.h
-  Revised:        $Date: 2010-03-30 17:07:05 -0700 (Tue, 30 Mar 2010) $
-  Revision:       $Revision: 22053 $
+  Revised:        $Date: 2007-12-07 09:05:42 -0800 (Fri, 07 Dec 2007) $
+  Revision:       $Revision: 16034 $
 
   Description:    This file contains the interface to the Zigbee Device Object.
 
@@ -339,7 +339,8 @@ extern void ZDO_ProcessMgmtNwkDiscReq( zdoIncomingMsg_t *inMsg );
  * ZDO_FinishProcessingMgmtNwkDiscReq - Called to parse the incoming
  * Management LQI Request
  */
-extern void ZDO_FinishProcessingMgmtNwkDiscReq( void );
+extern void ZDO_FinishProcessingMgmtNwkDiscReq(byte ResultCount,
+                                           networkDesc_t *NetworkList );
 /*
  * ZDO_ProcessMgmtNwkUpdateReq - Parse the Mgmt_NWK_Update_req message
  *

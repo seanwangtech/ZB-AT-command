@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       AssocList.h
-  Revised:        $Date: 2012-02-14 13:39:10 -0800 (Tue, 14 Feb 2012) $
-  Revision:       $Revision: 29286 $
+  Revised:        $Date: 2007-10-28 18:41:49 -0700 (Sun, 28 Oct 2007) $
+  Revision:       $Revision: 15799 $
 
   Description:    Associated Device List.
 
 
-  Copyright 2004-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,7 +34,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef ASSOCLIST_H
@@ -68,8 +68,8 @@ extern "C" {
 #define DEV_LINK_REPAIR     0x02 // link repair in progress ?
 #define DEV_SEC_INIT_STATUS 0x04 // security init
 #define DEV_SEC_AUTH_STATUS 0x08 // security authenticated
-
-#define DEV_SECURED_JOIN    0x20 // Device joined secure
+  
+#define DEV_SECURED_JOIN    0x20 // Device joined secure  
 #define DEV_REJOIN_STATUS   0x40 // Device rejoined
 #define DEV_HIGH_SEC_STATUS 0x80 // Device joined as High Security
 
@@ -199,7 +199,7 @@ extern void AssocSetDefaultNV( void );
 /*
  * Restore the device list (assoc list) from NV
  */
-extern uint8 AssocRestoreFromNV( void );
+extern byte AssocRestoreFromNV( void );
 
 /*
  * Save the device list (assoc list) to NV

@@ -1,9 +1,11 @@
-Projects/zstack/AT commands/*/CC2530DB/*.dep
-Projects/zstack/AT commands/*/CC2530DB/*.ewd
-Projects/zstack/AT commands/*/CC2530DB/CoordinatorEB/
-Projects/zstack/AT commands/*/CC2530DB/RouterEB/
-Projects/zstack/AT commands/*/CC2530DB/EndDeviceEB/
-Projects/zstack/AT commands/*/CC2530DB/settings/
+Projects/zstack/*/*/CC2530DB/*.dep
+Projects/zstack/*/*/CC2530DB/*.ewd
+Projects/zstack/*/*/CC2530DB/CoordinatorEB/
+Projects/zstack/*/*/CC2530DB/*-Pro/
+Projects/zstack/*/*/CC2530DB/RouterEB/
+Projects/zstack/*/*/CC2530DB/EndDeviceEB/
+Projects/zstack/*/*/CC2530DB/settings/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db

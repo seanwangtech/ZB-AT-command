@@ -6,7 +6,7 @@
   Description:    This file contains the interface to the Drivers Service.
 
 
-  Copyright 2005-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,7 +22,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -48,6 +48,7 @@
 #if (defined HAL_DMA) && (HAL_DMA == TRUE)
   #include "hal_dma.h"
 #endif
+#include "hal_flash.h"
 #include "hal_key.h"
 #include "hal_lcd.h"
 #include "hal_led.h"
@@ -63,10 +64,6 @@
 #endif
 #if (defined HAL_HID) && (HAL_HID == TRUE)
   #include "usb_hid.h"
-#endif
-
-#ifdef CC2591_COMPRESSION_WORKAROUND
-  #include "mac_rx.h"
 #endif
 
 /**************************************************************************************************
@@ -109,10 +106,6 @@ void Hal_Init( uint8 task_id )
 {
   /* Register task ID */
   Hal_TaskID = task_id;
-  
-#ifdef CC2591_COMPRESSION_WORKAROUND  
-  osal_start_reload_timer( Hal_TaskID, PERIOD_RSSI_RESET_EVT, PERIOD_RSSI_RESET_TIMEOUT );
-#endif  
 }
 
 /**************************************************************************************************
@@ -128,7 +121,7 @@ void HalDriverInit (void)
 {
   /* TIMER */
 #if (defined HAL_TIMER) && (HAL_TIMER == TRUE)
-  #error "The hal timer driver module is removed."
+  HalTimerInit();
 #endif
 
   /* ADC */
@@ -140,6 +133,12 @@ void HalDriverInit (void)
 #if (defined HAL_DMA) && (HAL_DMA == TRUE)
   // Must be called before the init call to any module that uses DMA.
   HalDmaInit();
+#endif
+
+  /* Flash */
+#if (defined HAL_FLASH) && (HAL_FLASH == TRUE)
+  // Must be called before the init call to any module that uses Flash access or NV.
+  HalFlashInit();
 #endif
 
   /* AES */
@@ -244,14 +243,6 @@ uint16 Hal_ProcessEvent( uint8 task_id, uint16 events )
   }
 #endif
 
-#ifdef CC2591_COMPRESSION_WORKAROUND
-  if ( events & PERIOD_RSSI_RESET_EVT )
-  {
-    macRxResetRssi();
-    return (events ^ PERIOD_RSSI_RESET_EVT);
-  }
-#endif  
-  
   /* Nothing interested, discard the message */
   return 0;
 
@@ -271,7 +262,7 @@ void Hal_ProcessPoll ()
 
   /* Timer Poll */
 #if (defined HAL_TIMER) && (HAL_TIMER == TRUE)
-  #error "The hal timer driver module is removed."
+  HalTimerTick();
 #endif
 
   /* UART Poll */
@@ -287,11 +278,6 @@ void Hal_ProcessPoll ()
   /* HID poll */
 #if (defined HAL_HID) && (HAL_HID == TRUE)
   usbHidProcessEvents();
-#endif
-  
-#if defined( POWER_SAVING )
-  /* Allow sleep before the next OSAL event loop */
-  ALLOW_SLEEP_MODE();
 #endif
 
 }

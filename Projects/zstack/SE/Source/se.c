@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       SE.c
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2007-11-16 10:54:05 -0800 (Fri, 16 Nov 2007) $
+  Revision:       $Revision: 15941 $
 
   Description:    This file contains the Smart Energy (SE)
                   Profile implementation.

@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       ZComDef.h
-  Revised:        $Date: 2012-01-12 17:54:52 -0800 (Thu, 12 Jan 2012) $
-  Revision:       $Revision: 28926 $
+  Revised:        $Date: 2010-01-17 08:58:03 -0800 (Sun, 17 Jan 2010) $
+  Revision:       $Revision: 21533 $
 
   Description:    Type definitions and macros.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -52,7 +52,7 @@ extern "C"
 #include "comdef.h"
 #include "saddr.h"
 
-
+  
 /*********************************************************************
  * CONSTANTS
  */
@@ -123,11 +123,6 @@ extern "C"
 #define ZCD_NV_CONCENTRATOR_RADIUS        0x0034
 #define ZCD_NV_CONCENTRATOR_RC            0x0036
 #define ZCD_NV_NWK_MGR_MODE               0x0037
-#define ZCD_NV_SRC_RTG_EXPIRY_TIME        0x0038
-#define ZCD_NV_ROUTE_DISCOVERY_TIME       0x0039
-#define ZCD_NV_NWK_ACTIVE_KEY_INFO        0x003A
-#define ZCD_NV_NWK_ALTERN_KEY_INFO        0x003B
-#define ZCD_NV_ROUTER_OFF_ASSOC_CLEANUP   0x003C
 
 
 // APS Layer NV item IDs
@@ -139,7 +134,8 @@ extern "C"
 #define ZCD_NV_BINDING_TIME               0x0046
 #define ZCD_NV_APS_USE_EXT_PANID          0x0047
 #define ZCD_NV_APS_USE_INSECURE_JOIN      0x0048
-
+#define ZCD_NV_APSF_WINDOW_SIZE           0x0049     // Window size for fregmentation
+#define ZCD_NV_APSF_INTERFRAME_DELAY      0x004A     // The delay between tx blocks when using fragmentaition
 #define ZCD_NV_APS_NONMEMBER_RADIUS       0x004B     // Multicast non_member radius
 #define ZCD_NV_APS_LINK_KEY_TABLE         0x004C
 
@@ -149,14 +145,13 @@ extern "C"
 #define ZCD_NV_PRECFGKEYS_ENABLE          0x0063
 #define ZCD_NV_SECURITY_MODE              0x0064
 #define ZCD_NV_SECURE_PERMIT_JOIN         0x0065
-
-#define ZCD_NV_IMPLICIT_CERTIFICATE       0x0069
-#define ZCD_NV_DEVICE_PRIVATE_KEY         0x006A
-#define ZCD_NV_CA_PUBLIC_KEY              0x006B
-
-#define ZCD_NV_USE_DEFAULT_TCLK           0x006D
-#define ZCD_NV_TRUSTCENTER_ADDR           0x006E
-#define ZCD_NV_RNG_COUNTER                0x006F
+#define ZCD_NV_lOCAL_CERTIFICATE          0x0069
+#define ZCD_NV_STATIC_PRIVATE_KEY         0x006a
+#define ZCD_NV_CA_PUBLIC_KEY              0x006b
+#define ZCD_NV_STATIC_PUBLIC_KEY          0x006c
+#define ZCD_NV_USE_DEFAULT_TCLK           0x006d 
+#define ZCD_NV_TRUSTCENTER_ADDR           0x006e
+#define ZCD_NV_RNG_COUNTER                0x006f
 #define ZCD_NV_RANDOM_SEED                0x0070
 
 // ZDO NV Item IDs
@@ -167,9 +162,7 @@ extern "C"
 #define ZCD_NV_LEAVE_CTRL                 0x0085
 #define ZCD_NV_SCAN_DURATION              0x0086
 #define ZCD_NV_LOGICAL_TYPE               0x0087
-#define ZCD_NV_NWKMGR_MIN_TX              0x0088
-#define ZCD_NV_NWKMGR_ADDR                0x0089
-
+  
 #define ZCD_NV_ZDO_DIRECT_CB              0x008F
 
 // ZCL NV item IDs
@@ -178,48 +171,12 @@ extern "C"
 // Non-standard NV item IDs
 #define ZCD_NV_SAPI_ENDPOINT              0x00A1
 
-// NV Items Reserved for Commissioning Cluster Startup Attribute Set (SAS):
-// 0x00B1 - 0x00BF: Parameters related to APS and NWK layers
-// 0x00C1 - 0x00CF: Parameters related to Security
-// 0x00D1 - 0x00DF: Current key parameters
-#define ZCD_NV_SAS_SHORT_ADDR             0x00B1
-#define ZCD_NV_SAS_EXT_PANID              0x00B2
-#define ZCD_NV_SAS_PANID                  0x00B3
-#define ZCD_NV_SAS_CHANNEL_MASK           0x00B4
-#define ZCD_NV_SAS_PROTOCOL_VER           0x00B5
-#define ZCD_NV_SAS_STACK_PROFILE          0x00B6
-#define ZCD_NV_SAS_STARTUP_CTRL           0x00B7
-
-#define ZCD_NV_SAS_TC_ADDR                0x00C1
-#define ZCD_NV_SAS_TC_MASTER_KEY          0x00C2
-#define ZCD_NV_SAS_NWK_KEY                0x00C3
-#define ZCD_NV_SAS_USE_INSEC_JOIN         0x00C4
-#define ZCD_NV_SAS_PRECFG_LINK_KEY        0x00C5
-#define ZCD_NV_SAS_NWK_KEY_SEQ_NUM        0x00C6
-#define ZCD_NV_SAS_NWK_KEY_TYPE           0x00C7
-#define ZCD_NV_SAS_NWK_MGR_ADDR           0x00C8
-
-#define ZCD_NV_SAS_CURR_TC_MASTER_KEY     0x00D1
-#define ZCD_NV_SAS_CURR_NWK_KEY           0x00D2
-#define ZCD_NV_SAS_CURR_PRECFG_LINK_KEY   0x00D3
-
 // NV Items Reserved for Trust Center Link Key Table entries
 // 0x0101 - 0x01FF
 #define ZCD_NV_TCLK_TABLE_START           0x0101
-#define ZCD_NV_TCLK_TABLE_END             0x01FF
-
-// NV Items Reserved for APS Link Key Table entries
-// 0x0201 - 0x02FF
-#define ZCD_NV_APS_LINK_KEY_DATA_START    0x0201     // APS key data
-#define ZCD_NV_APS_LINK_KEY_DATA_END      0x02FF
-
-// NV Items Reserved for Master Key Table entries
-// 0x0301 - 0x03FF
-#define ZCD_NV_MASTER_KEY_DATA_START      0x0301     // Master key data
-#define ZCD_NV_MASTER_KEY_DATA_END        0x03FF
-
+  
 // NV Items Reserved for applications (user applications)
-// 0x0401 – 0x0FFF
+// 0x0201 – 0x0FFF
 
 
 // ZCD_NV_STARTUP_OPTION values
@@ -232,10 +189,10 @@ extern "C"
 #define ZCD_STARTOPT_CLEAR_CONFIG   ZCD_STARTOPT_DEFAULT_CONFIG_STATE
 #define ZCD_STARTOPT_CLEAR_STATE    ZCD_STARTOPT_DEFAULT_NETWORK_STATE
 
-
-#define ZCL_KE_IMPLICIT_CERTIFICATE_LEN                  48
-#define ZCL_KE_CA_PUBLIC_KEY_LEN                         22
-#define ZCL_KE_DEVICE_PRIVATE_KEY_LEN                    21
+// NV Item Length
+#define ZCL_KEY_ESTABLISHMENT_PUBLIC_KEY_LENGTH    22
+#define ZCL_KEY_ESTABLSIHMENT_PRIVATE_KEY_LENTGH   21
+#define ZCL_KEY_ESTABLISHMENT_CERTIFICATE_LENGTH   48
 /*********************************************************************
  * TYPEDEFS
  */
@@ -282,18 +239,6 @@ typedef struct
 #define ZSapiInProgress             0x20
 #define ZSapiTimeout                0x21
 #define ZSapiInit                   0x22
-
-#define ZNotAuthorized              0x7E
-
-#define ZMalformedCmd               0x80
-#define ZUnsupClusterCmd            0x81
-
-// OTA Status values
-#define ZOtaAbort                   0x95
-#define ZOtaImageInvalid            0x96
-#define ZOtaWaitForData             0x97
-#define ZOtaNoImageAvailable        0x98
-#define ZOtaRequireMoreImage        0x99
 
 // APS status values
 #define ZApsFail                    0xb1
@@ -377,7 +322,6 @@ typedef struct
 #define SPI_INCOMING_ZAPP_DATA    0x22    // Raw data from the ZAPP port (see serialApp.c)
 #define MT_SYS_APP_MSG            0x23    // Raw data from an MT Sys message
 #define MT_SYS_APP_RSP_MSG        0x24    // Raw data output for an MT Sys message
-#define MT_SYS_OTA_MSG            0x25    // Raw data output for an MT OTA Rsp
 
 #define AF_DATA_CONFIRM_CMD       0xFD    // Data confirmation
 #define AF_INCOMING_MSG_CMD       0x1A    // Incoming MSG type message
@@ -392,14 +336,12 @@ typedef struct
 #define ZDO_CB_MSG                0xD3    // ZDO incoming message callback
 #define ZDO_NETWORK_REPORT        0xD4    // ZDO received a Network Report message
 #define ZDO_NETWORK_UPDATE        0xD5    // ZDO received a Network Update message
-#define ZDO_ADDR_CHANGE_IND       0xD6    // ZDO was informed of device address change
 
 #define NM_CHANNEL_INTERFERE      0x31    // NwkMgr received a Channel Interference message
 #define NM_ED_SCAN_CONFIRM        0x32    // NwkMgr received an ED Scan Confirm message
 #define SAPS_CHANNEL_CHANGE       0x33    // Stub APS has changed the device's channel
 #define ZCL_INCOMING_MSG          0x34    // Incoming ZCL foundation message
 #define ZCL_KEY_ESTABLISH_IND     0x35    // ZCL Key Establishment Completion Indication
-#define ZCL_OTA_CALLBACK_IND      0x36    // ZCL OTA Completion Indication
 
 
 // OSAL System Message IDs/Events Reserved for applications (user applications)

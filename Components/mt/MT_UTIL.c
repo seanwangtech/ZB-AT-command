@@ -1,21 +1,21 @@
 /***************************************************************************************************
   Filename:       MT_UTIL.c
-  Revised:        $Date: 2012-02-25 17:43:09 -0800 (Sat, 25 Feb 2012) $
-  Revision:       $Revision: 29520 $
+  Revised:        $Date: 2009-12-29 18:31:22 -0800 (Tue, 29 Dec 2009) $
+  Revision:       $Revision: 21416 $
 
   Description:    MonitorTest Utility Functions
 
-  Copyright 2007-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 - 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
@@ -43,17 +43,20 @@
 #include "ZComDef.h"
 
 #include "AddrMgr.h"
-
+#include "AssocList.h"
 #include "OnBoard.h"   /* This is here because of the key reading */
 #include "hal_key.h"
 #include "hal_led.h"
 #include "OSAL_Nv.h"
-#include "osal.h"
 #include "NLMEDE.h"
+#include "ZDApp.h"
 #include "MT.h"
 #include "MT_UTIL.h"
+#include "MT_ZDO.h"
+#include "MT_SAPI.h"
+#include "MT_NWK.h"
+#include "MT_AF.h"
 #include "MT_MAC.h"
-#include "ssp.h"
 #if defined ZCL_KEY_ESTABLISH
 #include "zcl_key_establish.h"
 #endif
@@ -61,25 +64,10 @@
 #include "zcl_se.h"
 #endif
 
-#if !defined NONWK
-#include "MT_ZDO.h"
-#include "MT_SAPI.h"
-#include "MT_NWK.h"
-#include "MT_AF.h"
-#include "AssocList.h"
-#include "ZDApp.h"
-#include "ZDSecMgr.h"
-#endif
 /***************************************************************************************************
  * CONSTANTS
  ***************************************************************************************************/
 #define MT_UTIL_DEVICE_INFO_RESPONSE_LEN 14
-#define MT_UTIL_STATUS_LEN    1
-#define MT_UTIL_FRM_CTR_LEN   4
-// Status + LinkKeyDataLen + Tx+Rx Frame counter.
-#define MT_APSME_LINKKEY_GET_RSP_LEN (MT_UTIL_STATUS_LEN + SEC_KEY_LEN + (MT_UTIL_FRM_CTR_LEN * 2))
-// Status + NV id
-#define MT_APSME_LINKKEY_NV_ID_GET_RSP_LEN (MT_UTIL_STATUS_LEN + 2)
 
 /***************************************************************************************************
  * LOCAL VARIABLES
@@ -91,11 +79,6 @@ uint8 zcl_key_establish_task_id;
 /***************************************************************************************************
  * LOCAL FUNCTIONS
  ***************************************************************************************************/
-#ifdef AUTO_PEND
-static void MT_UtilRevExtCpy( uint8 *pDst, uint8 *pSrc );
-static void MT_UtilSpi2Addr( zAddrType_t *pDst, uint8 *pSrc );
-#endif
-
 #if defined (MT_UTIL_FUNC)
 void MT_UtilGetDeviceInfo(void);
 void MT_UtilGetNvInfo(void);
@@ -107,33 +90,18 @@ void MT_UtilCallbackSub(uint8 *pData);
 void MT_UtilKeyEvent(uint8 *pBuf);
 void MT_UtilTimeAlive(void);
 void MT_UtilLedControl(uint8 *pBuf);
-void MT_UtilSrcMatchEnable (uint8 *pBuf);
-void MT_UtilSrcMatchAddEntry (uint8 *pBuf);
-void MT_UtilSrcMatchDeleteEntry (uint8 *pBuf);
-void MT_UtilSrcMatchCheckSrcAddr (uint8 *pBuf);
-void MT_UtilSrcMatchAckAllPending (uint8 *pBuf);
-void MT_UtilSrcMatchCheckAllPending (uint8 *pBuf);
-
-#if !defined NONWK
-void MT_UtilDataReq(uint8 *pBuf);
-static void MT_UtilAddrMgrEntryLookupExt(uint8 *pBuf);
+static void MT_UtilAddrMgrExtAddrLookup(uint8 *pBuf);
 static void MT_UtilAddrMgrEntryLookupNwk(uint8 *pBuf);
-#if defined MT_SYS_KEY_MANAGEMENT
 static void MT_UtilAPSME_LinkKeyDataGet(uint8 *pBuf);
-static void MT_UtilAPSME_LinkKeyNvIdGet(uint8 *pBuf);
-#endif //MT_SYS_KEY_MANAGEMENT
-static void MT_UtilAPSME_RequestKeyCmd(uint8 *pBuf);
 static void MT_UtilAssocCount(uint8 *pBuf);
 static void MT_UtilAssocFindDevice(uint8 *pBuf);
 static void MT_UtilAssocGetWithAddress(uint8 *pBuf);
-static void packDev_t(uint8 *pBuf, associated_devices_t *pDev);
 #if defined ZCL_KEY_ESTABLISH
 static void MT_UtilzclGeneral_KeyEstablish_InitiateKeyEstablishment(uint8 *pBuf);
 static void MT_UtilzclGeneral_KeyEstablishment_ECDSASign(uint8 *pBuf);
-#endif // ZCL_KEY_ESTABLISH
+#endif
 static void MT_UtilSync(void);
-#endif // !defined NONWK
-#endif // MT_UTIL_FUNC
+#endif /* MT_UTIL_FUNC */
 
 #if defined (MT_UTIL_FUNC)
 /***************************************************************************************************
@@ -151,8 +119,6 @@ uint8 MT_UtilCommandProcessing(uint8 *pBuf)
 
   switch (pBuf[MT_RPC_POS_CMD1])
   {
-// CC253X MAC Network Processor does not have NV support
-#if !defined(CC253X_MACNP)
     case MT_UTIL_GET_DEVICE_INFO:
       MT_UtilGetDeviceInfo();
       break;
@@ -176,7 +142,7 @@ uint8 MT_UtilCommandProcessing(uint8 *pBuf)
     case MT_UTIL_SET_PRECFGKEY:
       MT_UtilSetPreCfgKey(pBuf);
       break;
-#endif
+
     case MT_UTIL_CALLBACK_SUB_CMD:
       MT_UtilCallbackSub(pBuf);
       break;
@@ -187,70 +153,26 @@ uint8 MT_UtilCommandProcessing(uint8 *pBuf)
 #endif
       break;
 
-    case MT_UTIL_TIME_ALIVE:
-      MT_UtilTimeAlive();
-      break;
-
     case MT_UTIL_LED_CONTROL:
 #if (defined HAL_LED) && (HAL_LED == TRUE)
       MT_UtilLedControl(pBuf);
 #endif
       break;
 
-    case MT_UTIL_SRC_MATCH_ENABLE:
-      MT_UtilSrcMatchEnable(pBuf);
-      break;
-
-    case MT_UTIL_SRC_MATCH_ADD_ENTRY:
-      MT_UtilSrcMatchAddEntry(pBuf);
-      break;
-
-    case MT_UTIL_SRC_MATCH_DEL_ENTRY:
-      MT_UtilSrcMatchDeleteEntry(pBuf);
-      break;
-
-    case MT_UTIL_SRC_MATCH_CHECK_SRC_ADDR:
-      MT_UtilSrcMatchCheckSrcAddr(pBuf);
-      break;
-
-    case MT_UTIL_SRC_MATCH_ACK_ALL_PENDING:
-      MT_UtilSrcMatchAckAllPending(pBuf);
-      break;
-
-    case MT_UTIL_SRC_MATCH_CHECK_ALL_PENDING:
-      MT_UtilSrcMatchCheckAllPending(pBuf);
-      break;
-
-    case MT_UTIL_TEST_LOOPBACK:
-      MT_BuildAndSendZToolResponse((MT_RPC_CMD_SRSP|(uint8)MT_RPC_SYS_UTIL), MT_UTIL_TEST_LOOPBACK,
-                                    pBuf[MT_RPC_POS_LEN], (pBuf+MT_RPC_FRAME_HDR_SZ));
-      break;
-
-#if !defined NONWK
-    case MT_UTIL_DATA_REQ:
-      MT_UtilDataReq(pBuf);
+    case MT_UTIL_TIME_ALIVE:
+      MT_UtilTimeAlive();
       break;
 
     case MT_UTIL_ADDRMGR_EXT_ADDR_LOOKUP:
-      MT_UtilAddrMgrEntryLookupExt(pBuf);
+      MT_UtilAddrMgrExtAddrLookup(pBuf);
       break;
 
     case MT_UTIL_ADDRMGR_NWK_ADDR_LOOKUP:
       MT_UtilAddrMgrEntryLookupNwk(pBuf);
       break;
 
-#if defined MT_SYS_KEY_MANAGEMENT
     case MT_UTIL_APSME_LINK_KEY_DATA_GET:
       MT_UtilAPSME_LinkKeyDataGet(pBuf);
-      break;
-
-    case MT_UTIL_APSME_LINK_KEY_NV_ID_GET:
-      MT_UtilAPSME_LinkKeyNvIdGet(pBuf);
-      break;
-#endif // MT_SYS_KEY_MANAGEMENT
-
-    case MT_UTIL_APSME_REQUEST_KEY_CMD:
-      MT_UtilAPSME_RequestKeyCmd(pBuf);
       break;
 
     case MT_UTIL_ASSOC_COUNT:
@@ -278,7 +200,6 @@ uint8 MT_UtilCommandProcessing(uint8 *pBuf)
     case MT_UTIL_SYNC_REQ:
       MT_UtilSync();
       break;
-#endif /* !defined NONWK */
 
     default:
       status = MT_RPC_ERR_COMMAND_ID;
@@ -293,7 +214,7 @@ uint8 MT_UtilCommandProcessing(uint8 *pBuf)
  *
  * @brief   The Get Device Info serial message.
  *
- * @param   None.
+ * @param   void
  *
  * @return  void
  ***************************************************************************************************/
@@ -302,10 +223,9 @@ void MT_UtilGetDeviceInfo(void)
   uint8  *buf;
   uint8  *pBuf;
   uint8  bufLen = MT_UTIL_DEVICE_INFO_RESPONSE_LEN;
-  uint16 *assocList = NULL;
-
 #if !defined NONWK
   uint8  assocCnt = 0;
+  uint16 *assocList = NULL;
 
   if (ZG_DEVICE_RTR_TYPE)
   {
@@ -384,7 +304,7 @@ void MT_UtilGetDeviceInfo(void)
  *
  * @brief   The Get NV Info serial message.
  *
- * @param   None.
+ * @param   byte *msg - pointer to the data
  *
  * @return  void
  ***************************************************************************************************/
@@ -462,7 +382,7 @@ void MT_UtilGetNvInfo(void)
  *
  * @brief   Set PanID message
  *
- * @param   pBuf - pointer to the data
+ * @param   byte *msg - pointer to the data
  *
  * @return  void
  ***************************************************************************************************/
@@ -490,7 +410,7 @@ void MT_UtilSetPanID(uint8 *pBuf)
  *
  * @brief   Set Channels
  *
- * @param   pBuf - pointer to the data
+ * @param   byte *msg - pointer to the data
  *
  * @return  void
  ***************************************************************************************************/
@@ -542,7 +462,7 @@ void MT_UtilSetSecLevel(uint8 *pBuf)
  *
  * @brief   Set Pre Cfg Key
  *
- * @param   pBuf - pointer to the data
+ * @param   byte *msg - pointer to the data
  *
  * @return  void
  ***************************************************************************************************/
@@ -567,7 +487,7 @@ void MT_UtilSetPreCfgKey(uint8 *pBuf)
  *
  * @brief   The Callback subscribe.
  *
- * @param   pBuf - pointer to the data
+ * @param   byte *msg - pointer to the data
  *
  * @return  void
  ***************************************************************************************************/
@@ -576,7 +496,7 @@ void MT_UtilCallbackSub(uint8 *pBuf)
   uint8 cmdId = pBuf[MT_RPC_POS_CMD1];
   uint8 retValue = ZFailure;
 
-#if defined(MT_MAC_CB_FUNC) || defined(MT_NWK_CB_FUNC) || defined(MT_ZDO_CB_FUNC) || defined(MT_AF_CB_FUNC) || defined(MT_SAPI_CB_FUNC)
+#if defined(MT_MAC_CB_FUNC) || defined(MT_NWK_CB_FUNC) || defined(MT_ZDO_CB_FUNC) || defined(MT_AF_CB_FUNC) || defined(MT_SAPI_CB_FUNC) || defined(MT_SAPI_CB_FUNC)
   uint8 subSystem;
   uint16 subscribed_command;
 
@@ -660,7 +580,7 @@ void MT_UtilCallbackSub(uint8 *pBuf)
  *
  * @brief   Process Key Event
  *
- * @param   pBuf - pointer to the data
+ * @param   byte *msg - pointer to the data
  *
  * @return  void
  ***************************************************************************************************/
@@ -707,34 +627,6 @@ void MT_UtilKeyEvent(uint8 *pBuf)
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 1, &retValue );
 }
 #endif
-
-/***************************************************************************************************
- * @fn      MT_UtilTimeAlive
- *
- * @brief   Process Time Alive
- *
- * @param   None.
- *
- * @return  None
- ***************************************************************************************************/
-void MT_UtilTimeAlive(void)
-{
-  uint8 timeAlive[4];
-  uint32 tmp32;
-
-  /* Time since last reset (seconds) */
-  tmp32 = osal_GetSystemClock() / 1000;
-
-  /* Convert to high byte first into temp buffer */
-  timeAlive[0] = BREAK_UINT32(tmp32, 0);
-  timeAlive[1] = BREAK_UINT32(tmp32, 1);
-  timeAlive[2] = BREAK_UINT32(tmp32, 2);
-  timeAlive[3] = BREAK_UINT32(tmp32, 3);
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL),
-                                       MT_UTIL_TIME_ALIVE, sizeof(timeAlive), timeAlive);
-}
 
 #if (defined HAL_LED) && (HAL_LED == TRUE)
 /***************************************************************************************************
@@ -793,328 +685,55 @@ void MT_UtilLedControl(uint8 *pBuf)
 
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 1, &retValue );
+
 }
 #endif /* HAL_LED */
 
-
 /***************************************************************************************************
- * @fn          MT_UtilSrcMatchEnable
+ * @fn      MT_UtilTimeAlive
  *
- * @brief      Enabled AUTOPEND and source address matching.
- *
- * @param      pBuf - Buffer contains the data
- *
- * @return     void
- ***************************************************************************************************/
-void MT_UtilSrcMatchEnable (uint8 *pBuf)
-{
-  uint8 retValue, cmdId;
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-#ifdef AUTO_PEND
-  /* Call the routine */
-  retValue = ZMacSrcMatchEnable (pBuf[0], pBuf[1]);
-#else
-  retValue = ZMacUnsupported;
-#endif
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 1, &retValue );
-
-}
-
-/***************************************************************************************************
- * @fn          MT_UtilSrcMatchAddEntry
- *
- * @brief       Add a short or extended address to source address table.
- *
- * @param       pBuf - Buffer contains the data
- *
- * @return      void
- ***************************************************************************************************/
-void MT_UtilSrcMatchAddEntry (uint8 *pBuf)
-{
-  uint8 retValue, cmdId;
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-#ifdef AUTO_PEND
-  uint16 panID;
-  zAddrType_t devAddr;
-
-  /* Address mode */
-  devAddr.addrMode = *pBuf++;
-
-  /* Address based on the address mode */
-  MT_UtilSpi2Addr( &devAddr, pBuf);
-  pBuf += Z_EXTADDR_LEN;
-
-  /* PanID */
-  panID = BUILD_UINT16( pBuf[0] , pBuf[1] );
-
-  /* Call the routine */
-  retValue =  ZMacSrcMatchAddEntry (&devAddr, panID);
-#else
-  retValue = ZMacUnsupported;
-#endif
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 1, &retValue );
-}
-
-/***************************************************************************************************
- * @fn          MT_UtilSrcMatchDeleteEntry
- *
- * @brief      Delete a short or extended address from source address table.
- *
- * @param      pBuf - Buffer contains the data
- *
- * @return     void
- ***************************************************************************************************/
-void MT_UtilSrcMatchDeleteEntry (uint8 *pBuf)
-{
-  uint8 retValue, cmdId;
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-#ifdef AUTO_PEND
-  uint16 panID;
-  zAddrType_t devAddr;
-
-  /* Address mode */
-  devAddr.addrMode = *pBuf++;
-
-  /* Address based on the address mode */
-  MT_UtilSpi2Addr( &devAddr, pBuf);
-  pBuf += Z_EXTADDR_LEN;
-
-  /* PanID */
-  panID = BUILD_UINT16( pBuf[0] , pBuf[1] );
-
-  /* Call the routine */
-  retValue =  ZMacSrcMatchDeleteEntry (&devAddr, panID);
-#else
-  retValue = ZMacUnsupported;
-#endif
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 1, &retValue );
-}
-
-/***************************************************************************************************
- * @fn          MT_UtilSrcMatchCheckSrcAddr
- *
- * @brief      Check if a short or extended address is in the source address table.
- *
- * @param      pBuf - Buffer contains the data
- *
- * @return     void
- ***************************************************************************************************/
-void MT_UtilSrcMatchCheckSrcAddr (uint8 *pBuf)
-{
-  uint8 cmdId;
-  uint8 retArray[2];
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-#if 0  /* Unsupported  */
-  uint16 panID;
-  zAddrType_t devAddr;
-
-  /* Address mode */
-  devAddr.addrMode = *pBuf++;
-
-  /* Address based on the address mode */
-  MT_UtilSpi2Addr( &devAddr, pBuf);
-  pBuf += Z_EXTADDR_LEN;
-
-  /* PanID */
-  panID = BUILD_UINT16( pBuf[0] , pBuf[1] );
-
-  /* Call the routine */
-  retArray[1] =  ZMacSrcMatchCheckSrcAddr (&devAddr, panID);
-
-    /* Return failure if the index is invalid */
-  if (retArray[1] == ZMacSrcMatchInvalidIndex )
-  {
-    retArray[0] = ZFailure;
-  }
-  else
-  {
-    retArray[0] = ZSuccess;
-  }
-#else
-  retArray[0] = ZMacUnsupported;
-  retArray[1] = ZMacSrcMatchInvalidIndex;
-#endif
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 2, retArray );
-}
-
-/***************************************************************************************************
- * @fn          MT_UtilSrcMatchAckAllPending
- *
- * @brief       Enabled/disable acknowledging all packets with pending bit set
- *              It is normally enabled when adding new entries to
- *              the source address table fails due to the table is full, or
- *              disabled when more entries are deleted and the table has
- *              empty slots.
- *
- * @param       pBuf - Buffer contains the data
- *
- * @return      void
- ***************************************************************************************************/
-void MT_UtilSrcMatchAckAllPending (uint8 *pBuf)
-{
-  uint8 retValue, cmdId;
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-#ifdef AUTO_PEND
-  /* Call the routine */
-  retValue = ZMacSrcMatchAckAllPending(*pBuf);
-#else
-  retValue = ZMacUnsupported;
-#endif
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 1, &retValue );
-}
-
-/***************************************************************************************************
- * @fn          MT_UtilSrcMatchCheckAllPending
- *
- * @brief       Check if acknowledging all packets with pending bit set
- *              is enabled.
- *
- * @param       pBuf - Buffer contains the data
- *
- * @return      void
- ***************************************************************************************************/
-void MT_UtilSrcMatchCheckAllPending (uint8 *pBuf)
-{
-  uint8 retArray[2], cmdId;
-
-  /* Parse header */
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-#ifdef AUTO_PEND
-  /* Call the routine */
-  retArray[0] = ZMacSuccess;
-  retArray[1] = ZMacSrcMatchCheckAllPending();
-#else
-  retArray[0] = ZMacUnsupported;
-  retArray[1] = FALSE;
-#endif
-
-  /* Build and send back the response */
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 2, retArray );
-}
-
-/***************************************************************************************************
- * SUPPORT
- ***************************************************************************************************/
-
-#ifdef AUTO_PEND
-/***************************************************************************************************
- * @fn      MT_UtilRevExtCpy
- *
- * @brief
- *
- *   Reverse-copy an extended address.
- *
- * @param   pDst - Pointer to data destination
- * @param   pSrc - Pointer to data source
- *
- * @return  void
- ***************************************************************************************************/
-static void MT_UtilRevExtCpy( uint8 *pDst, uint8 *pSrc )
-{
-  int8 i;
-
-  for ( i = Z_EXTADDR_LEN - 1; i >= 0; i-- )
-  {
-    *pDst++ = pSrc[i];
-  }
-}
-
-/***************************************************************************************************
- * @fn      MT_UtilSpi2Addr
- *
- * @brief   Copy an address from an SPI message to an address struct.  The
- *          addrMode in pAddr must already be set.
- *
- * @param   pDst - Pointer to address struct
- * @param   pSrc - Pointer SPI message byte array
- *
- * @return  void
- ***************************************************************************************************/
-static void MT_UtilSpi2Addr( zAddrType_t *pDst, uint8 *pSrc )
-{
-  if ( pDst->addrMode == Addr16Bit )
-  {
-    pDst->addr.shortAddr = BUILD_UINT16( pSrc[0] , pSrc[1] );
-  }
-  else if ( pDst->addrMode == Addr64Bit )
-  {
-    MT_UtilRevExtCpy( pDst->addr.extAddr, pSrc );
-  }
-}
-#endif // AUTO_PEND
-
-#if !defined NONWK
-/**************************************************************************************************
- * @fn      MT_UtilDataReq
- *
- * @brief   Process the MAC Data Request command.
+ * @brief   Process Time Alive
  *
  * @param   pBuf - pointer to the received data
  *
  * @return  None
-**************************************************************************************************/
-void MT_UtilDataReq(uint8 *pBuf)
+ ***************************************************************************************************/
+void MT_UtilTimeAlive(void)
 {
-  uint8 rtrn = NwkPollReq(pBuf[MT_RPC_POS_DAT0]);
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), MT_UTIL_DATA_REQ,
-                                                                               1, &rtrn);
+  uint8 timeAlive[4];
+  uint32 tmp32;
+
+  /* Time since last reset (seconds) */
+  tmp32 = osal_GetSystemClock() / 1000;
+
+  /* Convert to high byte first into temp buffer */
+  timeAlive[0] = BREAK_UINT32(tmp32, 0);
+  timeAlive[1] = BREAK_UINT32(tmp32, 1);
+  timeAlive[2] = BREAK_UINT32(tmp32, 2);
+  timeAlive[3] = BREAK_UINT32(tmp32, 3);
+
+  /* Build and send back the response */
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), MT_UTIL_TIME_ALIVE,
+                               sizeof(tmp32), timeAlive );
 }
 
 /***************************************************************************************************
- * @fn      MT_UtilAddrMgrEntryLookupExt
+ * @fn      MT_UtilAddrMgrExtAddrLookup
  *
- * @brief   Proxy the AddrMgrEntryLookupExt() function.
+ * @brief   Proxy the AddrMgrExtAddrLookup() function.
  *
  * @param   pBuf - pointer to the received buffer
  *
  * @return  void
  ***************************************************************************************************/
-static void MT_UtilAddrMgrEntryLookupExt(uint8 *pBuf)
+static void MT_UtilAddrMgrExtAddrLookup(uint8 *pBuf)
 {
-  uint8 nwkAddr[2];
-  AddrMgrEntry_t entry;
   uint8 cmdId = pBuf[MT_RPC_POS_CMD1];
   pBuf += MT_RPC_FRAME_HDR_SZ;
 
-  osal_memcpy(entry.extAddr, pBuf, Z_EXTADDR_LEN);
-  (void)AddrMgrEntryLookupExt(&entry);
-  
-  nwkAddr[0] = LO_UINT16(entry.nwkAddr);
-  nwkAddr[1] = HI_UINT16(entry.nwkAddr);
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL),
-                                       cmdId, sizeof(uint16), nwkAddr);
+  (void)AddrMgrExtAddrLookup(BUILD_UINT16(pBuf[Z_EXTADDR_LEN], pBuf[Z_EXTADDR_LEN+1]), pBuf);
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId,
+                                                               Z_EXTADDR_LEN, (uint8 *)pBuf);
 }
 
 /***************************************************************************************************
@@ -1134,16 +753,14 @@ static void MT_UtilAddrMgrEntryLookupNwk(uint8 *pBuf)
 
   entry.nwkAddr = BUILD_UINT16(pBuf[0], pBuf[1]);
   (void)AddrMgrEntryLookupNwk(&entry);
-
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL),
-                                       cmdId, Z_EXTADDR_LEN, entry.extAddr);
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId,
+                                                                  Z_EXTADDR_LEN, entry.extAddr);
 }
 
-#if defined MT_SYS_KEY_MANAGEMENT
 /***************************************************************************************************
  * @fn      MT_UtilAPSME_LinkKeyDataGet
  *
- * @brief   Retrieves APS Link Key data from NV.
+ * @brief   Proxy the APSME_LinkKeyDataGet() function.
  *
  * @param   pBuf - pointer to the received buffer
  *
@@ -1151,124 +768,32 @@ static void MT_UtilAddrMgrEntryLookupNwk(uint8 *pBuf)
  ***************************************************************************************************/
 static void MT_UtilAPSME_LinkKeyDataGet(uint8 *pBuf)
 {
+  // Status + LinkKeyDataLen + Tx+Rx Frame counter.
+  #define MT_APSME_LINKKEY_GET_RSP_LEN (1 + SEC_KEY_LEN + 4 + 4)
   uint8 rsp[MT_APSME_LINKKEY_GET_RSP_LEN];
-  APSME_LinkKeyData_t *pData = NULL;
+  APSME_LinkKeyData_t *pData;
   uint8 cmdId = pBuf[MT_RPC_POS_CMD1];
-  uint16 apsLinkKeyNvId;
-  uint32 *apsRxFrmCntr;
-  uint32 *apsTxFrmCntr;
-
   pBuf += MT_RPC_FRAME_HDR_SZ;
 
-  *rsp = APSME_LinkKeyNVIdGet(pBuf, &apsLinkKeyNvId);
+  *rsp = APSME_LinkKeyDataGet(pBuf, &pData);
 
   if (SUCCESS == *rsp)
   {
-    pData = (APSME_LinkKeyData_t *)osal_mem_alloc(sizeof(APSME_LinkKeyData_t));
-
-    if (pData != NULL)
-    {
-      // retrieve key from NV
-      if ( osal_nv_read( apsLinkKeyNvId, 0,
-                        sizeof(APSME_LinkKeyData_t), pData) == SUCCESS)
-
-      {
-        apsRxFrmCntr = &ApsLinkKeyFrmCntr[apsLinkKeyNvId - ZCD_NV_APS_LINK_KEY_DATA_START].rxFrmCntr;
-        apsTxFrmCntr = &ApsLinkKeyFrmCntr[apsLinkKeyNvId - ZCD_NV_APS_LINK_KEY_DATA_START].txFrmCntr;
-
-        uint8 *ptr = rsp+1;
-        (void)osal_memcpy(ptr, pData->key, SEC_KEY_LEN);
-        ptr += SEC_KEY_LEN;
-        *ptr++ = BREAK_UINT32(*apsTxFrmCntr, 0);
-        *ptr++ = BREAK_UINT32(*apsTxFrmCntr, 1);
-        *ptr++ = BREAK_UINT32(*apsTxFrmCntr, 2);
-        *ptr++ = BREAK_UINT32(*apsTxFrmCntr, 3);
-        *ptr++ = BREAK_UINT32(*apsRxFrmCntr, 0);
-        *ptr++ = BREAK_UINT32(*apsRxFrmCntr, 1);
-        *ptr++ = BREAK_UINT32(*apsRxFrmCntr, 2);
-        *ptr++ = BREAK_UINT32(*apsRxFrmCntr, 3);
-      }
-
-      // clear copy of key in RAM
-      osal_memset( pData, 0x00, sizeof(APSME_LinkKeyData_t) );
-
-      osal_mem_free(pData);
-    }
-  }
-  else
-  {
-    // set data key and counters 0xFF
-    osal_memset(&rsp[1], 0xFF, SEC_KEY_LEN + (MT_UTIL_FRM_CTR_LEN * 2));
+    uint8 *ptr = rsp+1;
+    (void)osal_memcpy(ptr, pData->key, SEC_KEY_LEN);
+    ptr += SEC_KEY_LEN;
+    *ptr++ = BREAK_UINT32(pData->txFrmCntr, 0);
+    *ptr++ = BREAK_UINT32(pData->txFrmCntr, 1);
+    *ptr++ = BREAK_UINT32(pData->txFrmCntr, 2);
+    *ptr++ = BREAK_UINT32(pData->txFrmCntr, 3);
+    *ptr++ = BREAK_UINT32(pData->rxFrmCntr, 0);
+    *ptr++ = BREAK_UINT32(pData->rxFrmCntr, 1);
+    *ptr++ = BREAK_UINT32(pData->rxFrmCntr, 2);
+    *ptr++ = BREAK_UINT32(pData->rxFrmCntr, 3);
   }
 
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId,
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId, 
                                        MT_APSME_LINKKEY_GET_RSP_LEN, rsp);
-
-  // clear key data
-  osal_memset(rsp, 0x00, MT_APSME_LINKKEY_GET_RSP_LEN);
-
-}
-
-/***************************************************************************************************
- * @fn      MT_UtilAPSME_LinkKeyNvIdGet
- *
- * @brief   Retrieves APS Link Key NV ID from the entry table.
- *
- * @param   pBuf - pointer to the received buffer
- *
- * @return  void
- ***************************************************************************************************/
-static void MT_UtilAPSME_LinkKeyNvIdGet(uint8 *pBuf)
-{
-  uint8 rsp[MT_APSME_LINKKEY_NV_ID_GET_RSP_LEN];
-  uint8 cmdId = pBuf[MT_RPC_POS_CMD1];
-  uint16 apsLinkKeyNvId;
-
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-  *rsp = APSME_LinkKeyNVIdGet(pBuf, &apsLinkKeyNvId);
-
-  if (SUCCESS == *rsp)
-  {
-    rsp[1] = LO_UINT16(apsLinkKeyNvId);
-    rsp[2] = HI_UINT16(apsLinkKeyNvId);
-  }
-  else
-  {
-    // send failure response with invalid NV ID
-    osal_memset(&rsp[1], 0xFF, 2);
-  }
-
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId,
-                                       MT_APSME_LINKKEY_NV_ID_GET_RSP_LEN, rsp);
-}
-#endif // MT_SYS_KEY_MANAGEMENT
-
-/***************************************************************************************************
- * @fn      MT_UtilAPSME_RequestKeyCmd
- *
- * @brief   Send RequestKey command message to TC for a specific partner Address.
- *
- * @param   pBuf  - pointer to the received buffer
- *
- * @return  void
- ***************************************************************************************************/
-void MT_UtilAPSME_RequestKeyCmd(uint8 *pBuf)
-{
-  uint8 cmdId;
-  uint8 partnerAddr[Z_EXTADDR_LEN];
-  uint8 retValue;
-
-  // parse header
-  cmdId = pBuf[MT_RPC_POS_CMD1];
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-
-  /* PartnerAddress */
-  osal_memcpy(partnerAddr, pBuf, Z_EXTADDR_LEN);
-
-  retValue = (uint8)ZDSecMgrRequestAppKey(partnerAddr);
-
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 1, &retValue);
 }
 
 /***************************************************************************************************
@@ -1285,12 +810,12 @@ static void MT_UtilAssocCount(uint8 *pBuf)
   uint16 cnt;
   uint8 cmdId = pBuf[MT_RPC_POS_CMD1];
   pBuf += MT_RPC_FRAME_HDR_SZ;
-
+  
   cnt = AssocCount(pBuf[0], pBuf[1]);
   pBuf[0] = LO_UINT16(cnt);
   pBuf[1] = HI_UINT16(cnt);
 
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId, 2, pBuf);
+  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId, 2, pBuf);
 }
 
 /***************************************************************************************************
@@ -1304,12 +829,24 @@ static void MT_UtilAssocCount(uint8 *pBuf)
  ***************************************************************************************************/
 static void MT_UtilAssocFindDevice(uint8 *pBuf)
 {
+  associated_devices_t *pDev;
   uint8 cmdId = pBuf[MT_RPC_POS_CMD1];
-  uint8 buf[sizeof(associated_devices_t)];
 
-  packDev_t(buf, AssocFindDevice(pBuf[MT_RPC_FRAME_HDR_SZ]));
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId,
-                                       sizeof(associated_devices_t), buf);
+  pDev = AssocFindDevice(pBuf[MT_RPC_FRAME_HDR_SZ]);
+
+  if (NULL != pDev)
+  {
+    MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId,
+                                   sizeof(associated_devices_t), (uint8 *)pDev);
+  }
+  else
+  {
+    associated_devices_t dev;
+
+    dev.shortAddr = INVALID_NODE_ADDR;
+    MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId,
+                                   sizeof(associated_devices_t), (uint8 *)(&dev));
+  }
 }
 
 /***************************************************************************************************
@@ -1324,56 +861,25 @@ static void MT_UtilAssocFindDevice(uint8 *pBuf)
 static void MT_UtilAssocGetWithAddress(uint8 *pBuf)
 {
   extern associated_devices_t *AssocGetWithAddress(uint8 *extAddr, uint16 shortAddr);
+  associated_devices_t *pDev;
   uint8 cmdId = pBuf[MT_RPC_POS_CMD1];
-  uint8 buf[sizeof(associated_devices_t)];
 
   pBuf += MT_RPC_FRAME_HDR_SZ;
-  packDev_t(buf, AssocGetWithAddress(((AddrMgrExtAddrValid(pBuf)) ? pBuf : NULL),
-                                  BUILD_UINT16(pBuf[Z_EXTADDR_LEN], pBuf[Z_EXTADDR_LEN+1])));
+  pDev = AssocGetWithAddress(((AddrMgrExtAddrValid(pBuf)) ? pBuf : NULL),
+                               BUILD_UINT16(pBuf[Z_EXTADDR_LEN], pBuf[Z_EXTADDR_LEN+1]));
 
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_UTIL), cmdId,
-                                       sizeof(associated_devices_t), buf);
-}
-
-/***************************************************************************************************
- * @fn      packDev_t
- *
- * @brief   Pack an associated_devices_t structure into a byte buffer (pack INVALID_NODE_ADDR if
- *          the pDev parameter is NULL).
- *
- * @param   pBuf - pointer to the buffer into which to pack the structure.
- * @param   pDev - pointer to the structure.
- *
- * @return  void
- ***************************************************************************************************/
-static void packDev_t(uint8 *pBuf, associated_devices_t *pDev)
-{
-  if (NULL == pDev)
+  if (NULL != pDev)
   {
-    uint16 rtrn = INVALID_NODE_ADDR;
-    *pBuf++ = LO_UINT16(rtrn);
-    *pBuf++ = HI_UINT16(rtrn);
+    MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId,
+                                   sizeof(associated_devices_t), (uint8 *)pDev);
   }
   else
   {
-    *pBuf++ = LO_UINT16(pDev->shortAddr);
-    *pBuf++ = HI_UINT16(pDev->shortAddr);
-    *pBuf++ = LO_UINT16(pDev->addrIdx);
-    *pBuf++ = HI_UINT16(pDev->addrIdx);
-    *pBuf++ = pDev->nodeRelation;
-    *pBuf++ = pDev->devStatus;
-    *pBuf++ = pDev->assocCnt;
-    *pBuf++ = pDev->age;
-    *pBuf++ = pDev->linkInfo.txCounter;
-    *pBuf++ = pDev->linkInfo.txCost;
-    *pBuf++ = pDev->linkInfo.rxLqi;
-    *pBuf++ = pDev->linkInfo.inKeySeqNum;
-    *pBuf++ = BREAK_UINT32(pDev->linkInfo.inFrmCntr, 0);
-    *pBuf++ = BREAK_UINT32(pDev->linkInfo.inFrmCntr, 1);
-    *pBuf++ = BREAK_UINT32(pDev->linkInfo.inFrmCntr, 2);
-    *pBuf++ = BREAK_UINT32(pDev->linkInfo.inFrmCntr, 3);
-    *pBuf++ = LO_UINT16(pDev->linkInfo.txFailure);
-    *pBuf++ = HI_UINT16(pDev->linkInfo.txFailure);
+    associated_devices_t dev;
+
+    dev.shortAddr = INVALID_NODE_ADDR;
+    MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_NWK), cmdId,
+                                   sizeof(associated_devices_t), (uint8 *)(&dev));
   }
 }
 
@@ -1402,7 +908,7 @@ static void MT_UtilzclGeneral_KeyEstablish_InitiateKeyEstablishment(uint8 *pBuf)
   }
   else
   {
-    partnerAddr.addr.shortAddr = BUILD_UINT16(pBuf[4], pBuf[5]);
+    partnerAddr.addr.shortAddr = BUILD_UINT16(pBuf[4], pBuf[4]);
   }
 
   zcl_key_establish_task_id = pBuf[0];
@@ -1446,7 +952,7 @@ static void MT_UtilzclGeneral_KeyEstablishment_ECDSASign(uint8 *pBuf)
  *
  * @brief   Proxy the ZCL_KEY_ESTABLISH_IND command.
  *
- * @param   pInd - Pointer to a keyEstablishmentInd_t structure.
+ * @param   None
  *
  * @return  None
  ***************************************************************************************************/
@@ -1479,7 +985,7 @@ static void MT_UtilSync(void)
 {
  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_AREQ|(uint8)MT_RPC_SYS_UTIL),MT_UTIL_SYNC_REQ,0,0);
 }
-#endif /* !defined NONWK */
+
 #endif /* MT_UTIL_FUNC */
 /**************************************************************************************************
  **************************************************************************************************/

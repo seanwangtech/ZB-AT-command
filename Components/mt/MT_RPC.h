@@ -1,11 +1,11 @@
 /**************************************************************************************************
   Filename:       mt_rpc.h
-  Revised:        $Date: 2010-10-07 04:00:42 -0700 (Thu, 07 Oct 2010) $
-  Revision:       $Revision: 24055 $
+  Revised:        $Date: 2009-07-10 18:43:23 -0700 (Fri, 10 Jul 2009) $
+  Revision:       $Revision: 20299 $
 
   Description:    Public interface file for the RPC Transport Protocol Design.
 
-  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -55,14 +55,10 @@ extern "C" {
  ***************************************************************************************************/
 
 /* 1st byte is the length of the data field, 2nd/3rd bytes are command field. */
-#define MT_RPC_FRAME_HDR_SZ   3
+#define MT_RPC_FRAME_HDR_SZ  3
 
-/* Maximum length of data in the general frame format. The upper limit is 255 because of the
- * 1-byte length protocol. But the operation limit is lower for code size and ram savings so that
- * the uart driver can use 256 byte rx/tx queues and so
- * (MT_RPC_DATA_MAX + MT_RPC_FRAME_HDR_SZ + MT_UART_FRAME_OVHD) < 256
- */
-#define MT_RPC_DATA_MAX       250
+/* maximum length of data in the general frame format */
+#define MT_RPC_DATA_MAX       (256 - MT_RPC_FRAME_HDR_SZ)
 
 /* The 3 MSB's of the 1st command field byte are for command type. */
 #define MT_RPC_CMD_TYPE_MASK  0xE0
@@ -109,7 +105,6 @@ typedef enum {
   MT_RPC_SYS_UTIL,
   MT_RPC_SYS_DBG,
   MT_RPC_SYS_APP,
-  MT_RPC_SYS_OTA,
   MT_RPC_SYS_MAX     /* Maximum value, must be last */
   /* 10-32 available, not yet assigned. */
 } mtRpcSysType_t;

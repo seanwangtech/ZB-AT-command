@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       oad_app.c
-  Revised:        $Date: 2011-05-16 10:25:15 -0700 (Mon, 16 May 2011) $
-  Revision:       $Revision: 25990 $
+  Revised:        $Date: 2009-08-21 13:10:13 -0700 (Fri, 21 Aug 2009) $
+  Revision:       $Revision: 20630 $
 
   Description:    This file contains the implementation of an Over Air Download application.
 
 
-  Copyright 2008-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2008-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -45,7 +45,6 @@
 #include <string.h>
 
 #include "AF.h"
-#include "hal_adc.h"
 #include "hal_board_cfg.h"
 #include "hal_flash.h"
 #include "hal_oad.h"
@@ -67,7 +66,7 @@
 #endif
 
 /* ------------------------------------------------------------------------------------------------
- *                                           Macros
+ *                                           Macros  
  * ------------------------------------------------------------------------------------------------
  */
 
@@ -107,6 +106,18 @@
  *                                          Typedefs
  * ------------------------------------------------------------------------------------------------
  */
+
+// Used by the optional OAD en masse mode - TODO.
+/*
+typedef enum {
+  emBeg = 0x0010,
+  emDat,
+  emRst,
+  emEnd
+} en_masse_t;
+
+#define OAD_CLUSTERID_EM  0x0010
+*/
 
 #if defined ZPORT
 #define SIZEOF_ZAIN_HDR   (sizeof(uint16) + sizeof(uint8) + sizeof(uint16) + sizeof(uint8))
@@ -185,6 +196,10 @@ static uint16      s_myNwkAddr = 0xFFFE;
 static uint8                  s_PTSeqNum;
 static afIncomingMSGPacket_t  s_PTClientInfo;
 #else
+
+#pragma location="CRC_SHDW"
+const CODE uint16 _crcShdw = 0xFFFF;
+#pragma required=_crcShdw
 
 #pragma location="PREAMBLE"
 const CODE preamble_t _preamble = {
@@ -338,7 +353,7 @@ uint16 oadAppEvt(uint8 id, uint16 evts)
 {
   uint16 mask = 0;
   (void)id;
-
+  
   if (evts & SYS_EVENT_MSG)
   {
     mask = SYS_EVENT_MSG;
@@ -379,7 +394,7 @@ uint16 oadAppEvt(uint8 id, uint16 evts)
   }
   else if (evts & ZLOAD_RESET_BOARD_EVT)
   {
-    SystemResetSoft();
+    SystemReset();
   }
   else
   {
@@ -624,11 +639,6 @@ static void ZLOADApp_handleCommand(afIncomingMSGPacket_t *MSGpkt, zlmhdr_t *msg)
       }
     }
 #else
-    if (!HalAdcCheckVdd(VDD_MIN_OAD))
-    {
-      ((zlbegsessR_t *)cpr)->zlbsR_errorCode = EC_BAD_VDD;
-    }
-    else
     do {
       uint8 dlImagePreambleOffset;
       zlbegsessR_t *reply = (zlbegsessR_t *)cpr;
@@ -780,13 +790,8 @@ static void ZLOADApp_handleCommand(afIncomingMSGPacket_t *MSGpkt, zlmhdr_t *msg)
                 if (!s_serialMsg)  {
                     reply->zlclR_errorCode = EC_CL_NOT_CLIENT;
                 }
-                else
+                else                
 #endif
-                if (!HalAdcCheckVdd(VDD_MIN_OAD))
-                {
-                  reply->zlclR_errorCode = EC_BAD_VDD;
-                }
-                else
                 if (s_State != ZLSTATE_IDLE) {
                   if (!osal_memcmp(s_clientInfo, cpc, sizeof(zlclientC_t))) {
                     reply->zlclR_errorCode = EC_CL_NOT_IDLE;
@@ -864,11 +869,6 @@ static void ZLOADApp_handleCommand(afIncomingMSGPacket_t *MSGpkt, zlmhdr_t *msg)
                   if (preamble.vers != 0xFFFF) {
                     // see if they match
                     if (!memcmp(cpc, (uint8 *)&preamble.vers, ZL_IMAGE_ID_LENGTH))  {
-                        if (!HalAdcCheckVdd(VDD_MIN_OAD))
-                        {
-                          reply->zlceR_errorCode = EC_BAD_VDD;
-                        }
-                        else
                         // DL image there and matches request, see if image is sane.
                         if (SUCCESS == HalOADChkDL(dlImagePreambleOset)) {
                             //set event to cause reset
@@ -962,7 +962,7 @@ static void ZLOADApp_handleCommand(afIncomingMSGPacket_t *MSGpkt, zlmhdr_t *msg)
             if (!s_serialMsg)  {
                 return;
             }
-            else
+            else  
 #endif
             {
                 zlrstR_t *reply = (zlrstR_t *)cpr;
@@ -1006,7 +1006,7 @@ static void ZLOADApp_handleCommand(afIncomingMSGPacket_t *MSGpkt, zlmhdr_t *msg)
             }
         }
 #else
-        if ((buf != NULL) &&
+        if ((buf != NULL) && 
            ((msg->zlhdr_msgid != ZLMSGID_SEND_DATA) || (s_State != ZLSTATE_SERVER)))
         {
           osal_mem_free(buf);
@@ -1285,11 +1285,6 @@ static void zlProcessSDR(zlsdR_t *sdr)
   else if (sdr->zlsdR_errorCode)  {
     // there are no data here. just ignaore the packet. if things
     // are relly screwed up the timer will expire and we'll quit.
-    return;
-  }
-  else if (!HalAdcCheckVdd(VDD_MIN_OAD))
-  {
-    osal_set_event(oad_app_taskId, ZLOAD_XFER_DONE_EVT);
     return;
   }
 

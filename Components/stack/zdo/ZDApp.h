@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       ZDApp.h
-  Revised:        $Date: 2012-02-16 16:04:32 -0800 (Thu, 16 Feb 2012) $
-  Revision:       $Revision: 29348 $
+  Revised:        $Date: 2009-12-29 11:40:43 -0800 (Tue, 29 Dec 2009) $
+  Revision:       $Revision: 21414 $
 
   Description:    This file contains the interface to the Zigbee Device Application. This is the
                   Application part that the use can change. This also contains the Task functions.
 
 
-  Copyright 2004-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -23,8 +23,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -35,7 +35,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef ZDAPP_H
@@ -80,8 +80,6 @@ extern "C"
 #define ZDO_SECMGR_EVENT          0x0100
 #define ZDO_NWK_UPDATE_NV         0x0200
 #define ZDO_FRAMECOUNTER_CHANGE   0x0400
-#define ZDO_TCLK_FRAMECOUNTER_CHANGE  0x0800
-#define ZDO_APS_FRAMECOUNTER_CHANGE   0x1000
 
 // Incoming to ZDO
 #define ZDO_NWK_DISC_CNF        0x01
@@ -163,13 +161,13 @@ extern "C"
   extern uint8 zdoDiscCounter;
 
 #endif // MANAGED_SCAN
-
+  
 // Use the following to delay application data request after startup.
 #define ZDAPP_HOLD_DATA_REQUESTS_TIMEOUT        0 // in milliseconds
+  
+  
 
-
-
-
+  
 /*********************************************************************
  * TYPEDEFS
  */
@@ -194,6 +192,15 @@ typedef enum
   ZDO_FAIL
 } zdoStatus_t;
 
+typedef struct
+{
+  osal_event_hdr_t hdr;
+  uint8      panIdLSB;
+  uint8      panIdMSB;
+  uint8      logicalChannel;
+  uint8      version;
+  uint8      extendedPANID[Z_EXTADDR_LEN];
+} ZDO_NetworkDiscoveryCfm_t;
 
 typedef struct
 {
@@ -290,26 +297,15 @@ typedef struct
   uint16 *pOutClusters;
 } ZDO_MatchDescRspSent_t;
 
-typedef struct
-{
-  osal_event_hdr_t hdr;
-  uint16 shortAddr;
-} ZDO_AddrChangeInd_t;
+
 
 /* ZDO Indication Callback Registration */
 typedef void* (*pfnZdoCb)( void *param );
 
 /* ZDO Indication callback ID */
-enum
+enum 
 {
-  ZDO_SRC_RTG_IND_CBID,
-  ZDO_CONCENTRATOR_IND_CBID,
-  ZDO_NWK_DISCOVERY_CNF_CBID,
-  ZDO_BEACON_NOTIFY_IND_CBID,
-  ZDO_JOIN_CNF_CBID,
-  ZDO_LEAVE_CNF_CBID,
-  ZDO_LEAVE_IND_CBID,
-  MAX_ZDO_CB_FUNC               // Must be at the bottom of the list
+  ZDO_SRC_RTG_IND_CBID
 };
 
 typedef struct
@@ -318,38 +314,6 @@ typedef struct
   uint8  relayCnt;
   uint16 *pRelayList;
 } zdoSrcRtg_t;
-
-typedef struct
-{
-  uint16 nwkAddr;
-  uint8  *extAddr;
-  uint8  pktCost;
-} zdoConcentratorInd_t;
-
-/* Keep the same format as NLME_beaconInd_t */
-typedef struct
-{
-  uint16 sourceAddr;  /* Short address of the device sends the beacon */
-  uint16 panID;
-  uint8  logicalChannel;
-  uint8	 permitJoining;
-  uint8	 routerCapacity; 	
-  uint8	 deviceCapacity;  	
-  uint8  protocolVersion;  		
-  uint8  stackProfile ;
-  uint8	 LQI ;
-  uint8  depth ;
-  uint8  updateID;
-  uint8  extendedPanID[8];
-} zdoBeaconInd_t;
-
-typedef struct
-{
-  uint8  status;
-  uint16 deviceAddr;
-  uint16 parentAddr;
-} zdoJoinCnf_t;
-
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -368,7 +332,7 @@ extern uint8 zdappMgmtNwkDiscReqInProgress;
 extern zAddrType_t zdappMgmtNwkDiscRspAddr;
 extern uint8 zdappMgmtNwkDiscStartIndex;
 extern uint8 zdappMgmtSavedNwkState;
-
+  
 extern uint8 ZDO_UseExtendedPANID[Z_EXTADDR_LEN];
 /*********************************************************************
  * FUNCTIONS - API
@@ -394,21 +358,21 @@ extern void ZDO_AddrChangeIndicationCB( uint16 newAddr );
  */
 
 /*
- *  Start the device in the network.  This function will read
- *   ZCD_NV_STARTUP_OPTION (NV item) to determine whether or not to
+ *  Start the device in the network.  This function will read 
+ *   ZCD_NV_STARTUP_OPTION (NV item) to determine whether or not to 
  *   restore the network state of the device.
- *
+ * 
  *  startDelay - timeDelay to start device (in milliseconds).
  *      There is a jitter added to this delay:
  *              ((NWK_START_DELAY + startDelay)
- *              + (osal_rand() & EXTENDED_JOINING_RANDOM_MASK))
- *
+ *              + (osal_rand() & EXTENDED_JOINING_RANDOM_MASK)) 
+ *  
  *  NOTE:   If the application would like to force a "new" join, the
  *          application should set the ZCD_STARTOPT_DEFAULT_NETWORK_STATE
- *          bit in the ZCD_NV_STARTUP_OPTION NV item before calling
+ *          bit in the ZCD_NV_STARTUP_OPTION NV item before calling 
  *          this function.
  *
- *  returns:
+ *  returns: 
  *    ZDO_INITDEV_RESTORED_NETWORK_STATE  - The device's network state was
  *          restored.
  *    ZDO_INITDEV_NEW_NETWORK_STATE - The network state was initialized.
@@ -440,18 +404,6 @@ extern ZStatus_t ZDApp_EstablishKey( uint8  endPoint,
  */
 extern void ZDApp_NetworkInit( uint16 delay );
 
-/*
- * Request a network discovery
- */
-extern ZStatus_t ZDApp_NetworkDiscoveryReq( uint32 scanChannels, uint8 scanDuration);
-
-/*
- * Request the device to join a parent on a network
- */
-extern ZStatus_t ZDApp_JoinReq( uint8 channel, uint16 panID,
-                                uint8 *extendedPanID, uint16 chosenParent,
-                                uint8 parentDepth, uint8 stackProfile);
-
 /*********************************************************************
  * Callback FUNCTIONS - API
  */
@@ -462,20 +414,15 @@ extern ZStatus_t ZDApp_JoinReq( uint8 channel, uint16 panID,
 /*
  * ZDO_NetworkDiscoveryConfirmCB - scan results
  */
-extern ZStatus_t ZDO_NetworkDiscoveryConfirmCB( uint8 status );
+
+extern ZStatus_t ZDO_NetworkDiscoveryConfirmCB( uint8 ResultCount,
+                              networkDesc_t *NetworkList );
 
 /*
  * ZDO_NetworkFormationConfirm - results of the request to
  *              initialize a coordinator in a network
  */
 extern void ZDO_NetworkFormationConfirmCB( ZStatus_t Status );
-
-/*
- * ZDApp_beaconIndProcessing - processes the incoming beacon
- *              indication.
- */
-extern void ZDO_beaconNotifyIndCB( NLME_beaconInd_t *beacon );
-
 /*
  * ZDO_JoinConfirmCB - results of its request to join itself or another
  *              device to a network
@@ -485,13 +432,13 @@ extern void ZDO_JoinConfirmCB( uint16 PanId, ZStatus_t Status );
 /*
  * ZDO_JoinIndicationCB - notified of a remote join request
  */
-ZStatus_t ZDO_JoinIndicationCB(uint16 ShortAddress, uint8 *ExtendedAddress,
-                                 uint8 CapabilityFlags, uint8 type);
+extern ZStatus_t ZDO_JoinIndicationCB( uint16 ShortAddress,
+                      uint8 *ExtendedAddress, uint8 CapabilityInformation, uint8 type );
 
 /*
  * ZDO_ConcentratorIndicationCB - notified of a concentrator existence
  */
-extern void ZDO_ConcentratorIndicationCB( uint16 nwkAddr, uint8 *extAddr, uint8 pktCost );
+extern void ZDO_ConcentratorIndicationCB( uint16 nwkAddr );
 
 /*
  * ZDO_StartRouterConfirm -  results of the request to
@@ -516,7 +463,7 @@ extern void ZDO_LeaveInd( NLME_LeaveInd_t* ind );
 extern void ZDO_SyncIndicationCB( uint8 type, uint16 shortAddr );
 
 /*
- * ZDO_ManytoOneFailureIndicationCB - notified a many-to-one route failure
+ * ZDO_ManytoOneFailureIndicationCB - notified a many-to-one route failure 
  */
 extern void ZDO_ManytoOneFailureIndicationCB( void );
 
@@ -544,7 +491,7 @@ extern void ZDO_StartRouterConfirm( ZStatus_t Status );
  */
 /*
  * ZDO_NwkUpdateCB - Network state info has changed
- */
+ */ 
 extern void ZDApp_NwkStateUpdateCB( void );
 
 /*********************************************************************
@@ -558,17 +505,10 @@ extern void ZDApp_NwkStateUpdateCB( void );
 extern void ZDApp_ChangeMatchDescRespPermission( uint8 endpoint, uint8 action );
 
 /*
- * ZDApp_SaveNwkKey
- *     - Save off the Network key information.
- */
-extern void ZDApp_SaveNwkKey( void );
-
-/*
  * ZDApp_ResetNwkKey
  *    - Re initialize the NV Nwk Key
  */
 extern void ZDApp_ResetNwkKey( void );
-
 /*
  * ZDApp_StartJoiningCycle
  *    - Starts the joining cycle of a device.  This will only continue an
@@ -603,23 +543,6 @@ extern void ZDApp_NVUpdate( void );
  */
 extern uint16 ZDApp_CoordStartPANIDConflictCB( uint16 panid );
 
-/*
- * ZDApp_LeaveReset
- *    - Setup a device reset due to a leave indication/confirm
- */
-extern void ZDApp_LeaveReset( uint8 ra );
-
-/*
- * ZDApp_LeaveCtrlReset
- *    - Re-initialize the leave control logic
- */
-extern void ZDApp_LeaveCtrlReset( void );
-
-/*
- * ZDApp_DeviceConfigured
- *    - Check to see if the local device is configured
- */
-extern uint8 ZDApp_DeviceConfigured( void );
 
 /*********************************************************************
  * @fn          ZDO_SrcRtgIndCB
@@ -637,10 +560,10 @@ extern void ZDO_SrcRtgIndCB (uint16 srcAddr, uint8 relayCnt, uint16* pRelayList 
 /*********************************************************************
  * @fn          ZDO_RegisterForZdoCB
  *
- * @brief       Call this function to register the higher layer (for
- *              example, the Application layer or MT layer) with ZDO
+ * @brief       Call this function to register the higher layer (for 
+ *              example, the Application layer or MT layer) with ZDO 
  *              callbacks to get notified of some ZDO indication like
- *              existence of a concentrator or receipt of a source
+ *              existence of a concentrator or receipt of a source 
  *              route record.
  *
  * @param       indID - ZDO Indication ID
@@ -649,21 +572,6 @@ extern void ZDO_SrcRtgIndCB (uint16 srcAddr, uint8 relayCnt, uint16* pRelayList 
  * @return      ZSuccess - successful, ZInvalidParameter if not
  */
 extern ZStatus_t ZDO_RegisterForZdoCB( uint8 indID, pfnZdoCb pFn );
-
-/*********************************************************************
- * @fn          ZDO_DeregisterForZdoCB
- *
- * @brief       Call this function to de-register the higher layer (for
- *              example, the Application layer or MT layer) with ZDO
- *              callbacks to get notified of some ZDO indication like
- *              existence of a concentrator or receipt of a source
- *              route record.
- *
- * @param       indID - ZDO Indication ID
- *
- * @return      ZSuccess - successful, ZInvalidParameter if not
- */
-extern ZStatus_t ZDO_DeregisterForZdoCB( uint8 indID );
 /*********************************************************************
 *********************************************************************/
 

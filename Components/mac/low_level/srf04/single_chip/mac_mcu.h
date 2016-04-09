@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       mac_mcu.h
-  Revised:        $Date: 2012-03-07 11:55:12 -0800 (Wed, 07 Mar 2012) $
-  Revision:       $Revision: 29664 $
+  Revised:        $Date: 2009-08-19 06:55:19 -0700 (Wed, 19 Aug 2009) $
+  Revision:       $Revision: 20605 $
 
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -206,12 +206,10 @@ MAC_INTERNAL_API uint32 macMcuOverflowCount(void);
 MAC_INTERNAL_API uint32 macMcuOverflowCapture(void);
 MAC_INTERNAL_API void macMcuOverflowSetCount(uint32 count);
 MAC_INTERNAL_API void macMcuOverflowSetCompare(uint32 count);
-MAC_INTERNAL_API void macMcuOverflowSetPeriod(uint32 count);
 MAC_INTERNAL_API void macMcuRecordMaxRssiStart(void);
 MAC_INTERNAL_API int8 macMcuRecordMaxRssiStop(void);
 MAC_INTERNAL_API void macMcuRecordMaxRssiIsr(void);
-MAC_INTERNAL_API void macMcuAccumulatedOverFlow(void);
-uint32 macMcuPrecisionCount(void);
+uint16 macMcuPrecisionCount(void);
 void macMcuTimer2OverflowWorkaround(void);
 
 

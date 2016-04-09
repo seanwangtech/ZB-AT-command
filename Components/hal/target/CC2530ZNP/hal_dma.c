@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_dma.c
-  Revised:        $Date: 2010-05-11 15:33:22 -0700 (Tue, 11 May 2010) $
-  Revision:       $Revision: 22450 $
+  Revised:        $Date: 2009-12-31 18:28:34 -0800 (Thu, 31 Dec 2009) $
+  Revision:       $Revision: 21422 $
 
   Description:    This file contains the interface to the DMA.
 
 
-  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -116,8 +116,6 @@ void HalDmaInit( void )
  *****************************************************************************/
 HAL_ISR_FUNCTION( halDmaIsr, DMA_VECTOR )
 {
-  HAL_ENTER_ISR();
-
   DMAIF = 0;
 
   if (ZNP_CFG1_UART == znpCfg1)
@@ -142,8 +140,6 @@ HAL_ISR_FUNCTION( halDmaIsr, DMA_VECTOR )
       HalSpiTxIsr();
     }
   }
-
-  HAL_EXIT_ISR();
 }
 #endif  // #if ((defined HAL_DMA) && (HAL_DMA == TRUE))
 /******************************************************************************

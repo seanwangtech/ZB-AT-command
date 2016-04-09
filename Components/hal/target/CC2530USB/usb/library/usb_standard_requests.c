@@ -325,7 +325,7 @@ void usbsrGetDescriptor(void)
    // String descriptor
    case DESC_TYPE_STRING:
       // TODO: Implement language ID
-      usbSetupData.pBuffer = (uint8 *)usbdpGetStringDesc(LO_UINT16(usbSetupHeader.value));
+      usbSetupData.pBuffer = (uint8 __code*) usbdpGetStringDesc(LO_UINT16(usbSetupHeader.value));
       usbSetupData.bytesLeft = usbSetupData.pBuffer[DESC_LENGTH_IDX];
       break;
 
@@ -625,7 +625,7 @@ void usbsrSetInterface(void)
 
 /*
 +------------------------------------------------------------------------------
-|  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+|  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 |
 |  IMPORTANT: Your use of this Software is limited to those specific rights
 |  granted under the terms of a software license agreement between the user who

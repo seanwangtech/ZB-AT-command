@@ -6,7 +6,7 @@
   </project>
   <batchBuild>
     <batchDefinition>
-      <name>ALL</name>
+      <name>Build All</name>
       <member>
         <project>Boot</project>
         <configuration>OAD Boot Loader</configuration>

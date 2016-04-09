@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       ZDProfile.h
-  Revised:        $Date: 2010-11-01 13:26:00 -0700 (Mon, 01 Nov 2010) $
-  Revision:       $Revision: 24298 $
+  Revised:        $Date: 2009-11-09 20:03:17 -0800 (Mon, 09 Nov 2009) $
+  Revision:       $Revision: 21106 $
 
   Description:    This file contains the interface to the Zigbee Device Object.
 
 
-  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +22,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,7 +34,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 #ifndef ZDPROFILE_H
@@ -73,13 +73,11 @@ extern "C"
 #define ZDP_NOT_SUPPORTED      0x84  // Optional feature not supported
 #define ZDP_TIMEOUT            0x85  // Operation has timed out
 #define ZDP_NO_MATCH           0x86  // No match for end device bind
+#define ZDP_TABLE_FULL         0x87  // Bind request failed, no resources
 #define ZDP_NO_ENTRY           0x88  // Unbind request failed, no entry
-#define ZDP_NO_DESCRIPTOR      0x89  // Child descriptor not available
-#define ZDP_INSUFFICIENT_SPACE 0x8a  // Insufficient space to support operation
-#define ZDP_NOT_PERMITTED      0x8b  // Not in proper state to support operation
-#define ZDP_TABLE_FULL         0x8c  // No table space to support operation
-#define ZDP_NOT_AUTHORIZED     0x8d  // Permissions indicate request not authorized
-#define ZDP_BINDING_TABLE_FULL 0x8e  // No binding table space to support operation
+
+#define ZDP_INSUFFICIENT_SPACE 0x8a
+#define ZDP_NOT_PERMITTED      0x8b
 
 #define ZDP_NETWORK_DISCRIPTOR_SIZE  8
 #define ZDP_NETWORK_EXTENDED_DISCRIPTOR_SIZE  14
@@ -94,7 +92,7 @@ extern "C"
 // Mgmt_Leave_req fields
 #define ZDP_MGMT_LEAVE_REQ_REJOIN      1 << 7
 #define ZDP_MGMT_LEAVE_REQ_RC          1 << 6   // Remove Children
-
+  
 // Mgmt_Lqi_rsp - (neighbor table) device type
 #define ZDP_MGMT_DT_COORD  0x0
 #define ZDP_MGMT_DT_ROUTER 0x1
@@ -196,7 +194,7 @@ typedef struct
   uint8   stackProfile;    // Network's profile
   uint8   version;         // Network's Zigbee version
   uint8   beaconOrder;     // Beacon Order
-  uint8   superFrameOrder;
+  uint8   superFrameOrder; 
   uint8   permitJoining;   // PermitJoining. 1 or 0
 } mgmtNwkDiscItem_t;
 
@@ -226,18 +224,18 @@ typedef struct
   uint8  lqi;                    // LQI
 } ZDP_MgmtLqiItem_t;
 // devType, rxOnIdle, relation, are all packed into 1 byte: 18-2=16.
-#define ZDP_MGMTLQI_SIZE           15
+#define ZDP_MGMTLQI_SIZE        15
 #define ZDP_MGMTLQI_EXTENDED_SIZE  22   // One extra byte for permitJointing, also with extended PanID instead of PanID 15+8-2+1 = 22
 
 // This structure is used to build the Mgmt Routing Response
-// NOTICE: this structure must match "rtgEntry_t" in rtg.h
+//   Notice, if you change this structure, you must also change
+//   rtgEntry_t in rtg.h
 typedef struct
 {
-  uint16 dstAddress;     // Destination short address
-  uint16 nextHopAddress; // next hop short address
-  uint8  expiryTime;     // expiration time - not used for response
-  uint8  status;         // route entry status
-  uint8  options;
+    uint16  dstAddress;     // Destination short address
+    uint16  nextHopAddress; // next hop short address
+    uint8    expiryTime;     // expiration time - not used for response
+    uint8    status;         // route entry status
 } rtgItem_t;
 // expiryTime is not packed & sent OTA.
 #define ZDP_ROUTINGENTRY_SIZE   5
@@ -262,7 +260,6 @@ typedef struct
  */
 
 extern byte ZDP_TransID;
-extern byte ZDP_TxOptions;
 
 /*********************************************************************
  * MACROS
@@ -664,10 +661,10 @@ extern afStatus_t ZDP_MgmtDirectJoinReq( zAddrType_t *dstAddr,
  *  uint8 Rejoin
  *  uint8 SecurityEnable)
  */
-extern afStatus_t ZDP_MgmtLeaveReq( zAddrType_t *dstAddr,
-                                   uint8 *IEEEAddr,
+extern afStatus_t ZDP_MgmtLeaveReq( zAddrType_t *dstAddr, 
+                                   uint8 *IEEEAddr, 
                                    uint8 RemoveChildren,
-                                   uint8 Rejoin,
+                                   uint8 Rejoin, 
                                    uint8 SecurityEnable );
 /*
  * ZDP_MgmtPermitJoinReq - Send a Management Permit Join Request

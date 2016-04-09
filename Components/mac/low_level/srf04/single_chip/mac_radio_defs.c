@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       mac_radio_defs.c
-  Revised:        $Date: 2010-12-23 14:50:47 -0800 (Thu, 23 Dec 2010) $
-  Revision:       $Revision: 24688 $
+  Revised:        $Date: 2010-01-06 14:40:42 -0800 (Wed, 06 Jan 2010) $
+  Revision:       $Revision: 21441 $
 
   Description:    Describe the purpose and contents of the file.
 
@@ -44,7 +44,6 @@
 #include "mac_radio_defs.h"
 #include "hal_types.h"
 #include "hal_assert.h"
-#include "hal_mcu.h"
 #include "mac_pib.h"
 
 
@@ -55,39 +54,6 @@
 #if defined MAC_RUNTIME_CC2591 || defined MAC_RUNTIME_CC2590 || \
   (!defined HAL_PA_LNA && !defined HAL_PA_LNA_CC2590)
 
-#ifdef HAL_MCU_CC2533
-const uint8 CODE macRadioDefsTxPwrBare[] =
-{
-  4,  /* tramsmit power level of the first entry */
-  (uint8)(int8)-21, /* transmit power level of the last entry */
-  /*   4 dBm */   0xEC,   /* characterized as  4.5 dBm in datasheet */
-  /*   3 dBm */   0xDC,   /* characterized as  3   dBm in datasheet */
-  /*   2 dBm */   0xDC,   
-  /*   1 dBm */   0xCC,   /* characterized as  1.7 dBm in datasheet */
-  /*   0 dBm */   0xBC,   /* characterized as  0.3 dBm in datasheet */
-  /*  -1 dBm */   0xAC,   /* characterized as -1   dBm in datasheet */
-  /*  -2 dBm */   0xAC,
-  /*  -3 dBm */   0x9C,   /* characterized as -2.8 dBm in datasheet */
-  /*  -4 dBm */   0x9C,   
-  /*  -5 dBm */   0x8C,   /* characterized as -4.1 dBm in datasheet */
-  /*  -6 dBm */   0x7C,   /* characterized as -5.9 dBm in datasheet */
-  /*  -7 dBm */   0x7C,
-  /*  -8 dBm */   0x6C,   /* characterized as -7.7 dBm in datasheet */
-  /*  -9 dBm */   0x6C,
-  /* -10 dBm */   0x5C,   /* characterized as -9.9 dBm in datasheet */
-  /* -11 dBm */   0x5C,
-  /* -12 dBm */   0x5C,   /* characterized as -9.9 dBm in datasheet */
-  /* -13 dBm */   0x4C,   /* characterized as -12.8 dBm in datasheet */
-  /* -14 dBm */   0x4C,
-  /* -15 dBm */   0x3C,   /* characterized as -14.9 dBm in datasheet */
-  /* -16 dBm */   0x3C, 
-  /* -17 dBm */   0x2C,   /* characterized as -16.6 dBm in datasheet */
-  /* -18 dBm */   0x2C,
-  /* -19 dBm */   0x1C,   /* characterized as -18.7 dBm in datasheet */
-  /* -20 dBm */   0x1C,   /* characterized as -18.7 dBm in datasheet */
-  /* -21 dBm */   0x0C
-};
-#else /* HAL_MCU_CC2533 */
 const uint8 CODE macRadioDefsTxPwrBare[] =
 {
   3,  /* tramsmit power level of the first entry */
@@ -119,26 +85,33 @@ const uint8 CODE macRadioDefsTxPwrBare[] =
   /* -21 dBm */   0x15,
   /* -22 dBm */   0x05    /* characterized as -22  dBm in datasheet */
 };
-#endif /* HAL_MCU_CC2533 */
-#endif /* defined MAC_RUNTIME_CC2591 || defined MAC_RUNTIME_CC2590 || 
-          (!defined HAL_PA_LNA && !defined HAL_PA_LNA_CC2590) */
+#endif
 
 #if defined HAL_PA_LNA || defined MAC_RUNTIME_CC2591
 const uint8 CODE macRadioDefsTxPwrCC2591[] =
 {
-  20,  /* tramsmit power level of the first entry */
-  (uint8)(int8)10, /* transmit power level of the last entry */
-  /*  20 dBm */   0xE5,   /* characterized as 20 dBm in datasheet */
-  /*  19 dBm */   0xD5,   /* characterized as 19 dBm in datasheet */
-  /*  18 dBm */   0xC5,   /* characterized as 18 dBm in datasheet */
-  /*  17 dBm */   0xB5,   /* characterized as 17 dBm in datasheet */
-  /*  16 dBm */   0xA5,   /* characterized as 16 dBm in datasheet */
-  /*  15 dBm */   0xA5,
-  /*  14 dBm */   0x95,   /* characterized as 14.5 dBm in datasheet */
-  /*  13 dBm */   0x85,   /* characterized as 13 dBm in datasheet */
-  /*  12 dBm */   0x85,
-  /*  11 dBm */   0x75,   /* characterized as 11.5 dBm in datasheet */
-  /*  10 dBm */   0x65    /* characterized as 10 dBm in datasheet */
+  19,  /* tramsmit power level of the first entry */
+  (uint8)(int8)0, /* transmit power level of the last entry */
+  /*  19 dBm */   0xF5,   /* characterized as 19.36 dBm in datasheet */
+  /*  18 dBm */   0xD5,   /* characterized as 18.45 dBm in datasheet */
+  /*  17 dBm */   0xB5,   /* characterized as 17.37 dBm in datasheet */
+  /*  16 dBm */   0xA5,   /* characterized as 16.42 dBm in datasheet */
+  /*  15 dBm */   0x95,   /* characterized as 15.06 dBm in datasheet */
+  /*  14 dBm */   0x85,   /* characterized as 14.08 dBm in datasheet */
+  /*  13 dBm */   0x75,
+  /*  12 dBm */   0x75,   /* characterized as 12.63 dBm in datasheet */
+  /*  11 dBm */   0x65,   /* characterized as 10.97 dBm in datasheet */
+  /*  10 dBm */   0x55,
+  /*   9 dBm */   0x55,
+  /*   8 dBm */   0x55,   /* characterized as 8.94 dBm in datasheet */
+  /*   7 dBm */   0x45,
+  /*   6 dBm */   0x45,   /* characterized as 6.64 dBm in datasheet */
+  /*   5 dBm */   0x35,
+  /*   4 dBm */   0x35,   /* characterized as 4.30 dBm in datasheet */
+  /*   3 dBm */   0x25,
+  /*   2 dBm */   0x25,   /* characterized as 2.71 dBm in datasheet */
+  /*   1 dBm */   0x15,   /* characterized as 0.70 dBm in datasheet*/
+  /*   0 dBm */   0x05,   /* characterized as -0.8 dBm in datasheet */
 };
 #endif
 
@@ -206,13 +179,13 @@ const int8 CODE macRadioDefsRssiAdj[] =
 #endif
 
 #if defined HAL_PA_LNA || defined MAC_RUNTIME_CC2591
-  -6, /* high gain mode */
-  6,  /* low gain mode */
+  -9, /* high gain mode */
+  4,  /* low gain mode */
 #endif
 
 #if defined HAL_PA_LNA_CC2590 || defined MAC_RUNTIME_CC2590
--10,  /* TBD: place holder for high gain mode */
-  0,  /* TBD: place holder for low gain mode */
+  -10, /* high gain mode */
+  0,   /* low gain mode */
 #endif
 };
 
@@ -310,12 +283,6 @@ MAC_INTERNAL_API void macRadioTurnOnPower(void)
     /* P1_4 -> EN (LNA control) */
     RFC_OBS_CTRL1 = RFC_OBS_CTRL_LNAMIX_PD_INV;
     OBSSEL4       = OBSSEL_OBS_CTRL1;
-    
-    /* For any RX, change CCA settings for CC2591 compression workaround.
-     * This will override LNA control if CC2591_COMPRESSION_WORKAROUND 
-     * flag is defined. 
-     */
-    COMPRESSION_WORKAROUND_ON();
   }
 #endif /* defined MAC_RUNTIME_CC2591 || ... || defined HAL_PA_LNA_CC2590 */
 
@@ -326,9 +293,6 @@ MAC_INTERNAL_API void macRadioTurnOnPower(void)
     MAC_RADIO_SET_SHORT_ADDR(macPib.shortAddress);
     MAC_RADIO_SET_IEEE_ADDR(macPib.extendedAddress.addr.extAddr);
   }
-
-  /* Turn on frame filtering */
-  MAC_RADIO_TURN_ON_RX_FRAME_FILTERING();
 }
 
 
@@ -373,13 +337,6 @@ MAC_INTERNAL_API void macRadioTurnOffPower(void)
 #error "ERROR: HAL_PA_LNA_CC2590 and MAC_RUNTIME_CC2590 cannot be both defined."
 #endif
 
-#if defined (CC2591_COMPRESSION_WORKAROUND) && !defined (HAL_PA_LNA)
-#error "ERROR: CC2591_COMPRESSION_WORKAROUND can only be defined when HAL_PA_LNA is defined."
-#endif
-
-#if defined (CC2591_COMPRESSION_WORKAROUND)
-#warning "WARNING: Contact TI customer support if your reference design is based on CC2530-CC2591EM rev 2.0 or prior."
-#endif
 
 /**************************************************************************************************
  */

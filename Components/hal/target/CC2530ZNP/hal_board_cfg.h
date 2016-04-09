@@ -1,13 +1,14 @@
 /**************************************************************************************************
   Filename:       hal_board_cfg.h
-  Revised:        $Date: 2012-03-29 12:17:34 -0700 (Thu, 29 Mar 2012) $
-  Revision:       $Revision: 29944 $
+  Revised:        $Date: 2009-12-31 18:28:34 -0800 (Thu, 31 Dec 2009) $
+  Revision:       $Revision: 21422 $
 
   Description:    Declarations for the CC2530EM used as a ZNP replacement for the CC2520 on
                   MSP platforms (and possibly others.)
 
 
-  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
+
+  Copyright 2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -37,7 +38,7 @@
   Should you have any questions regarding your right to use this Software,
   contact Texas Instruments Incorporated at www.TI.com.
 **************************************************************************************************/
-
+// Generic lock-out to prevent including 2 different flavors of a znp hal_board_cfg.h.
 #ifndef HAL_BOARD_CFG_H
 #define HAL_BOARD_CFG_H
 
@@ -74,26 +75,18 @@
 #define HAL_BOARD_CC2530EB_REV17
 #endif
 
-/* ------------------------------------------------------------------------------------------------
- *                                          Clock Speed
- * ------------------------------------------------------------------------------------------------
- */
-
-#define HAL_CPU_CLOCK_MHZ     32
-
-/* This flag should be defined if the SoC uses the 32MHz crystal
- * as the main clock source (instead of DCO).
- */
-#define HAL_CLOCK_CRYSTAL
-
 // Values based on powerup h/w config as input with pull-up - not using dynamic cfg of transport.
 #define ZNP_CFG0_32K_XTAL        1         /* 32kHz crystal installed and used */
 #define ZNP_CFG0_32K_OSC         0         /* 32kHz crystal not installed; internal osc. used */
 #define ZNP_CFG1_SPI             1         /* use SPI transport */
 #define ZNP_CFG1_UART            0         /* use UART transport */
 extern unsigned char znpCfg1;
-extern unsigned char znpCfg0;
 
+/* ------------------------------------------------------------------------------------------------
+ *                                          Clock Speed
+ * ------------------------------------------------------------------------------------------------
+ */
+#define HAL_CPU_CLOCK_MHZ     32
 
 /* ------------------------------------------------------------------------------------------------
  *                                       LED Configuration
@@ -116,7 +109,7 @@ extern unsigned char znpCfg0;
 #define LED1_DDR          P1DIR
 #define LED1_POLARITY     ACTIVE_HIGH
 
-#if defined (HAL_BOARD_CC2530EB_REV17)
+#ifdef HAL_BOARD_CC2530EB_REV17
   /* 2 - Red */
   #define LED2_BV           BV(1)
   #define LED2_SBIT         P1_1
@@ -139,16 +132,6 @@ extern unsigned char znpCfg0;
 #define HAL_GPIO TRUE
 #endif
 
-#if defined CC2530_MK
-#define GPIO_0_PORT         0
-#define GPIO_0_PIN          6
-#define GPIO_1_PORT         0
-#define GPIO_1_PIN          7
-#define GPIO_2_PORT         1
-#define GPIO_2_PIN          6
-#define GPIO_3_PORT         1
-#define GPIO_3_PIN          7
-#else
 #define GPIO_0_PORT         0
 #define GPIO_0_PIN          0
 #define GPIO_1_PORT         0
@@ -157,7 +140,6 @@ extern unsigned char znpCfg0;
 #define GPIO_2_PIN          6
 #define GPIO_3_PORT         1
 #define GPIO_3_PIN          0
-#endif
 
 #define GPIO_DIR_IN(IDX)    MCU_IO_DIR_INPUT(GPIO_##IDX##_PORT, GPIO_##IDX##_PIN)
 #define GPIO_DIR_OUT(IDX)   MCU_IO_DIR_OUTPUT(GPIO_##IDX##_PORT, GPIO_##IDX##_PIN)
@@ -237,7 +219,7 @@ extern unsigned char znpCfg0;
 #define PUSH1_BV          BV(1)
 #define PUSH1_SBIT        P0_1
 
-#if defined (HAL_BOARD_CC2530EB_REV17)
+#ifdef HAL_BOARD_CC2530EB_REV17
   #define PUSH1_POLARITY    ACTIVE_HIGH
 #elif defined (HAL_BOARD_CC2530EB_REV13)
   #define PUSH1_POLARITY    ACTIVE_LOW
@@ -265,7 +247,6 @@ extern unsigned char znpCfg0;
 #define HAL_FLASH_PAGE_MAP         0x8000
 
 // The last 16 bytes of the last available page are reserved for flash lock bits.
-// NV page definitions must coincide with segment declaration in project *.xcl file.
 #if defined NON_BANKED
 #define HAL_FLASH_LOCK_BITS        16
 #define HAL_NV_PAGE_END            30
@@ -282,10 +263,6 @@ extern unsigned char znpCfg0;
 #define HAL_FLASH_IEEE_OSET       (HAL_FLASH_PAGE_SIZE - HAL_FLASH_LOCK_BITS - HAL_FLASH_IEEE_SIZE)
 #define HAL_INFOP_IEEE_OSET        0xC
 
-#define HAL_FLASH_DEV_PRIVATE_KEY_OSET     0x7D2
-#define HAL_FLASH_CA_PUBLIC_KEY_OSET       0x7BC
-#define HAL_FLASH_IMPLICIT_CERT_OSET       0x78C
-
 #define HAL_NV_PAGE_BEG           (HAL_NV_PAGE_END-HAL_NV_PAGE_CNT+1)
 
 // Used by DMA macros to shift 1 to create a mask for DMA registers.
@@ -296,15 +273,6 @@ extern unsigned char znpCfg0;
 #define HAL_NV_DMA_GET_DESC()      HAL_DMA_GET_DESC0()
 #define HAL_NV_DMA_SET_ADDR(a)     HAL_DMA_SET_ADDR_DESC0((a))
 
-/* ------------------------------------------------------------------------------------------------
- *  Serial Boot Loader: reserving the first 4 pages of flash and other memory in cc2530-sb.xcl.
- * ------------------------------------------------------------------------------------------------
- */
-
-#define HAL_SB_IMG_ADDR       0x2000
-#define HAL_SB_CRC_ADDR       0x2090
-// Size of internal flash less 4 pages for boot loader, 6 pages for NV, & 1 page for lock bits.
-#define HAL_SB_IMG_SIZE      (0x40000 - 0x2000 - 0x3000 - 0x0800)
 
 /* ------------------------------------------------------------------------------------------------
  *                                            Macros
@@ -323,26 +291,14 @@ extern void MAC_RfFrontendSetup(void);
 #define PREFETCH_ENABLE()     st( FCTL = 0x08; )
 #define PREFETCH_DISABLE()    st( FCTL = 0x04; )
 
-/* Default powerup with P1_2 as input with pullup. P1_2 is read into znpCfg0 is in "init_board()".
- * 1->0x00 external 32 kHz xosc & 0->0x80 for internal. 
- */
-#define HAL_CLOCK_STABLE()    st( uint8 OSC_32KHZ = ((znpCfg0 == ZNP_CFG0_32K_XTAL) ? 0x00 : 0x80); \
-                                  while (CLKCONSTA != (CLKCONCMD_32MHZ | OSC_32KHZ)); )
-
-#if defined CC2530_MK
-#define OSC_32KHZ_VALUE  0x80
-#else
- /* Default powerup with P1_2 as input with pullup, so 1->0x00 external 32 kHz xosc & 0->0x80 for internal */\
-#define OSC_32KHZ_VALUE  ((P1_2 == ZNP_CFG0_32K_XTAL) ? 0x00 : 0x80)
-#endif
-
 /* ----------- Board Initialization ---------- */
 #if defined (HAL_BOARD_CC2530EB_REV17) && !defined (HAL_PA_LNA) && !defined (HAL_PA_LNA_CC2590)
 
-#define HAL_BOARD_INIT() st                                      \
-(                                                                \
-  uint8 OSC_32KHZ = OSC_32KHZ_VALUE;                             \
+#define HAL_BOARD_INIT()                                         \
+{                                                                \
   uint16 i;                                                      \
+  /* Default powerup with P1_2 as input with pullup, so 1->0x00 external 32 kHz xosc & 0->0x80 for internal */\
+  uint8 OSC_32KHZ = ((P1_2) ? 0x00 : 0x80);                      \
                                                                  \
   SLEEPCMD &= ~OSC_PD;                       /* turn on 16MHz RC and 32MHz XOSC */                \
   while (!(SLEEPSTA & XOSC_STB));            /* wait for 32MHz XOSC stable */                     \
@@ -354,13 +310,12 @@ extern void MAC_RfFrontendSetup(void);
                                                                  \
   /* Turn on cache prefetch mode */                              \
   PREFETCH_ENABLE();                                             \
-)
+}
 
 #elif defined (HAL_BOARD_CC2530EB_REV13) || defined (HAL_PA_LNA) || defined (HAL_PA_LNA_CC2590)
 
-#define HAL_BOARD_INIT() st                                      \
-(                                                                \
-  uint8 OSC_32KHZ = OSC_32KHZ_VALUE;                             \
+#define HAL_BOARD_INIT()                                         \
+{                                                                \
   uint16 i;                                                      \
                                                                  \
   SLEEPCMD &= ~OSC_PD;                       /* turn on 16MHz RC and 32MHz XOSC */                \
@@ -372,7 +327,7 @@ extern void MAC_RfFrontendSetup(void);
   SLEEPCMD |= OSC_PD;                        /* turn off 16MHz RC */                              \
                                                                  \
   /* Turn on cache prefetch mode */                              \
-  PREFETCH_ENABLE();                                             \
+  PREFETCH_ENABLE();                                            \
                                                                  \
   /* set direction for GPIO outputs  */                          \
   LED1_DDR |= LED1_BV;                                           \
@@ -385,7 +340,7 @@ extern void MAC_RfFrontendSetup(void);
                                                                  \
   /* setup RF frontend if necessary */                           \
   HAL_BOARD_RF_FRONTEND_SETUP();                                 \
-)
+}
 
 #endif
 
@@ -487,16 +442,6 @@ st( \
   P1_1 = 1; \
 )
 
-/* ----------- Minimum safe bus voltage ---------- */
-
-// Vdd/3 / Internal Reference X ENOB --> (Vdd / 3) / 1.15 X 127
-#define VDD_2_0  74   // 2.0 V required to safely read/write internal flash.
-#define VDD_2_7  100  // 2.7 V required for the Numonyx device.
-
-#define VDD_MIN_RUN   VDD_2_0
-#define VDD_MIN_NV   (VDD_2_0+4)  // 5% margin over minimum to survive a page erase and compaction.
-#define VDD_MIN_XNV  (VDD_2_7+5)  // 5% margin over minimum to survive a page erase and compaction.
-
 /* ------------------------------------------------------------------------------------------------
  *                                     Driver Configuration
  * ------------------------------------------------------------------------------------------------
@@ -551,14 +496,8 @@ st( \
 
 #define HAL_SPI       TRUE
 #define HAL_UART      TRUE
-
-#if defined HAL_SB_BOOT_CODE
-#define HAL_UART_DMA  0
-#define HAL_UART_ISR  1
-#else
 #define HAL_UART_DMA  1
 #define HAL_UART_ISR  0
-#endif
 #define HAL_UART_USB  0
 
 // Used to set P2 priority - USART0 over USART1 if both are defined.

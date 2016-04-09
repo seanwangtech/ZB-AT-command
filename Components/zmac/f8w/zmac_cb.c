@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       zmac_cb.c
-  Revised:        $Date: 2012-03-08 17:10:16 -0800 (Thu, 08 Mar 2012) $
-  Revision:       $Revision: 29685 $
+  Revised:        $Date: 2009-12-04 08:04:20 -0800 (Fri, 04 Dec 2009) $
+  Revision:       $Revision: 21276 $
 
   Description:    This file contains the NWK functions that the ZMAC calls
 
 
-  Copyright 2005-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2005-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -57,8 +57,6 @@
   #include "mac_sim.h"
 #endif
 
-#include "mac_security.h"
-
 #include "mac_main.h"
 extern void *ZMac_ScanBuf;
 
@@ -89,17 +87,6 @@ const uint8 CODE zmacCBSizeTable [] = {
 };
 #endif /* !defined NONWK */
 
-/********************************************************************************************************
- *                                               LOCALS
- ********************************************************************************************************/
-
-/* LQI Adjustment Mode */
-static ZMacLqiAdjust_t lqiAdjMode = LQI_ADJ_OFF;
-
-#if !defined NONWK
-/* LQI Adjustment Function */
-static void ZMacLqiAdjust( uint8 corr, uint8* lqi );
-#endif
 
 /*********************************************************************
  * ZMAC Function Pointers
@@ -183,7 +170,7 @@ void MAC_CbackEvent(macCbackEvent_t *pData)
     if ( !(msgPtr = (macCbackEvent_t *)osal_msg_allocate(tmp)) )
     {
       // Not enough memory. If data confirm - try again
-      if ((event == MAC_MCPS_DATA_CNF) && (pData->dataCnf.pDataReq != NULL))
+      if ( event == MAC_MCPS_DATA_CNF )
       {
         halIntState_t intState;
 
@@ -199,6 +186,7 @@ void MAC_CbackEvent(macCbackEvent_t *pData)
           return;
         }
         HAL_EXIT_CRITICAL_SECTION( intState );   // Re-enable interrupts.
+        pData->dataCnf.pDataReq = NULL;
       }
       else
       {
@@ -250,49 +238,34 @@ void MAC_CbackEvent(macCbackEvent_t *pData)
       uint8 fcFrameType = (pData->dataInd.msdu.p[0] & 0x03);
       uint8 fcProtoVer = ((pData->dataInd.msdu.p[0] >> 2) & 0x0F);
       uint8 fcReserve = (pData->dataInd.msdu.p[1] & 0xE0);
-      if ( (fcFrameType > 0x01) || (fcProtoVer != _NIB.nwkProtocolVersion) || (fcReserve != 0)
+      if ( (fcFrameType > 0x01) || (fcProtoVer != _NIB.nwkProtocolVersion) || (fcReserve != 0) 
           || (pData->dataInd.mac.srcAddr.addrMode != SADDR_MODE_SHORT) )
       {
-        // Drop the message
+        // Drop the message 
         mac_msg_deallocate( (uint8 **)&pData );
         return;
       }
-      else
+      else if ( pData->dataInd.mac.dstAddr.addr.shortAddr == 0xFFFF )
       {
-        macDataInd_t *pInd = &msgPtr->dataInd.mac;
-        // See if LQI needs adjustment due to frame correlation
-        ZMacLqiAdjust( pInd->correlation, &pInd->mpduLinkQuality );
-
-        // Look for broadcast message that has a radius of greater 1
-        if ( (pData->dataInd.mac.dstAddr.addr.shortAddr == 0xFFFF)
-               && (pData->dataInd.msdu.p[6] > 1) )
+        // Send the messsage to a special broadcast queue
+        if ( nwk_broadcastSend( (uint8 *)msgPtr ) == SUCCESS )
         {
-          // Send the messsage to a special broadcast queue
-          if ( nwk_broadcastSend( (uint8 *)msgPtr ) != SUCCESS )
-          {
-            // Drop the message, too many broadcast messages to process
-            mac_msg_deallocate( (uint8 **)&pData );
-          }
+          return;
+        }
+        else
+        {
+          // Drop the message, too many broadcast messages to process
+          mac_msg_deallocate( (uint8 **)&pData );
           return;
         }
       }
     }
-    else if ((event == MAC_MCPS_DATA_CNF) && (pData->hdr.status != MAC_NO_RESOURCES))
-    {
-      macMcpsDataCnf_t *pCnf = &msgPtr->dataCnf;
-      
-      if (pCnf->pDataReq->internal.txOptions & MAC_TXOPTION_ACK)
-      {
-        // See if LQI needs adjustment due to frame correlation
-        ZMacLqiAdjust( pCnf->correlation, &pCnf->mpduLinkQuality );
-      }
-    }
-
+    
     // Application hasn't already processed this message. Send it to NWK task.
     osal_msg_send( NWK_TaskID, (uint8 *)msgPtr );
   }
 
-  if ((event == MAC_MCPS_DATA_CNF) && (pData->dataCnf.pDataReq != NULL))
+  if ( event == MAC_MCPS_DATA_CNF )
   {
     // If the application needs 'pDataReq' then we cannot free it here.
     // The application must free it after using it. Note that 'pDataReq'
@@ -373,60 +346,50 @@ void MAC_CbackEvent(macCbackEvent_t *pData)
       break;
 
     case MAC_MCPS_DATA_CNF:
-      if (pData->dataCnf.pDataReq != NULL)
-        mac_msg_deallocate((uint8**)&pData->dataCnf.pDataReq);
+      mac_msg_deallocate((uint8**)&pData->dataCnf.pDataReq);
 
       if ( _macCallbackSub & CB_ID_NWK_DATA_CNF )
         nwk_MTCallbackSubNwkDataCnf( (ZMacDataCnf_t *) pData );
       break;
 
     case MAC_MCPS_DATA_IND:
-      {
-        /*
-           Data Ind is unconventional: to save an alloc/copy, reuse the MAC
-           buffer and re-organize the contents into ZMAC format.
-        */
-        ZMacDataInd_t *pDataInd = (ZMacDataInd_t *) pData;
-        uint8 event, status, len, *msdu;
+        {
+          /*
+             Data Ind is unconventional: to save an alloc/copy, reuse the MAC
+             buffer and re-organize the contents into ZMAC format.
+          */
+          ZMacDataInd_t *pDataInd = (ZMacDataInd_t *) pData;
+          uint8 event, status, len, *msdu;
 
-        /* Store parameters */
-        event = pData->hdr.event;
-        status = pData->hdr.status;
-        len = pData->dataInd.msdu.len;
-        msdu = pData->dataInd.msdu.p;
+          /* Store parameters */
+          event = pData->hdr.event;
+          status = pData->hdr.status;
+          len = pData->dataInd.msdu.len;
+          msdu = pData->dataInd.msdu.p;
 
-        /* Copy security fields */
-        osal_memcpy(&pDataInd->Sec, &pData->dataInd.sec, sizeof(ZMacSec_t));
-        
-        /* Copy mac fields one by one since the two buffers overlap. */
-        osal_memcpy(&pDataInd->SrcAddr, &pData->dataInd.mac.srcAddr, sizeof(zAddrType_t));
-        osal_memcpy(&pDataInd->DstAddr, &pData->dataInd.mac.dstAddr, sizeof(zAddrType_t));
-        pDataInd->Timestamp = pData->dataInd.mac.timestamp;
-        pDataInd->Timestamp2 = pData->dataInd.mac.timestamp2;
-        pDataInd->SrcPANId = pData->dataInd.mac.srcPanId;
-        pDataInd->DstPANId = pData->dataInd.mac.dstPanId;
-        pDataInd->mpduLinkQuality = pData->dataInd.mac.mpduLinkQuality;
-        pDataInd->Correlation = pData->dataInd.mac.correlation;
-        pDataInd->Rssi = pData->dataInd.mac.rssi;
-        pDataInd->Dsn = pData->dataInd.mac.dsn;
+          /* Copy header */
+          osal_memcpy(&pDataInd->SrcAddr, &pData->dataInd.mac, sizeof(ZMacDataInd_t) - sizeof(ZMacEventHdr_t));
 
-        /* Restore parameters */
-        pDataInd->hdr.Status = status;
-        pDataInd->hdr.Event = event;
-        pDataInd->msduLength = len;
+          /* Security - set to zero for now*/
+          pDataInd->Sec.SecurityLevel = false;
 
-        if (len)
-          pDataInd->msdu = msdu;
-        else
-          pDataInd->msdu = NULL;
+          /* Restore parameters */
+          pDataInd->hdr.Status = status;
+          pDataInd->hdr.Event = event;
+          pDataInd->msduLength = len;
 
-        if ( _macCallbackSub & CB_ID_NWK_DATA_IND )
-          nwk_MTCallbackSubNwkDataInd ( pDataInd );
-      }
+          if (len)
+            pDataInd->msdu = msdu;
+          else
+            pDataInd->msdu = NULL;
 
-      /* free buffer */
-      mac_msg_deallocate( (uint8 **)&pData );
-      break;
+          if ( _macCallbackSub & CB_ID_NWK_DATA_IND )
+            nwk_MTCallbackSubNwkDataInd ( pDataInd );
+
+          /* free buffer */
+          mac_msg_deallocate( (uint8 **)&pData );
+        }
+        break;
 
     case MAC_MCPS_PURGE_CNF:
       if ( _macCallbackSub & CB_ID_NWK_PURGE_CNF )
@@ -463,84 +426,3 @@ uint8 MAC_CbackCheckPending(void)
   return (0);
 #endif
 }
-
-/********************************************************************************************************
- * @fn      ZMacLqiAdjustMode
- *
- * @brief   Sets/return LQI adjust mode
- *
- * @param   mode - LQI_ADJ_GET = return current mode only
- *                 LQI_ADJ_OFF = disable LQI adjusts
- *                 LQI_ADJ_MODEx = set to LQI adjust MODEx
- *
- * @return  current LQI adjust mode
- ********************************************************************************************************/
-ZMacLqiAdjust_t ZMacLqiAdjustMode( ZMacLqiAdjust_t mode )
-{
-  if ( mode != LQI_ADJ_GET )
-  {
-    lqiAdjMode = mode;
-  }
-  return ( lqiAdjMode );
-}
-
-#if !defined NONWK
-/********************************************************************************************************
- * @fn      ZMacLqiAdjust
- *
- * @brief   Adjust LQI according to correlation value
- *
- * @notes - the IEEE 802.15.4 specification provides some general statements on
- *          the subject of LQI. Section 6.7.8: "The minimum and maximum LQI values
- *          (0x00 and 0xFF) should be associated with the lowest and highest IEEE
- *          802.15.4 signals detectable by the receiver, and LQ values should be
- *          uniformly distributed between these two limits." Section E.2.3: "The
- *          LQI (see 6.7.8) measures the received energy and/or SNR for each
- *          received packet. When energy level and SNR information are combined,
- *          they can indicate whether a corrupt packet resulted from low signal
- *          strength or from high signal strength plus interference."
- *        - LQI Adjustment Mode1 provided below is a simple algorithm to use the
- *          packet correlation value (related to SNR) to scale incoming LQI value
- *          (related to signal strength) to 'derate' noisy packets.
- *        - LQI Adjustment Mode2 provided below is a location for a developer to
- *          implement their own proprietary LQI adjustment algorithm.
- *
- * @param   corr - packet correlation value
- * @param   lqi  - ptr to link quality (scaled rssi)
- *
- * @return  *lqi - adjusted link quality
- ********************************************************************************************************/
-static void ZMacLqiAdjust( uint8 corr, uint8 *lqi )
-{
-  if ( lqiAdjMode != LQI_ADJ_OFF )
-  {
-    uint16 adjLqi = *lqi;
-
-    // Keep correlation within theoretical limits
-    if ( corr < LQI_CORR_MIN )
-    {
-       corr = LQI_CORR_MIN;
-    }
-    else if ( corr > LQI_CORR_MAX )
-    {
-       corr = LQI_CORR_MAX;
-    }
-
-    if ( lqiAdjMode == LQI_ADJ_MODE1 )
-    {
-      /* MODE1 - linear scaling of incoming LQI with a "correlation percentage"
-                 which is computed from the incoming correlation value between
-                 theorectical minimum/maximum values. This is a very simple way
-                 of 'derating' the incoming LQI as correlation value drops. */
-      adjLqi = (adjLqi * (corr - LQI_CORR_MIN)) / (LQI_CORR_MAX - LQI_CORR_MIN);
-    }
-    else if ( lqiAdjMode == LQI_ADJ_MODE2 )
-    {
-      /* MODE2 - location for developer to implement a proprietary algorithm */
-    }
-
-    // Replace incoming LQI with scaled value
-    *lqi = (adjLqi > 255) ? 255 : (uint8)adjLqi;
-  }
-}
-#endif

@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       OSAL_ZNP.c
-  Revised:        $Date: 2010-08-12 16:15:23 -0700 (Thu, 12 Aug 2010) $
-  Revision:       $Revision: 23398 $
+  Revised:        $Date: 2010-01-06 16:39:32 -0800 (Wed, 06 Jan 2010) $
+  Revision:       $Revision: 21446 $
 
   Description:    This file is the Application-specific mandatory OSAL file.
 
@@ -43,10 +43,7 @@
 
 #include "ZComDef.h"
 #include "hal_drivers.h"
-#include "hal_mcu.h"
 #include "OSAL.h"
-#include "OSAL_Clock.h"
-#include "OSAL_PwrMgr.h"
 #include "OSAL_Tasks.h"
 
 #include "MT.h"
@@ -76,6 +73,7 @@
 
 // The order in this table must be identical to the task initialization calls below in osalInitTask.
 const pTaskEventHandlerFn tasksArr[] = {
+  Hal_ProcessEvent,
   znpEventLoop,
   macEventLoop,
   nwk_event_loop,
@@ -91,10 +89,9 @@ const pTaskEventHandlerFn tasksArr[] = {
   StubAPS_ProcessEvent,
 #endif
   SAPI_ProcessEvent,
-#if defined ( TC_LINKKEY_JOIN )
+#if defined ( ZCL_KEY_ESTABLISH )
   zclKeyEstablish_event_loop,
 #endif
-  Hal_ProcessEvent
 };
 
 const uint8 tasksCnt = sizeof( tasksArr ) / sizeof( tasksArr[0] );
@@ -103,9 +100,6 @@ uint16 *tasksEvents;
 /*********************************************************************
  * FUNCTIONS
  *********************************************************************/
-
-void osal_start_znp(void);
-static void osal_run_task(uint8 idx);
 
 /*********************************************************************
  * @fn      osalInitTasks
@@ -123,6 +117,7 @@ void osalInitTasks( void )
   tasksEvents = (uint16 *)osal_mem_alloc( sizeof( uint16 ) * tasksCnt);
   osal_memset( tasksEvents, 0, (sizeof( uint16 ) * tasksCnt));
 
+  Hal_Init( taskID++ );
   znpInit( taskID++ );
   macTaskInit( taskID++ );
   nwk_init( taskID++ );
@@ -138,100 +133,9 @@ void osalInitTasks( void )
   StubAPS_Init( taskID++ );
 #endif
   SAPI_Init( taskID++ );
-#if defined ( TC_LINKKEY_JOIN )
+#if defined ( ZCL_KEY_ESTABLISH )
   zclGeneral_KeyEstablish_Init( taskID++ );
 #endif
-  Hal_Init( taskID );
-}
-
-/*********************************************************************
- * @fn      osal_start_znp
- *
- * @brief
- *
- *   This function is the main loop function of the task system.  It
- *   will look through all task events and call the task_event_processor()
- *   function for the task with the event.  If there are no events (for
- *   all tasks), this function puts the processor into Sleep.
- *   This Function doesn't return.
- *
- * @param   void
- *
- * @return  none
- */
-void osal_start_znp( void )
-{
-#if !defined ( ZBIT ) && !defined ( UBIT )
-  for(;;)  // Forever Loop
-#endif
-  {
-#if defined( POWER_SAVING )
-    uint8 busy = FALSE;
-#endif
-    uint8 idx;
-
-    osalTimeUpdate();
-    Hal_ProcessPoll();
-
-    for (idx = 1; idx < tasksCnt; idx++)
-    {
-      if (tasksEvents[idx])
-      {
-        osal_run_task(idx);
-#if defined( POWER_SAVING )
-        busy = TRUE;
-#endif
-        break;
-      }
-    }
-
-    if (tasksEvents[0])  // Always run the ZNP task.
-    {
-      osal_run_task(0);
-#if defined( POWER_SAVING )
-      busy = TRUE;
-#endif
-    }
-
-#if defined( POWER_SAVING )
-    if (!busy)  // Complete pass through all task events with no activity?
-    {
-      osal_pwrmgr_powerconserve();  // Put the processor/system into sleep.
-    }
-#endif
-  }
-}
-
-/*********************************************************************
- * @fn      osal_run_task
- *
- * @brief
- *
- *   This function is the main loop function of the task system.  It
- *   will look through all task events and call the task_event_processor()
- *   function for the task with the event.  If there are no events (for
- *   all tasks), this function puts the processor into Sleep.
- *   This Function doesn't return.
- *
- * @param   void
- *
- * @return  none
- */
-static void osal_run_task(uint8 idx)
-{
-  uint16 events;
-  halIntState_t intState;
-
-  HAL_ENTER_CRITICAL_SECTION(intState);
-  events = tasksEvents[idx];
-  tasksEvents[idx] = 0;  // Clear the Events for this task.
-  HAL_EXIT_CRITICAL_SECTION(intState);
-
-  events = (tasksArr[idx])( idx, events );
-
-  HAL_ENTER_CRITICAL_SECTION(intState);
-  tasksEvents[idx] |= events;  // Add back unprocessed events to the current task.
-  HAL_EXIT_CRITICAL_SECTION(intState);
 }
 
 /*********************************************************************

@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       zcl_general.c
-  Revised:        $Date: 2011-12-14 16:30:16 -0800 (Wed, 14 Dec 2011) $
-  Revision:       $Revision: 28678 $
+  Revised:        $Date: 2009-10-26 15:51:02 -0700 (Mon, 26 Oct 2009) $
+  Revision:       $Revision: 20979 $
 
   Description:    Zigbee Cluster Library - General.  This application receives all
                   ZCL messages and initially parses them before passing to application.
 
 
-  Copyright 2006-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2008 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -23,7 +23,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -198,7 +198,7 @@ ZStatus_t zclGeneral_RegisterCmdCallbacks( uint8 endpoint, zclGeneral_AppCallbac
   if ( zclGenPluginRegisted == FALSE )
   {
     zcl_registerPlugin( ZCL_CLUSTER_ID_GEN_BASIC,
-                        ZCL_CLUSTER_ID_GEN_MULTISTATE_VALUE_BASIC,
+                        ZCL_CLUSTER_ID_GEN_LOCATION,
                         zclGeneral_HdlIncoming );
 
 #ifdef ZCL_SCENES
@@ -924,85 +924,6 @@ ZStatus_t zclGeneral_SendAlarmGetRespnose( uint8 srcEP, afAddrType_t *dstAddr,
                           COMMAND_ALARMS_GET_RSP, TRUE, ZCL_FRAME_SERVER_CLIENT_DIR,
                           disableDefaultRsp, 0, seqNum, len, buf );
 }
-
-#ifdef SE_UK_EXT
-/*********************************************************************
- * @fn      zclGeneral_SendAlarmGetEventLog
- *
- * @brief   Call to send out an Alarm Get Event Log Command
- *
- * @param   srcEP - Sending application's endpoint
- * @param   dstAddr - where you want the message to go
- * @param   pEventLog - pointer to Get Event Log Command
- * @param   disableDefaultRsp - disable default response
- * @param   seqNum - ZCL sequence number
- *
- * @return  ZStatus_t
- */
-ZStatus_t zclGeneral_SendAlarmGetEventLog( uint8 srcEP, afAddrType_t *dstAddr,
-                                           zclGetEventLog_t *pEventLog,
-                                           uint8 disableDefaultRsp, uint8 seqNum )
-{
-  uint8 buf[10];
-
-  buf[0] = pEventLog->logID;
-  osal_buffer_uint32( &buf[1], pEventLog->startTime );
-  osal_buffer_uint32( &buf[5], pEventLog->endTime );
-  buf[9] = pEventLog->numEvents;
-  
-  return zcl_SendCommand( srcEP, dstAddr, ZCL_CLUSTER_ID_GEN_ALARMS,
-                          COMMAND_ALARMS_GET_EVENT_LOG, TRUE, ZCL_FRAME_SERVER_CLIENT_DIR,
-                          disableDefaultRsp, 0, seqNum, 10, buf );
-}
-
-/*********************************************************************
- * @fn      zclGeneral_SendAlarmPublishEventLog
- *
- * @brief   Call to send out an Alarm Publish Event Log Command
- *
- * @param   srcEP - Sending application's endpoint
- * @param   dstAddr - where you want the message to go
- * @param   pEventLog - pointer to Publish Event Log Command
- * @param   disableDefaultRsp - disable default response
- * @param   seqNum - ZCL sequence number
- *
- * @return  ZStatus_t
- */
-ZStatus_t zclGeneral_SendAlarmPublishEventLog( uint8 srcEP, afAddrType_t *dstAddr,
-                                               zclPublishEventLog_t *pEventLog,
-                                               uint8 disableDefaultRsp, uint8 seqNum )
-{
-  uint8 *buf;
-  uint8 *pBuf;
-  uint8 bufLen;
-  
-  // Log ID + Command Index + Total Commands + (numSubLogs * ( Event ID + Event Time))
-  bufLen = 1 + 1 + 1 + (pEventLog->numSubLogs * (1 + 4));
-  
-  buf = osal_mem_alloc( bufLen );
-  if ( buf == NULL )
-  {
-    return (ZMemError);
-  }
-  
-  pBuf = buf;
-  *pBuf++ = pEventLog->logID;
-  *pBuf++ = pEventLog->cmdIndex;
-  *pBuf++ = pEventLog->totalCmds;
-  
-  for ( uint8 i = 0; i < pEventLog->numSubLogs; i++ )
-  {
-    zclEventLogPayload_t *pLogs = &(pEventLog->pLogs[i]);
-    
-    *pBuf++ = pLogs->eventId;
-    pBuf = osal_buffer_uint32( pBuf, pLogs->eventTime );
-  }
-  
-  return zcl_SendCommand( srcEP, dstAddr, ZCL_CLUSTER_ID_GEN_ALARMS,
-                          COMMAND_ALARMS_PUBLISH_EVENT_LOG, TRUE, ZCL_FRAME_CLIENT_SERVER_DIR,
-                          disableDefaultRsp, 0, seqNum, bufLen, buf );
-}
-#endif // SE_UK_EXT
 #endif // ZCL_ALARMS
 
 #ifdef ZCL_LOCATION
@@ -1471,7 +1392,7 @@ static ZStatus_t zclGeneral_ProcessInIdentity( zclIncoming_t *pInMsg,
 
       // Retrieve Identify Time
       if ( zclFindAttrRec( pInMsg->msg->endPoint, pInMsg->msg->clusterId, ATTRID_IDENTIFY_TIME, &attrRec ) )
-        zclReadAttrData( (uint8 *)&identifyTime, &attrRec, NULL );
+        zclReadAttrData( (uint8 *)&identifyTime, &attrRec );
 
       // Is device identifying itself?
       if ( identifyTime > 0 )
@@ -1527,7 +1448,7 @@ static ZStatus_t zclGeneral_AddGroup( uint8 endPoint, aps_Group_t *group, uint8 
 
   // Retrieve Name Support attribute
   if ( zclFindAttrRec( endPoint, ZCL_CLUSTER_ID_GEN_GROUPS, ATTRID_GROUP_NAME_SUPPORT, &attrRec ) )
-     zclReadAttrData( &nameSupport, &attrRec, NULL );
+     zclReadAttrData( &nameSupport, &attrRec );
 
   if ( nameSupport )
   {
@@ -1603,7 +1524,7 @@ static ZStatus_t zclGeneral_ProcessInGroupsServer( zclIncoming_t *pInMsg )
 
     case COMMAND_GROUP_GET_MEMBERSHIP:
       grpCnt = *pData++;
-
+        
       // Allocate space for the group list
       grpList = osal_mem_alloc( sizeof( uint16 ) * APS_MAX_GROUPS );
       if ( grpList != NULL )
@@ -1625,11 +1546,11 @@ static ZStatus_t zclGeneral_ProcessInGroupsServer( zclIncoming_t *pInMsg )
               grpList[grpRspCnt++] = group.ID;
           }
         }
-
+      
         if ( grpCnt == 0 ||  grpRspCnt != 0 )
         {
-          zclGeneral_SendGroupGetMembershipResponse( pInMsg->msg->endPoint, &pInMsg->msg->srcAddr,
-                                                     aps_GroupsRemaingCapacity(), grpRspCnt,
+          zclGeneral_SendGroupGetMembershipResponse( pInMsg->msg->endPoint, &pInMsg->msg->srcAddr, 
+                                                     aps_GroupsRemaingCapacity(), grpRspCnt, 
                                                      grpList, true, pInMsg->hdr.transSeqNum );
         }
 
@@ -1639,7 +1560,7 @@ static ZStatus_t zclGeneral_ProcessInGroupsServer( zclIncoming_t *pInMsg )
       {
         // Couldn't allocate space for the group list -- send a Default Response command back.
         zclDefaultRspCmd_t defaultRspCmd;
-
+        
         defaultRspCmd.commandID = pInMsg->hdr.commandID;
         defaultRspCmd.statusCode = ZCL_STATUS_INSUFFICIENT_SPACE;
         zcl_SendDefaultRspCmd( pInMsg->msg->endPoint, &(pInMsg->msg->srcAddr),
@@ -1667,7 +1588,7 @@ static ZStatus_t zclGeneral_ProcessInGroupsServer( zclIncoming_t *pInMsg )
     case COMMAND_GROUP_ADD_IF_IDENTIFYING:
       // Retrieve Identify Time
       if ( zclFindAttrRec( pInMsg->msg->endPoint, ZCL_CLUSTER_ID_GEN_IDENTIFY, ATTRID_IDENTIFY_TIME, &attrRec ) )
-        zclReadAttrData( (uint8 *)&identifyTime, &attrRec, NULL );
+        zclReadAttrData( (uint8 *)&identifyTime, &attrRec );
 
       // Is device identifying itself?
       if ( identifyTime > 0 )
@@ -1696,6 +1617,7 @@ static ZStatus_t zclGeneral_ProcessInGroupsClient( zclIncoming_t *pInMsg,
 {
   aps_Group_t group;
   uint8 *pData = pInMsg->pData;
+  uint16 *grpList;
   uint8 grpCnt;
   uint8 nameLen;
   zclGroupRsp_t rsp;
@@ -1737,40 +1659,35 @@ static ZStatus_t zclGeneral_ProcessInGroupsClient( zclIncoming_t *pInMsg,
       break;
 
     case COMMAND_GROUP_GET_MEMBERSHIP_RSP:
+      rsp.capacity = *pData++;
+      grpCnt = *pData++;
+
+      if ( grpCnt > 0 )
       {
-        uint16 *grpList = NULL;
-        rsp.capacity = *pData++;
-        grpCnt = *pData++;
-
-        if ( grpCnt > 0 )
-        {
-          // Allocate space for the group list
-          grpList = osal_mem_alloc( sizeof( uint16 ) * grpCnt );
-          if ( grpList != NULL )
-          {
-            rsp.grpCnt = grpCnt;
-            for ( i = 0; i < grpCnt; i++ )
-            {
-              grpList[i] = BUILD_UINT16( pData[0], pData[1] );
-              pData += 2;
-            }
-          }
-        }
-
-        if ( pCBs->pfnGroupRsp )
-        {
-          rsp.srcAddr = &(pInMsg->msg->srcAddr);
-          rsp.cmdID = pInMsg->hdr.commandID;
-          rsp.grpList = grpList;
-
-          pCBs->pfnGroupRsp( &rsp );
-        }
-
+        // Allocate space for the group list
+        grpList = osal_mem_alloc( sizeof( uint16 ) * grpCnt );
         if ( grpList != NULL )
         {
-          osal_mem_free( grpList );
+          rsp.grpCnt = grpCnt;
+          for ( i = 0; i < grpCnt; i++ )
+          {
+            grpList[i] = BUILD_UINT16( pData[0], pData[1] );
+            pData += 2;
+          }
         }
       }
+
+      if ( pCBs->pfnGroupRsp )
+      {
+        rsp.srcAddr = &(pInMsg->msg->srcAddr);
+        rsp.cmdID = pInMsg->hdr.commandID;
+        rsp.grpList = grpList;
+
+        pCBs->pfnGroupRsp( &rsp );
+      }
+      
+      if ( grpList != NULL )
+        osal_mem_free( grpList );
       break;
 
     default:
@@ -2024,54 +1941,6 @@ uint8 zclGeneral_CountAllScenes( void )
 }
 
 /*********************************************************************
- * @fn      zclGeneral_ReadSceneCountCB
- *
- * @brief   Read the number of scenes currently in the device's
- *          scene table (i.e., the Scene Count attribute).
- *
- *          Note: This function gets called only when the pointer
- *                'dataPtr' to the Scene Count attribute value is
- *                NULL in the attribute database registered with
- *                the ZCL.
- *
- * @param   clusterId - cluster that attribute belongs to
- * @param   attrId - attribute to be read
- * @param   oper - ZCL_OPER_LEN, ZCL_OPER_READ
- * @param   pValue - pointer to attribute value
- * @param   pLen - pointer to length of attribute value read
- *
- * @return  status
- */
-ZStatus_t zclGeneral_ReadSceneCountCB( uint16 clusterId, uint16 attrId,
-                                       uint8 oper, uint8 *pValue, uint16 *pLen )
-{
-  ZStatus_t status = ZCL_STATUS_SUCCESS;
-
-  // This callback function should only be called for the Scene Count attribute
-  switch ( oper )
-  {
-    case ZCL_OPER_LEN:
-      *pLen = 1; // uint8
-      break;
-
-    case ZCL_OPER_READ:
-      *pValue = zclGeneral_CountAllScenes();
-
-      if ( pLen != NULL )
-      {
-        *pLen = 1;
-      }
-      break;
-
-    default:
-      status = ZCL_STATUS_SOFTWARE_FAILURE; // should never get here!
-      break;
-  }
-
-  return ( status );
-}
-
-/*********************************************************************
  * @fn      zclGeneral_ProcessInScenesServer
  *
  * @brief   Process in the received Scenes Command.
@@ -2111,34 +1980,24 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
 
       // Retrieve Name Support attribute
       if ( zclFindAttrRec( pInMsg->msg->endPoint, ZCL_CLUSTER_ID_GEN_SCENES, ATTRID_SCENES_NAME_SUPPORT, &attrRec ) )
-      {
-        zclReadAttrData( &nameSupport, &attrRec, NULL );
-      }
+        zclReadAttrData( &nameSupport, &attrRec );
 
       if ( nameSupport )
       {
         if ( nameLen > (ZCL_GEN_SCENE_NAME_LEN-1) )
-        {
-          // truncate to maximum size
-          scene.name[0] = ZCL_GEN_SCENE_NAME_LEN-1;
-        }
-        else
-        {
-          scene.name[0] = nameLen;
-        }
-        osal_memcpy( &(scene.name[1]), pData, scene.name[0] );
+          nameLen = (ZCL_GEN_SCENE_NAME_LEN-1);
+        scene.name[0] = nameLen;
+        osal_memcpy( &(scene.name[1]), pData, nameLen );
       }
 
-      pData += nameLen; // move past name, use original length
+      pData += nameLen; // move pass name
 
       scene.extLen = pInMsg->pDataLen - ( (uint16)( pData - pInMsg->pData ) );
       if ( scene.extLen > 0 )
       {
         // Copy the extention field(s)
         if ( scene.extLen > ZCL_GEN_SCENE_EXT_LEN )
-        {
           scene.extLen = ZCL_GEN_SCENE_EXT_LEN;
-        }
         osal_memcpy( scene.extField, pData, scene.extLen );
       }
 
@@ -2171,14 +2030,10 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
           }
         }
         else
-        {
           status = ZCL_STATUS_INSUFFICIENT_SPACE; // The Scene Table is full
-        }
       }
       else
-      {
         status = ZCL_STATUS_INVALID_FIELD; // The Group is not in the Group Table
-      }
 
       zclGeneral_SendSceneAddResponse( pInMsg->msg->endPoint, &pInMsg->msg->srcAddr,
                                        status, scene.groupID, scene.ID,
@@ -2201,9 +2056,7 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
           status = ZCL_STATUS_INVALID_FIELD; // The Group is not in the Group Table
         }
         else
-        {
           status = ZCL_STATUS_NOT_FOUND;
-        }
         pScene = &scene;
       }
       zclGeneral_SendSceneViewResponse( pInMsg->msg->endPoint, &pInMsg->msg->srcAddr,
@@ -2225,9 +2078,7 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
           status = ZCL_STATUS_INVALID_FIELD;
         }
         else
-        {
           status = ZCL_STATUS_NOT_FOUND;
-        }
       }
 
       if ( UNICAST_MSG( pInMsg->msg ) )
@@ -2248,9 +2099,7 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
         status = ZCL_STATUS_SUCCESS;
       }
       else
-      {
         status = ZCL_STATUS_INVALID_FIELD;
-      }
 
       if ( UNICAST_MSG( pInMsg->msg ) )
       {
@@ -2288,9 +2137,7 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
 
             // Get the latest Scene info
             if ( pCBs->pfnSceneStoreReq( &req ) )
-            {
               sceneChanged = TRUE;
-            }
           }
 
           if ( pScene == &scene )
@@ -2305,14 +2152,10 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
           }
         }
         else
-        {
           status = ZCL_STATUS_INSUFFICIENT_SPACE; // The Scene Table is full
-        }
       }
       else
-      {
         status = ZCL_STATUS_INVALID_FIELD; // The Group is not in the Group Table
-      }
 
       if ( UNICAST_MSG( pInMsg->msg ) )
       {
@@ -2347,8 +2190,8 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
         sceneList = osal_mem_alloc( ZCL_GEN_MAX_SCENES );
         if ( sceneList != NULL )
         {
-          sceneCnt = zclGeneral_FindAllScenesForGroup( pInMsg->msg->endPoint,
-                                                       scene.groupID, sceneList );
+          sceneCnt = zclGeneral_FindAllScenesForGroup( pInMsg->msg->endPoint, 
+                                                       scene.groupID, sceneList ); 
           status = ZCL_STATUS_SUCCESS;
           if ( UNICAST_MSG( pInMsg->msg ) )
           {
@@ -2357,12 +2200,10 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
           }
           else
           {
-            // Addressed to the Group - ONLY send a response if an entry within the
+            // Addressed to the Group - ONLY send a response if an entry within the 
             // Scene Table corresponds to the Group ID
             if ( sceneCnt != 0 )
-            {
               sendRsp = TRUE;
-            }
           }
         }
         else
@@ -2385,12 +2226,10 @@ static ZStatus_t zclGeneral_ProcessInScenesServer( zclIncoming_t *pInMsg,
                                     status, zclGeneral_ScenesRemaingCapacity(), sceneCnt, sceneList,
                                     scene.groupID, true, pInMsg->hdr.transSeqNum );
       }
-
+      
       if ( sceneList != NULL )
-      {
         osal_mem_free( sceneList );
-      }
-
+      
       stat = ZCL_STATUS_CMD_HAS_RSP;
       break;
 
@@ -2417,6 +2256,7 @@ static ZStatus_t zclGeneral_ProcessInScenesClient( zclIncoming_t *pInMsg,
   zclGeneral_Scene_t scene;
   uint8 *pData = pInMsg->pData;
   uint8 nameLen;
+  uint8 *sceneList = NULL;
   zclSceneRsp_t rsp;
   uint8 i;
   ZStatus_t stat = ZSuccess;
@@ -2428,9 +2268,7 @@ static ZStatus_t zclGeneral_ProcessInScenesClient( zclIncoming_t *pInMsg,
   rsp.status = *pData++;
 
   if ( pInMsg->hdr.commandID == COMMAND_SCENE_GET_MEMBERSHIP_RSP )
-  {
     rsp.capacity = *pData++;
-  }
 
   scene.groupID = BUILD_UINT16( pData[0], pData[1] );
   pData += 2;   // Move past group ID
@@ -2444,17 +2282,10 @@ static ZStatus_t zclGeneral_ProcessInScenesClient( zclIncoming_t *pInMsg,
       pData += 2;
       nameLen = *pData++; // Name length
       if ( nameLen > (ZCL_GEN_SCENE_NAME_LEN-1) )
-      {
-        // truncate to maximum size
-        scene.name[0] = ZCL_GEN_SCENE_NAME_LEN-1;
-      }
-      else
-      {
-        scene.name[0] = nameLen;
-      }
-      osal_memcpy( &(scene.name[1]), pData, scene.name[0] );
-
-      pData += nameLen; // move past name, use original length
+        nameLen = (ZCL_GEN_SCENE_NAME_LEN-1);
+      scene.name[0] = nameLen;
+      osal_memcpy( &(scene.name[1]), pData, nameLen );
+      pData += nameLen; // move pass name
 
       //*** Do something with the extension field(s)
 
@@ -2475,41 +2306,35 @@ static ZStatus_t zclGeneral_ProcessInScenesClient( zclIncoming_t *pInMsg,
       break;
 
     case COMMAND_SCENE_GET_MEMBERSHIP_RSP:
+      if ( rsp.status == ZCL_STATUS_SUCCESS )
       {
-        uint8 *sceneList = NULL;
-
-        if ( rsp.status == ZCL_STATUS_SUCCESS )
+        uint8 sceneCnt = *pData++;
+        
+        if ( sceneCnt > 0 )
         {
-          uint8 sceneCnt = *pData++;
-
-          if ( sceneCnt > 0 )
+          // Allocate space for the scene list
+          sceneList = osal_mem_alloc( sceneCnt );
+          if ( sceneList != NULL )
           {
-            // Allocate space for the scene list
-            sceneList = osal_mem_alloc( sceneCnt );
-            if ( sceneList != NULL )
-            {
-              rsp.sceneCnt = sceneCnt;
-              for ( i = 0; i < sceneCnt; i++ )
-                sceneList[i] = *pData++;
-            }
+            rsp.sceneCnt = sceneCnt;
+            for ( i = 0; i < sceneCnt; i++ )
+              sceneList[i] = *pData++;
           }
         }
-
-        if ( pCBs->pfnSceneRsp )
-        {
-          rsp.srcAddr = &(pInMsg->msg->srcAddr);
-          rsp.cmdID = pInMsg->hdr.commandID;
-          rsp.sceneList = sceneList;
-          rsp.scene = &scene;
-
-          pCBs->pfnSceneRsp( &rsp);
-        }
-
-        if ( sceneList != NULL )
-        {
-          osal_mem_free( sceneList );
-        }
       }
+
+      if ( pCBs->pfnSceneRsp )
+      {
+        rsp.srcAddr = &(pInMsg->msg->srcAddr);
+        rsp.cmdID = pInMsg->hdr.commandID;
+        rsp.sceneList = sceneList;
+        rsp.scene = &scene;
+
+        pCBs->pfnSceneRsp( &rsp);
+      }
+      
+      if ( sceneList != NULL )
+        osal_mem_free( sceneList );
       break;
 
     default:
@@ -2895,56 +2720,6 @@ static ZStatus_t zclGeneral_ProcessInAlarmsServer( zclIncoming_t *pInMsg,
       zclGeneral_ResetAllAlarms( pInMsg->msg->endPoint, FALSE );
       break;
 
-#ifdef SE_UK_EXT
-    case COMMAND_ALARMS_PUBLISH_EVENT_LOG:
-      if ( pCBs->pfnPublishEventLog )
-      {
-        zclPublishEventLog_t eventLog;
-        
-        eventLog.logID = *pData++;
-        eventLog.cmdIndex = *pData++;
-        eventLog.totalCmds = *pData++;
-          
-        // First try to find out number of Sub Log Payloads
-        eventLog.numSubLogs = (pInMsg->pDataLen-3)/(1+4); // event ID + event time
-        if ( eventLog.numSubLogs > 0 )
-        {
-          // Try to alloc space for Log Payload
-          eventLog.pLogs = (zclEventLogPayload_t *)osal_mem_alloc( sizeof( zclEventLogPayload_t ) *
-                                                                   eventLog.numSubLogs );
-          if ( eventLog.pLogs != NULL )
-          {
-            // Copy Log Payload
-            for ( uint8 i = 0; i < eventLog.numSubLogs; i++ )
-            {
-              eventLog.pLogs[i].eventId = *pData++;
-              eventLog.pLogs[i].eventTime = osal_build_uint32( pData, 4 );
-              pData += 4;
-            }
-          }
-          else
-          {
-            stat = ZCL_STATUS_SOFTWARE_FAILURE;
-          }
-        }
-        else
-        {
-          eventLog.pLogs = NULL;
-        }
-        
-        if ( stat == ZSuccess )
-        { 
-          pCBs->pfnPublishEventLog( &(pInMsg->msg->srcAddr), &eventLog );
-        }
-        
-        if ( eventLog.pLogs != NULL )
-        {
-          osal_mem_free( eventLog.pLogs );
-        }
-      }
-      break;
-#endif // SE_UK_EXT
-      
     default:
       stat = ZFailure;
       break;
@@ -3000,25 +2775,6 @@ static ZStatus_t zclGeneral_ProcessInAlarmsClient( zclIncoming_t *pInMsg,
       }
       break;
 
-#ifdef SE_UK_EXT
-    case COMMAND_ALARMS_GET_EVENT_LOG:
-      if ( pCBs->pfnGetEventLog )
-      {
-        zclGetEventLog_t eventLog;
-        
-        eventLog.logID = *pData++;
-        eventLog.startTime = osal_build_uint32( pData, 4 );
-        pData += 4;
-        eventLog.endTime = osal_build_uint32( pData, 4 );
-        pData += 4;
-        eventLog.numEvents = *pData;
-  
-        pCBs->pfnGetEventLog( pInMsg->msg->endPoint, &(pInMsg->msg->srcAddr),
-                              &eventLog, pInMsg->hdr.transSeqNum );
-      }
-      break;
-#endif // SE_UK_EXT
-      
     default:
       stat = ZFailure;
       break;

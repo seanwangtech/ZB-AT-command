@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       rtg.h
-  Revised:        $Date: 2010-10-19 12:38:16 -0700 (Tue, 19 Oct 2010) $
-  Revision:       $Revision: 24150 $
+  Revised:        $Date: 2009-11-12 15:18:51 -0800 (Thu, 12 Nov 2009) $
+  Revision:       $Revision: 21146 $
 
   Description:    Interface to mesh routing functions
 
 
-  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -78,13 +78,9 @@ extern "C"
   
 #define RREP_ORI_IEEE       0x10
 #define RREP_RES_IEEE       0x20 
-#define RREP_MULTICAST      0x40
-#define RREP_OPTIONS_MASK   (RREP_ORI_IEEE | RREP_RES_IEEE | RREP_MULTICAST)
 
 #define RTG_END_DEVICE_ADDR_TYPE 0
 #define RTG_ROUTER_ADDR_TYPE     1
-  
-#define RTG_NO_EXPIRY_TIME  0xFF
 
 /*********************************************************************
  * TYPEDEFS
@@ -172,13 +168,12 @@ extern rtgEntry_t *RTG_GetRtgEntry( uint16 DstAddress, uint8 options);
 
 extern RTG_Status_t RTG_RemoveRtgEntry( uint16 DstAddress, uint8 options );
 
-extern uint16 RTG_GetNextHop( uint16 DstAddress, uint16 avoidAddr, 
-                             uint16 avoidAddr2, uint16 avoidAddr3, uint8 options );
+extern uint16 RTG_GetNextHop( uint16 DstAddress, uint8 options );
 
 extern byte RTG_ProcessRreq(
            NLDE_FrameFormat_t *ff, uint16 macSrcAddress, uint16 *nextHopAddr );
 
-extern void RTG_ProcessRrep( NLDE_FrameFormat_t *ff, uint16 macSrcAddress );
+extern void RTG_ProcessRrep( NLDE_FrameFormat_t *ff );
 
 extern void RTG_ProcessRrec( NLDE_FrameFormat_t *ff );
 

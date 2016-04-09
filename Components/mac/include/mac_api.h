@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       mac_api.h
-  Revised:        $Date: 2011-02-28 16:59:59 -0800 (Mon, 28 Feb 2011) $
-  Revision:       $Revision: 25230 $
+  Revised:        $Date: 2010-01-08 14:36:19 -0800 (Fri, 08 Jan 2010) $
+  Revision:       $Revision: 21466 $
 
   Description:    Public interface file for 802.15.4 MAC.
 
@@ -147,21 +147,6 @@ extern "C" {
 /* Key source maximum length in bytes */
 #define MAC_KEY_SOURCE_MAX_LEN      8
 
-/* Key index length in bytes */
-#define MAC_KEY_INDEX_LEN           1
-
-/* Frame counter length in bytes */
-#define MAC_FRAME_COUNTER_LEN       4
-
-/* Key length in bytes */
-#define MAC_KEY_MAX_LEN             16
-
-/* Key lookup data length in bytes */
-#define MAC_KEY_LOOKUP_SHORT_LEN    5
-#define MAC_KEY_LOOKUP_LONG_LEN     9
-#define MAC_MAX_KEY_LOOKUP_LEN      MAC_KEY_LOOKUP_LONG_LEN
-
-
 /* Data constants */
 #if !defined ( MAC_MAX_FRAME_SIZE )
   #define MAC_MAX_FRAME_SIZE        102   /* Maximum application data length without security */
@@ -173,8 +158,6 @@ extern "C" {
 #define MAC_MIC_64_LEN              8     /* Length required for MIC-64 authentication */
 #define MAC_MIC_128_LEN             16    /* Length required for MIC-128 authentication */
 
-/* MHR length for received frame */
-#define MAC_MHR_LEN                 37    /* FCF (2) + Seq (1) + Addr Fields (20) + Security HDR (14) */
 
 /* TX Options */
 #define MAC_TXOPTION_ACK            0x01  /* Acknowledged transmission.  The MAC will attempt to retransmit
@@ -183,8 +166,6 @@ extern "C" {
 #define MAC_TXOPTION_INDIRECT       0x04  /* Indirect transmission.  The MAC will queue the data and wait
                                              for the destination device to poll for it.  This can only be used
                                              by a coordinator device */
-#define MAC_TXOPTION_PEND_BIT       0x08  /* This proprietary option forces the pending bit set for direct
-                                             transmission */
 #define MAC_TXOPTION_NO_RETRANS     0x10  /* This proprietary option prevents the frame from being retransmitted */
 #define MAC_TXOPTION_NO_CNF         0x20  /* This proprietary option prevents a MAC_MCPS_DATA_CNF
                                              event from being sent for this frame */
@@ -302,43 +283,15 @@ extern "C" {
 #define MAC_TIMESTAMP_SUPPORTED           0x5C  /* TRUE if the MAC supports RX and TX timestamps */
 #define MAC_SECURITY_ENABLED              0x5D  /* TRUE if security is enabled */
 
-/* Security PIB Get and Set Attributes */
-#define MAC_KEY_TABLE                     0x71  /* A table of KeyDescriptor, entries, each containing keys and related
-                                                   information required for secured communications */
-#define MAC_KEY_TABLE_ENTRIES             0x72  /* The number of entries in macKeyTable */
-#define MAC_DEVICE_TABLE                  0x73  /* A table of Device-Descriptor entries, each indicating a remote device
-                                                   with which this device securely communicates */
-#define MAC_DEVICE_TABLE_ENTRIES          0x74  /* The number of entries in macDeviceTable. */
-#define MAC_SECURITY_LEVEL_TABLE          0x75  /* A table of SecurityLevel-Descriptor entries, each with information
-                                                   about the minimum security level expected depending on incoming frame
-                                                   type and subtype. */
-#define MAC_SECURITY_LEVEL_TABLE_ENTRIES  0x76  /* The number of entries in macSecurityLevelTable. */
-#define MAC_FRAME_COUNTER                 0x77  /* The outgoing frame counter for this device */
-#define MAC_AUTO_REQUEST_SECURITY_LEVEL   0x78  /* The security level used for automatic data requests. */
-#define MAC_AUTO_REQUEST_KEY_ID_MODE      0x79  /* The key identifier mode used for automatic data requests */
-#define MAC_AUTO_REQUEST_KEY_SOURCE       0x7A  /* The originator of the key used for automatic data requests. */
-#define MAC_AUTO_REQUEST_KEY_INDEX        0x7B  /* The index of the key used for automatic data requests. */
-#define MAC_DEFAULT_KEY_SOURCE            0x7C  /* The originator of the default key used for key ID mode 0x01 */
-#define MAC_PAN_COORD_EXTENDED_ADDRESS    0x7D  /* The 64-bit address of the PAN coordinator. */
-#define MAC_PAN_COORD_SHORT_ADDRESS       0x7E  /* The 16-bit short address assigned to the PAN coordinator. */
-
-/* Proprietary Security PIB Get and Set Attributes */
-#define MAC_KEY_ID_LOOKUP_ENTRY           0xD0  /* The key lookup table entry, part of an entry of the key table */
-#define MAC_KEY_DEVICE_ENTRY              0xD1  /* The key device entry, part of an entry of the key table */
-#define MAC_KEY_USAGE_ENTRY               0xD2  /* The key usage entry, part of an entry of the key table */
-#define MAC_KEY_ENTRY                     0xD3  /* The MAC key entry, an entry of the key table */
-#define MAC_DEVICE_ENTRY                  0xD4  /* The MAC device entry, an entry of the device table */
-#define MAC_SECURITY_LEVEL_ENTRY          0xD5  /* The AMC security level entry, an entry of the security level table */
-
 /* Proprietary PIB Get and Set Attributes */
 #define MAC_PHY_TRANSMIT_POWER            0xE0  /* The transmit power in units of -1 dBm */
 #define MAC_LOGICAL_CHANNEL               0xE1  /* The logical channel */
 #define MAC_EXTENDED_ADDRESS              0xE2  /* The extended address of the device */
 #define MAC_ALT_BE                        0xE3  /* alternate minimum backoff exponent */
 #define MAC_DEVICE_BEACON_ORDER           0xE4  /* Device beacon order */
-#define MAC_PHY_TRANSMIT_POWER_SIGNED     0xE5  /* Duplicate transmit power attribute in signed
-                                                   (2's complement) dBm unit */
-  
+#define MAC_PHY_TRANSMIT_POWER_SIGNED     0xE5  /* Duplicate transmit power attribute
+                                                 * in signed (2's complement) dBm unit */
+
 /* Disassociate Reason */
 #define MAC_DISASSOC_COORD          1     /* The coordinator wishes the device to disassociate */
 #define MAC_DISASSOC_DEVICE         2     /* The device itself wishes to disassociate */
@@ -390,10 +343,10 @@ extern "C" {
 #define MAC_PWR_ON_CNF              15    /* Power on confirm */
 #define MAC_MLME_POLL_IND           16    /* Poll indication */
 
+
 /* The length of the random seed is currently set to 16 bytes to match
    the security key length of Z-Stack */
 #define MAC_RANDOM_SEED_LEN         16
-
 /* ------------------------------------------------------------------------------------------------
  *                                           Macros
  * ------------------------------------------------------------------------------------------------
@@ -437,79 +390,6 @@ typedef struct
   uint8   keyIdMode;                          /* Key identifier mode */
   uint8   keyIndex;                           /* Key index */
 } macSec_t;
-
-/* Key ID Lookup Descriptor */
-typedef struct
-{
-  uint8              lookupData[MAC_MAX_KEY_LOOKUP_LEN];  /* Data used to identify the key */
-  uint8              lookupDataSize;  /* 0x00 indicates 5 octets; 0x01 indicates 9 octets. */
-} keyIdLookupDescriptor_t;
-
-/* Key Device Descriptor */
-typedef struct
-{
-  uint8              deviceDescriptorHandle;  /* Handle to the DeviceDescriptor */
-  bool               uniqueDevice;            /* Is it a link key or a group key? */
-  bool               blackListed;             /* This key exhausted the frame counter. */
-} keyDeviceDescriptor_t;
-
-/* Key Usage Descriptor */
-typedef struct
-{
-  uint8              frameType;               /* Frame Type */
-  uint8              cmdFrameId;              /* Command Frame Identifier */
-} keyUsageDescriptor_t;
-
-/* Key Descriptor */
-typedef struct
-{
-  keyIdLookupDescriptor_t  *keyIdLookupList;   /* A list identifying this KeyDescriptor */
-  uint8                    keyIdLookupEntries; /* The number of entries in KeyIdLookupList */
-
-  keyDeviceDescriptor_t    *keyDeviceList;        /* A list indicating which devices are
-                                                     currently using this key, including
-                                                     their blacklist status. */
-  uint8                    keyDeviceListEntries;  /* The number of entries in KeyDeviceList */
-
-  keyUsageDescriptor_t     *keyUsageList;         /* A list indicating which frame types
-                                                   * this key may be used with. */
-  uint8                    keyUsageListEntries;   /* The number of entries in KeyUsageList */
-
-  uint8                    key[MAC_KEY_MAX_LEN];  /* The actual value of the key */
-} keyDescriptor_t;
-
-/* Device Descriptor */
-typedef struct
-{
-  uint16             panID;          /* The 16-bit PAN identifier of the device */
-  uint16             shortAddress;   /* The 16-bit short address of the device */
-  sAddrExt_t         extAddress;     /* The 64-bit IEEE extended address of the
-                                        device. This element is also used in
-                                        unsecuring operations on incoming frames. */
-  uint32             frameCounter;   /* The incoming frame counter of the device.
-                                        This value is used to ensure sequential
-                                        freshness of frames. */
-  bool               exempt;         /* Device may override the minimum security
-                                        level settings. */
-} deviceDescriptor_t;
-
-/* Security Level Descriptor */
-typedef struct
-{
-  uint8              frameType;              /* Frame Type */
-  uint8              commandFrameIdentifier; /* Command Frame ID */
-  uint8              securityMinimum;        /* The minimal required/expected security
-                                                level for incoming MAC frames. */
-  bool               securityOverrideSecurityMinimum;
-                                             /* Indication of whether originating devices
-                                                for which the Exempt flag is set may
-                                                override the minimum security level
-                                                indicated by the SecurityMinimum
-                                                element. If TRUE, this indicates that for
-                                                originating devices with Exempt status,
-                                                the incoming security level zero is
-                                                acceptable. */
-} securityLevelDescriptor_t;
 
 /* For internal use only */
 typedef struct
@@ -1163,30 +1043,6 @@ extern void MAC_MlmeDisassociateReq(macMlmeDisassociateReq_t *pData);
 extern uint8 MAC_MlmeGetReq(uint8 pibAttribute, void *pValue);
 
 /**************************************************************************************************
- * @fn          MAC_MlmeGetSecutityReq
- *
- * @brief       This direct execute function retrieves an attribute value
- *              from the MAC Secutity PIB. This function only exists when MAC_SECURITY
- *              is defined.
- *
- * input parameters
- *
- * @param       pibAttribute - The attribute identifier.
- * @param       pValue - pointer to the attribute value.
- *
- * output parameters
- *
- * @param       pValue - pointer to the attribute value.
- *
- * @return      The status of the request, as follows:
- *              MAC_SUCCESS Operation successful.
- *              MAC_UNSUPPORTED_ATTRIBUTE Attribute not found.
- *
- **************************************************************************************************
- */
-extern uint8 MAC_MlmeGetSecurityReq(uint8 pibAttribute, void *pValue);
-
-/**************************************************************************************************
  * @fn          MAC_MlmeOrphanRsp
  *
  * @brief       This function is called in response to an orphan notification
@@ -1301,30 +1157,6 @@ extern void MAC_MlmeScanReq(macMlmeScanReq_t *pData);
  **************************************************************************************************
  */
 extern uint8 MAC_MlmeSetReq(uint8 pibAttribute, void *pValue);
-
-/**************************************************************************************************
- * @fn          MAC_MlmeSetSecurityReq
- *
- * @brief       This direct execute function sets an attribute value
- *              in the MAC Security PIB. This function only exists when MAC_SECURITY
- *              is defined.
- *
- * input parameters
- *
- * @param       pibAttribute - The attribute identifier.
- * @param       pValue - pointer to the attribute value.
- *
- * output parameters
- *
- * None.
- *
- * @return      The status of the request, as follows:
- *              MAC_SUCCESS Operation successful.
- *              MAC_UNSUPPORTED_ATTRIBUTE Attribute not found.
- *
- **************************************************************************************************
- */
-extern uint8 MAC_MlmeSetSecurityReq(uint8 pibAttribute, void *pValue);
 
 /**************************************************************************************************
  * @fn          MAC_MlmeStartReq

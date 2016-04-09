@@ -6,7 +6,7 @@
   Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2012 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -130,6 +130,7 @@
  */
 static uint32 backoffTimerRollover;
 static uint32 backoffTimerTrigger;
+static uint8 compareState;
 
 
 /**************************************************************************************************
@@ -144,10 +145,9 @@ static uint32 backoffTimerTrigger;
  */
 MAC_INTERNAL_API void macBackoffTimerInit(void)
 {
+  compareState = COMPARE_STATE_ROLLOVER;
   MAC_RADIO_BACKOFF_SET_COUNT(0);
   macBackoffTimerSetRollover(MAC_BACKOFF_TIMER_DEFAULT_ROLLOVER);
-  MAC_RADIO_BACKOFF_PERIOD_CLEAR_INTERRUPT();
-  MAC_RADIO_BACKOFF_PERIOD_ENABLE_INTERRUPT();
   MAC_RADIO_BACKOFF_COMPARE_CLEAR_INTERRUPT();
   MAC_RADIO_BACKOFF_COMPARE_ENABLE_INTERRUPT();
 }
@@ -166,7 +166,6 @@ MAC_INTERNAL_API void macBackoffTimerInit(void)
 MAC_INTERNAL_API void macBackoffTimerReset(void)
 {
   MAC_RADIO_BACKOFF_COMPARE_DISABLE_INTERRUPT();
-  MAC_RADIO_BACKOFF_PERIOD_DISABLE_INTERRUPT();
   macBackoffTimerInit();
 }
 
@@ -189,7 +188,7 @@ MAC_INTERNAL_API void macBackoffTimerSetRollover(uint32 rolloverBackoff)
 
   HAL_ENTER_CRITICAL_SECTION(s);
   backoffTimerRollover = rolloverBackoff;
-  MAC_RADIO_BACKOFF_SET_PERIOD(rolloverBackoff);
+  MAC_RADIO_BACKOFF_SET_COMPARE(rolloverBackoff);
   HAL_EXIT_CRITICAL_SECTION(s);
 }
 
@@ -208,6 +207,7 @@ MAC_INTERNAL_API void macBackoffTimerSetCount(uint32 backoff)
 {
   halIntState_t  s;
 
+  MAC_ASSERT(compareState == COMPARE_STATE_ROLLOVER);   /* trigger cannot be active if changing count */
   MAC_ASSERT(backoff < backoffTimerRollover);  /* count must be less than rollover value */
   MAC_ASSERT(!(backoff & 0x80000000));  /* count must not represent negative value for int32 */
 
@@ -333,25 +333,31 @@ MAC_INTERNAL_API void macBackoffTimerSetTrigger(uint32 triggerBackoff)
 
   HAL_ENTER_CRITICAL_SECTION(s);
   backoffTimerTrigger = triggerBackoff;
-  MAC_RADIO_BACKOFF_SET_COMPARE(triggerBackoff);
-  if (triggerBackoff == MAC_RADIO_BACKOFF_COUNT())
+  if (triggerBackoff > MAC_RADIO_BACKOFF_COUNT())
   {
-    /* Clear the interrupt and fire it manually */
-    MAC_RADIO_BACKOFF_COMPARE_CLEAR_INTERRUPT();
-    HAL_EXIT_CRITICAL_SECTION(s);
-    macBackoffTimerTriggerCallback();
+    compareState = COMPARE_STATE_TRIGGER;
+    MAC_RADIO_BACKOFF_SET_COMPARE(triggerBackoff);
   }
   else
   {
-    HAL_EXIT_CRITICAL_SECTION(s);
+    if (triggerBackoff == 0)
+    {
+      compareState = COMPARE_STATE_ROLLOVER_AND_TRIGGER;
+    }
+    else
+    {
+      compareState = COMPARE_STATE_ROLLOVER_AND_ARM_TRIGGER;
+    }
+    MAC_RADIO_BACKOFF_SET_COMPARE(backoffTimerRollover);
   }
+  HAL_EXIT_CRITICAL_SECTION(s);
 }
 
 
 /**************************************************************************************************
  * @fn          macBackoffTimerCancelTrigger
  *
- * @brief       Cancels the trigger for the backoff counter - obselete for CC2530.
+ * @brief       Cancels the trigger for the backoff counter.
  *
  * @param       none
  *
@@ -360,7 +366,12 @@ MAC_INTERNAL_API void macBackoffTimerSetTrigger(uint32 triggerBackoff)
  */
 MAC_INTERNAL_API void macBackoffTimerCancelTrigger(void)
 {
-  /* Stub for high level MAC */
+  halIntState_t  s;
+
+  HAL_ENTER_CRITICAL_SECTION(s);
+  compareState = COMPARE_STATE_ROLLOVER;
+  MAC_RADIO_BACKOFF_SET_COMPARE(backoffTimerRollover);
+  HAL_EXIT_CRITICAL_SECTION(s);
 }
 
 
@@ -468,40 +479,39 @@ MAC_INTERNAL_API int32 macBackoffTimerRealign(macRx_t *pMsg)
  */
 MAC_INTERNAL_API void macBackoffTimerCompareIsr(void)
 {
-  macBackoffTimerTriggerCallback();
+  uint8 oldState;
+  halIntState_t  s;
+
+  HAL_ENTER_CRITICAL_SECTION(s);
+  oldState = compareState;
+
+  /* if compare is a rollover, set count to zero */
+  if (oldState & COMPARE_STATE_ROLLOVER_BV)
+  {
+    MAC_RADIO_BACKOFF_SET_COUNT(0);
+    macBackoffTimerRolloverCallback();
+  }
+
+  /* if compare is a trigger, reset for rollover and run the trigger callback */
+  if (oldState & COMPARE_STATE_TRIGGER_BV)
+  {
+    compareState = COMPARE_STATE_ROLLOVER;
+    MAC_RADIO_BACKOFF_SET_COMPARE(backoffTimerRollover);
+    HAL_EXIT_CRITICAL_SECTION(s);
+    macBackoffTimerTriggerCallback();
+  }
+  else if (oldState == COMPARE_STATE_ROLLOVER_AND_ARM_TRIGGER)
+  {
+    compareState = COMPARE_STATE_TRIGGER;
+    MAC_RADIO_BACKOFF_SET_COMPARE(backoffTimerTrigger);
+    HAL_EXIT_CRITICAL_SECTION(s);
+  }
+  else
+  {
+    HAL_EXIT_CRITICAL_SECTION(s);
+  }
 }
 
-/**************************************************************************************************
- * @fn          macBackoffTimerPeriodIsr
- *
- * @brief       Interrupt service routine that fires when the backoff count rolls over on
- *              overflow period.
- *
- * @param       none
- *
- * @return      none
- **************************************************************************************************
- */
-MAC_INTERNAL_API void macBackoffTimerPeriodIsr(void)
-{
-  macMcuAccumulatedOverFlow();
-  macBackoffTimerRolloverCallback();
-}
-
-/**************************************************************************************************
- * @fn          macGetBackOffTimerRollover
- *
- * @brief       Function to get the timer 2 rollover value
- *
- * @param       none
- *
- * @return      timer 2 rollover value
- **************************************************************************************************
- */
-MAC_INTERNAL_API uint32 macGetBackOffTimerRollover(void)
-{
-  return backoffTimerRollover;
-}
 
 /**************************************************************************************************
 */

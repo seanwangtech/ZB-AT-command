@@ -1,29 +1,29 @@
 /**************************************************************************************************
   Filename:       nwk_globals.c
-  Revised:        $Date: 2012-03-07 01:04:58 -0800 (Wed, 07 Mar 2012) $
-  Revision:       $Revision: 29656 $
+  Revised:        $Date: 2010-01-11 09:24:44 -0800 (Mon, 11 Jan 2010) $
+  Revision:       $Revision: 21474 $
 
   Description:    User definable Network Parameters.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
   who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License"). You may not use this
+  and Texas Instruments Incorporated (the "License").  You may not use this
   Software unless you agree to abide by the terms of the License. The License
   limits your use, and you acknowledge, that the Software may not be modified,
   copied or distributed unless embedded on a Texas Instruments microcontroller
   or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product. Other than for
+  frequency transceiver, which is integrated into your product.  Other than for
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,7 +34,7 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
+  contact Texas Instruments Incorporated at www.TI.com. 
 **************************************************************************************************/
 
 /*********************************************************************
@@ -42,7 +42,6 @@
  */
 #include "ZComdef.h"
 #include "OSAL.h"
-#include "OSAL_Nv.h"
 #include "AddrMgr.h"
 #include "AssocList.h"
 #include "BindingTable.h"
@@ -147,16 +146,8 @@ uint8 gMIN_TREE_LINK_COST = MIN_LQI_COST_3;
 // Statically defined Associated Device List
 associated_devices_t AssociatedDevList[NWK_MAX_DEVICES];
 
-#if defined ( ZIGBEE_STOCHASTIC_ADDRESSING )
-  CONST uint16 gNWK_MIN_ROUTER_CHILDREN = NWK_MIN_ROUTER_CHILDREN;
-  CONST uint16 gNWK_MIN_ENDDEVICE_CHILDREN = NWK_MIN_ENDDEVICE_CHILDREN;
-#else
-  CONST uint16 gNWK_MIN_ROUTER_CHILDREN = 0;
-  CONST uint16 gNWK_MIN_ENDDEVICE_CHILDREN = 0;
-#endif
-
-CONST uint16 gMAX_RTG_ENTRIES = MAX_RTG_ENTRIES;
-CONST uint16 gMAX_RTG_SRC_ENTRIES = MAX_RTG_SRC_ENTRIES;
+CONST uint8 gMAX_RTG_ENTRIES = MAX_RTG_ENTRIES;
+CONST uint8 gMAX_RTG_SRC_ENTRIES = MAX_RTG_SRC_ENTRIES;
 CONST uint8 gMAX_RREQ_ENTRIES = MAX_RREQ_ENTRIES;
 
 CONST uint8 gMAX_NEIGHBOR_ENTRIES = MAX_NEIGHBOR_ENTRIES;
@@ -167,10 +158,6 @@ neighborEntry_t neighborTable[MAX_NEIGHBOR_ENTRIES];
 CONST uint8 gMAX_SOURCE_ROUTE = MAX_SOURCE_ROUTE;
 
 CONST uint8 gMAX_BROADCAST_QUEUED = MAX_BROADCAST_QUEUED;
-
-CONST uint8 gLINK_DOWN_TRIGGER = LINK_DOWN_TRIGGER;
-
-CONST uint8 gMAX_PASSIVE_ACK_CNT = MAX_PASSIVE_ACK_CNT;
 
 // Routing table
 rtgEntry_t rtgTable[MAX_RTG_ENTRIES];
@@ -192,8 +179,8 @@ uint32 bcastHoldAckMask[MAX_BCAST];
 
 CONST uint8 gMAX_BCAST = MAX_BCAST;
 
-// For tree addressing, this switch allows the allocation of a
-// router address to an end device when end device address are
+// For tree addressing, this switch allows the allocation of a 
+// router address to an end device when end device address are 
 // all used up.  If this option is enabled, address space
 // could be limited.
 CONST uint8 gNWK_TREE_ALLOCATE_ROUTERADDR_FOR_ENDDEVICE = FALSE;
@@ -207,34 +194,18 @@ CONST uint8 gNWK_CONFLICTED_ADDR_EXPIRY_TIME = NWK_CONFLICTED_ADDR_EXPIRY_TIME;
 #if defined ( ZIGBEE_FREQ_AGILITY )
 CONST uint8 gNWK_FREQ_AGILITY_ALL_MAC_ERRS = NWK_FREQ_AGILITY_ALL_MAC_ERRS;
 #endif
-
-// The time limited to one MTO RReq (Concentrator Announce) in milliseconds.
-CONST uint16 gMTO_RREQ_LIMIT_TIME = MTO_RREQ_LIMIT_TIME;
-
-// The number of seconds a MTO routing entry will last.
-CONST uint8 gMTO_ROUTE_EXPIRY_TIME = MTO_ROUTE_EXPIRY_TIME;
-
-// Route Discovery Request Default Radius
-CONST uint8 gDEFAULT_ROUTE_REQUEST_RADIUS = DEFAULT_ROUTE_REQUEST_RADIUS;
-
-// Network message radius
-CONST uint8 gDEF_NWK_RADIUS = DEF_NWK_RADIUS;
-
-#if ( ZSTACK_ROUTER_BUILD )
-CONST uint16 gLINK_STATUS_JITTER_MASK = LINK_STATUS_JITTER_MASK;
-#endif
-
+  
 /*********************************************************************
  * APS GLOBAL VARIABLES
  */
 
 // The Maximum number of binding records
-// This number is defined in f8wConfig.cfg - change it there.
+// This number is defined in BindingTable.h - change it there.
 CONST uint16 gNWK_MAX_BINDING_ENTRIES = NWK_MAX_BINDING_ENTRIES;
 
 #if defined ( REFLECTOR )
   // The Maximum number of cluster IDs in a binding record
-  // This number is defined in f8wConfig.cfg - change it there.
+  // This number is defined in BindingTable.h - change it there.
   CONST uint8 gMAX_BINDING_CLUSTER_IDS = MAX_BINDING_CLUSTER_IDS;
 
   CONST uint16 gBIND_REC_SIZE = sizeof( BindingEntry_t );
@@ -259,10 +230,6 @@ CONST uint8 gAPS_MAX_GROUPS = APS_MAX_GROUPS;
 // This is the default pre-configured key,
 // change this to make a unique key
 // SEC_KEY_LEN is defined in ssp.h.
-
-#if defined ( DEFAULT_KEY )
-CONST uint8 defaultKey[SEC_KEY_LEN] = DEFAULT_KEY;
-#else
 CONST uint8 defaultKey[SEC_KEY_LEN] =
 {
 #if defined ( APP_TP ) || defined ( APP_TP2 )
@@ -275,22 +242,14 @@ CONST uint8 defaultKey[SEC_KEY_LEN] =
   0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 #endif
 };
-#endif
 
 // This is the default pre-configured Trust Center Link key,
 // change this to make a unique key, SEC_KEY_LEN is defined in ssp.h.
-CONST uint8 defaultTCLinkKey[SEC_KEY_LEN] = DEFAULT_TC_LINK_KEY;
-
-/*********************************************************************
- * GLOBAL VARIABLES - Statistics
- */
-
-#if defined ( PACKET_FILTER_STATS )
-  uint32 apsInvalidPackets = 0;
-  uint32 apsSecurityFailures = 0;
-  uint32 nwkInvalidPackets = 0;
-  uint32 nwkSecurityFailures = 0;
-#endif
+CONST uint8 defaultTCLinkKey[SEC_KEY_LEN] =
+{
+  0x56, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77,
+  0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77
+};
 
 /*********************************************************************
  * STATUS STRINGS
@@ -330,7 +289,7 @@ CONST uint8 defaultTCLinkKey[SEC_KEY_LEN] = DEFAULT_TC_LINK_KEY;
 void nwk_globals_init( void )
 {
   AddrMgrInit( NWK_MAX_ADDRESSES );
-
+  
 #if !defined ( ZIGBEE_STOCHASTIC_ADDRESSING )
   if ( ZSTACK_ROUTER_BUILD )
   {
@@ -339,14 +298,14 @@ void nwk_globals_init( void )
     RTG_FillCSkipTable(CskipChldrn, CskipRtrs, MAX_NODE_DEPTH, Cskip);
   }
 #endif
-
+  
   // To compile out the Link Status Feature, set NWK_LINK_STATUS_PERIOD
   // to 0 (compiler flag).
   if ( ZSTACK_ROUTER_BUILD && NWK_LINK_STATUS_PERIOD )
   {
     NLME_InitLinkStatus();
   }
-
+  
 #if defined ( ZIGBEE_FREQ_AGILITY )
   NwkFreqAgilityInit();
 #endif
@@ -378,11 +337,11 @@ void NIB_init()
   // BROADCAST SETTINGS:
   // *******************
   //   Broadcast Delivery Time
-  //     - set to multiples of 100ms
+  //     - set to multiples of 100ms 
   //     - should be 500ms more than the retry time
   //       -  "retry time" = PassiveAckTimeout * (MaxBroadcastRetries + 1)
   //   Passive Ack Timeout
-  //     - set to multiples of 100ms
+  //     - set to multiples of 100ms 
   _NIB.BroadcastDeliveryTime = zgBcastDeliveryTime;
   _NIB.PassiveAckTimeout     = zgPassiveAckTimeout;
   _NIB.MaxBroadcastRetries   = zgMaxBcastRetires;
@@ -391,7 +350,7 @@ void NIB_init()
   _NIB.RouteDiscRetries = 0;
   _NIB.SecureAllFrames = USE_NWK_SECURITY;
   _NIB.nwkAllFresh = NWK_ALL_FRESH;
-
+   
   if ( ZG_SECURE_ENABLED )
   {
     _NIB.SecurityLevel = SECURITY_LEVEL;
@@ -400,18 +359,18 @@ void NIB_init()
   {
     _NIB.SecurityLevel = 0;
   }
-
+   
 #if defined ( ZIGBEEPRO )
   _NIB.SymLink = FALSE;
 #else
   _NIB.SymLink = TRUE;
-#endif
-
-  _NIB.CapabilityFlags = ZDO_Config_Node_Descriptor.CapabilityFlags;
+#endif  
+  
+  _NIB.CapabilityInfo = ZDO_Config_Node_Descriptor.CapabilityFlags;
 
   _NIB.TransactionPersistenceTime = zgIndirectMsgTimeout;
 
-  _NIB.RouteDiscoveryTime = zgRouteDiscoveryTime;
+  _NIB.RouteDiscoveryTime = 5;
   _NIB.RouteExpiryTime = zgRouteExpiryTime;
 
   _NIB.nwkDevAddress = INVALID_NODE_ADDR;
@@ -421,9 +380,9 @@ void NIB_init()
   _NIB.nwkPanId = INVALID_NODE_ADDR;
 
   osal_cpyExtAddr( _NIB.extendedPANID, zgExtendedPANID );
-
+   
   _NIB.nwkKeyLoaded = FALSE;
-
+   
 #if defined ( ZIGBEE_STOCHASTIC_ADDRESSING )
   _NIB.nwkAddrAlloc  = NWK_ADDRESSING_STOCHASTIC;
   _NIB.nwkUniqueAddr = FALSE;
@@ -432,28 +391,21 @@ void NIB_init()
   _NIB.nwkUniqueAddr = TRUE;
 #endif
 
-  _NIB.nwkLinkStatusPeriod = NWK_LINK_STATUS_PERIOD;
+  _NIB.nwkLinkStatusPeriod = NWK_LINK_STATUS_PERIOD; 
   _NIB.nwkRouterAgeLimit = NWK_ROUTE_AGE_LIMIT;
-
+ 
   //MTO and source routing
   _NIB.nwkConcentratorDiscoveryTime = zgConcentratorDiscoveryTime;
   _NIB.nwkIsConcentrator = zgConcentratorEnable;
   _NIB.nwkConcentratorRadius = zgConcentratorRadius;
+  _NIB.nwkSrcRtgExpiryTime = SRC_RTG_EXPIRY_TIME;
 
 #if defined ( ZIGBEE_MULTICAST )
   _NIB.nwkUseMultiCast = TRUE;
 #else
   _NIB.nwkUseMultiCast = FALSE;
-#endif
-
-#if defined ( NV_RESTORE )
-  if ( osal_nv_read( ZCD_NV_NWKMGR_ADDR, 0, sizeof( _NIB.nwkManagerAddr ),
-                     &_NIB.nwkManagerAddr ) != SUCCESS )
-#endif
-  {
-    _NIB.nwkManagerAddr = 0x0000;
-  }
-
+#endif  
+  _NIB.nwkManagerAddr = 0x0000;
   _NIB.nwkUpdateId = 0;
   _NIB.nwkTotalTransmissions = 0;
 
@@ -517,7 +469,7 @@ void nwk_Status( uint16 statusCode, uint16 statusValue )
         HalLcdWriteValue( (uint32)(statusValue), 16, HAL_LCD_LINE_2 );
       }
       break;
-
+      
     case NWK_STATUS_ED_ADDR:
       if ( ZSTACK_END_DEVICE_BUILD )
       {
@@ -540,40 +492,6 @@ void nwk_Status( uint16 statusCode, uint16 statusValue )
 
     case NWK_ERROR_ENERGY_SCAN_FAILED:
       HalLcdWriteScreen( (char*)EnergyLevelStr, (char*)ScanFailedStr );
-      break;
-  }
-#endif
-}
-
-/*********************************************************************
- * @fn       nwk_UpdateStatistics()
- *
- * @brief   Update network layer statistic counters
- *
- * @param   statisticCode
- *
- * @return  none
- */
-void nwk_UpdateStatistics( uint8 statisticCode )
-{
-#if defined ( PACKET_FILTER_STATS )
-  switch ( statisticCode )
-  {
-    case STAT_NWK_INVALID_PACKET:
-      nwkInvalidPackets++;
-      break;
-
-    case STAT_NWK_SECURITY_FAILURE:
-      nwkInvalidPackets++;
-      nwkSecurityFailures++;
-      break;
-
-    case STAT_APS_INVALID_PACKET:
-      apsInvalidPackets++;
-      break;
-
-    case STAT_APS_SECURITY_FAILURE:
-      apsSecurityFailures++;
       break;
   }
 #endif

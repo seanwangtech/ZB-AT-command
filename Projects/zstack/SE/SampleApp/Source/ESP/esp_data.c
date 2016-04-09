@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       esp_data.c
-  Revised:        $Date: 2011-12-20 16:16:03 -0800 (Tue, 20 Dec 2011) $
-  Revision:       $Revision: 28725 $
+  Revised:        $Date: 2009-12-16 11:20:11 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21338 $
 
   Description:    File that contains attribute and simple descriptor
                   definitions for the ESP
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -87,8 +87,6 @@ uint8 espDeviceEnabled = DEVICE_ENABLED;
 uint16 espIdentifyTime = 0;
 uint32 espTime = 0;
 uint8 espTimeStatus = 0x01;
-uint32 espLastSetTime;
-uint32 espValidUntilTime;
 
 // Simple Metering Cluster - Reading Information Set Attributes
 uint8 espCurrentSummationDelivered[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
@@ -113,8 +111,6 @@ int8 espPowerFactor = 0x01;
 UTCTime espSnapshotTime = 0x00;
 UTCTime espMaxDemandDeliverdTime = 0x00;
 UTCTime espMaxDemandReceivedTime = 0x00;
-uint8 espDefaultUpdatePeriod = 0x1E;
-uint8 espFastPollUpdatePeriod = 0x05;
 
 // Simple Metering Cluster - Meter Status Attributes
 uint8 espStatus = 0x12;
@@ -128,15 +124,13 @@ uint8 espDemandFormatting = 0x01;
 uint8 espHistoricalConsumptionFormatting = 0x01;
 
 // Simple Metering Cluster - esp Historical Consumption Attributes
-int24 espInstanteneousDemand = 0x01;
+uint24 espInstanteneousDemand = 0x01;
 uint24 espCurrentdayConsumptionDelivered = 0x01;
 uint24 espCurrentdayConsumptionReceived = 0x01;
 uint24 espPreviousdayConsumptionDelivered = 0x01;
 uint24 espPreviousdayConsumtpionReceived = 0x01;
-UTCTime espCurPartProfileIntStartTimeDelivered = 0x1000;
-UTCTime espCurPartProfileIntStartTimeReceived  = 0x2000;
-uint24 espCurPartProfileIntValueDelivered = 0x0001;
-uint24 espCurPartProfileIntValueReceived  = 0x0002;
+UTCTime espCurrentPartialProfileIntervalStartTime = 0x1000;
+uint24 espCurrentPartialProfileIntervalValue = 0x0001;
 uint8 espMaxNumberOfPeriodsDelivered = 0x01;
 
 // Demand Response and Load Control
@@ -148,44 +142,6 @@ uint8 espSignature[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 
 // Key Establishment
 uint16 espKeyEstablishmentSuite = CERTIFICATE_BASED_KEY_ESTABLISHMENT;
-
-// Prepayment Cluster - Prepayment Information Set Attributes
-uint8 espPaymentControl = 0x00;
-int32 espCreditRemaining;
-int32 espEmerCreditRemaining;
-uint8 espCreditStatus = 0x00;
-
-// Prepayment Cluster - Top-up Attribute Set Attributes
-UTCTime espTopUpDateTime1;
-uint8 espTopUpAmount1[6] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
-uint8 espOrigDev1;
-UTCTime espTopUpDateTime2;
-uint8 espTopUpAmount2[6] = { 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 };
-uint8 espOrigDev2;
-UTCTime espTopUpDateTime3;
-uint8 espTopUpAmount3[6] = { 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 };
-uint8 espOrigDev3;
-UTCTime espTopUpDateTime4;
-uint8 espTopUpAmount4[6] = { 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
-uint8 espOrigDev4;
-UTCTime espTopUpDateTime5;
-uint8 espTopUpAmount5[6] = { 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA };
-uint8 espOrigDev5;
-
-// Prepayment Cluster - Debt Attribute Set Attributes
-uint8 espFuelDebtRem[6] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
-uint32 espFuelDebtRecRate;
-uint8 espFuelDebtRecPeriod;
-uint8 espNonFuelDebtRem[6] = { 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 };
-uint32 espNonFuelDebtRecRate;
-uint8 espNonFuelDebtRecPeriod;
-
-// Prepayment Cluster - Supply Control Set Attributes
-uint32 espPropChangeProviderId;
-UTCTime espPropChangeImplemTime;
-uint8 espPropChangeSupplyStatus;
-uint16 espDelayedSuppIntValueRem;
-uint8 espDelayedSuppIntValueType;
 
 /*********************************************************************
  * ATTRIBUTE DEFINITIONS - Uses Cluster IDs
@@ -288,42 +244,29 @@ CONST zclAttrRec_t espAttrs[ESP_MAX_ATTRIBUTES] =
   },
 
   // *** Time Cluster Attribute ***
+  // In SE domain, only master clock will be used. Therefore
+  // mark the access control to only readable.
   {
     ZCL_CLUSTER_ID_GEN_TIME,
     { // Attribute record
       ATTRID_TIME_TIME,
       ZCL_DATATYPE_UTC,
-      (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
+      ACCESS_CONTROL_READ,
       (void *)&espTime
     }
   },
+  // In SE domain, only master clock will be used. Therefore
+  // mark the access control to only readable.
   {
     ZCL_CLUSTER_ID_GEN_TIME,
     { // Attribute record
       ATTRID_TIME_STATUS,
       ZCL_DATATYPE_BITMAP8,
-      (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
+      ACCESS_CONTROL_READ,
       (void *)&espTimeStatus
     }
   },
-  {
-    ZCL_CLUSTER_ID_GEN_TIME,
-    { // Attribute record
-      ATTRID_TIME_LAST_SET_TIME,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espLastSetTime
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_GEN_TIME,
-    { // Attribute record
-      ATTRID_TIME_VALID_UNTIL_TIME,
-      ZCL_DATATYPE_UTC,
-      (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
-      (void *)&espValidUntilTime
-    }
-  },
+
 
   // SE Attributes
   {
@@ -506,7 +449,7 @@ CONST zclAttrRec_t espAttrs[ESP_MAX_ATTRIBUTES] =
       (void *)&espSnapshotTime               // Pointer to attribute variable
     }
   },
-  {
+    {
     ZCL_CLUSTER_ID_SE_SIMPLE_METERING,               // Cluster IDs - defined in the profile (ie. se.h)
     {  // Attribute record
       ATTRID_SE_CURRENT_MAX_DEMAND_DELIVERD_TIME,    // Attribute ID - Found in Cluster Library header (ie. zcl_general.h)
@@ -515,31 +458,13 @@ CONST zclAttrRec_t espAttrs[ESP_MAX_ATTRIBUTES] =
       (void *)&espMaxDemandDeliverdTime              // Pointer to attribute variable
     }
   },
-  {
+    {
     ZCL_CLUSTER_ID_SE_SIMPLE_METERING,               // Cluster IDs - defined in the profile (ie. se.h)
     {  // Attribute record
       ATTRID_SE_CURRENT_MAX_DEMAND_RECEIVED_TIME,    // Attribute ID - Found in Cluster Library header (ie. zcl_general.h)
       ZCL_DATATYPE_UTC,                              // Data Type - found in zcl.h
       ACCESS_CONTROL_READ,                           // Variable access control - found in zcl.h
       (void *)&espMaxDemandReceivedTime              // Pointer to attribute variable
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,               // Cluster IDs - defined in the profile (ie. se.h)
-    {  // Attribute record
-      ATTRID_SE_DEFAULT_UPDATE_PERIOD,               // Attribute ID - Found in Cluster Library header (ie. zcl_general.h)
-      ZCL_DATATYPE_UINT8,                            // Data Type - found in zcl.h
-      ACCESS_CONTROL_READ,                           // Variable access control - found in zcl.h
-      (void *)&espDefaultUpdatePeriod                // Pointer to attribute variable
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,               // Cluster IDs - defined in the profile (ie. se.h)
-    {  // Attribute record
-      ATTRID_SE_FAST_POLL_UPDATE_PERIOD,             // Attribute ID - Found in Cluster Library header (ie. zcl_general.h)
-      ZCL_DATATYPE_UINT8,                            // Data Type - found in zcl.h
-      ACCESS_CONTROL_READ,                           // Variable access control - found in zcl.h
-      (void *)&espFastPollUpdatePeriod               // Pointer to attribute variable
     }
   },
   {
@@ -610,7 +535,7 @@ CONST zclAttrRec_t espAttrs[ESP_MAX_ATTRIBUTES] =
     ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
     {  // Attribute record
       ATTRID_SE_INSTANTANEOUS_DEMAND,
-      ZCL_DATATYPE_INT24,
+      ZCL_DATATYPE_UINT24,
       ACCESS_CONTROL_READ,
       (void *)&espInstanteneousDemand
     }
@@ -654,37 +579,20 @@ CONST zclAttrRec_t espAttrs[ESP_MAX_ATTRIBUTES] =
   {
     ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
     {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_START_TIME_DELIVERED,
+      ATTRID_SE_CURRENT_PARTIAL_PROFILE_INTERVAL_START_TIME,
       ZCL_DATATYPE_UTC,
       ACCESS_CONTROL_READ,
-      (void *)&espCurPartProfileIntStartTimeDelivered
+      (void *)&espCurrentPartialProfileIntervalStartTime
     }
   },
+
   {
     ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
     {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_START_TIME_RECEIVED,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espCurPartProfileIntStartTimeReceived
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-    {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_VALUE_DELIVERED,
+      ATTRID_SE_CURRENT_PARTIAL_PROFILE_INTERVAL_VALUE,
       ZCL_DATATYPE_UINT24,
       ACCESS_CONTROL_READ,
-      (void *)&espCurPartProfileIntValueDelivered
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-    {  // Attribute record
-      ATTRID_SE_CUR_PART_PROFILE_INT_VALUE_RECEIVED,
-      ZCL_DATATYPE_UINT24,
-      ACCESS_CONTROL_READ,
-      (void *)&espCurPartProfileIntValueReceived
+      (void *)&espCurrentPartialProfileIntervalValue
     }
   },
 
@@ -733,278 +641,6 @@ CONST zclAttrRec_t espAttrs[ESP_MAX_ATTRIBUTES] =
       (void *)&espKeyEstablishmentSuite
     }
   },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_PAYMENT_CONTROL,
-      ZCL_DATATYPE_BITMAP8,
-      ACCESS_CONTROL_READ,
-      (void *)&espPaymentControl
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_CREDIT_REMAINING,
-      ZCL_DATATYPE_INT32,
-      ACCESS_CONTROL_READ,
-      (void *)&espCreditRemaining
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_EMERGENCY_CREDIT_REMAINING,
-      ZCL_DATATYPE_INT32,
-      ACCESS_CONTROL_READ,
-      (void *)&espEmerCreditRemaining
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_CREDIT_STATUS,
-      ZCL_DATATYPE_BITMAP8,
-      ACCESS_CONTROL_READ,
-      (void *)&espCreditStatus
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_DATE_TIME_1,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpDateTime1
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_AMOUNT_1,
-      ZCL_DATATYPE_UINT48,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpAmount1
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_ORIGINATING_DEVICE_1,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espOrigDev1
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_DATE_TIME_2,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpDateTime2
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_AMOUNT_2,
-      ZCL_DATATYPE_UINT48,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpAmount2
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_ORIGINATING_DEVICE_2,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espOrigDev2
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_DATE_TIME_3,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpDateTime3
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_AMOUNT_3,
-      ZCL_DATATYPE_UINT48,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpAmount3
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_ORIGINATING_DEVICE_3,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espOrigDev3
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_DATE_TIME_4,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpDateTime4
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_AMOUNT_4,
-      ZCL_DATATYPE_UINT48,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpAmount4
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_ORIGINATING_DEVICE_4,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espOrigDev4
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_DATE_TIME_5,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpDateTime5
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_TOPUP_AMOUNT_5,
-      ZCL_DATATYPE_UINT48,
-      ACCESS_CONTROL_READ,
-      (void *)&espTopUpAmount5
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_ORIGINATING_DEVICE_5,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espOrigDev5
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_FUEL_DEBT_REMAINING,
-      ZCL_DATATYPE_UINT48,
-      ACCESS_CONTROL_READ,
-      (void *)&espFuelDebtRem
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_FUEL_DEBT_RECOVERY_RATE,
-      ZCL_DATATYPE_UINT32,
-      ACCESS_CONTROL_READ,
-      (void *)&espFuelDebtRecRate
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_FUEL_DEBT_RECOVERY_PERIOD,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espFuelDebtRecPeriod
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_NON_FUEL_DEBT_REMAINING,
-      ZCL_DATATYPE_UINT48,
-      ACCESS_CONTROL_READ,
-      (void *)&espNonFuelDebtRem
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_NON_FUEL_DEBT_RECOVERY_RATE,
-      ZCL_DATATYPE_UINT32,
-      ACCESS_CONTROL_READ,
-      (void *)&espNonFuelDebtRecRate
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_NON_FUEL_DEBT_RECOVERY_PERIOD,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espNonFuelDebtRecPeriod
-    }
-  },
-#ifndef SE_UK_EXT   // SE 1.1
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_PROPOSED_CHANGE_PROVIDER_ID,
-      ZCL_DATATYPE_UINT32,
-      ACCESS_CONTROL_READ,
-      (void *)&espPropChangeProviderId
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_PROPOSED_CHANGE_IMPLEMENTATION_TIME,
-      ZCL_DATATYPE_UTC,
-      ACCESS_CONTROL_READ,
-      (void *)&espPropChangeImplemTime
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_PROPOSED_CHANGE_SUPPLY_STATUS,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ,
-      (void *)&espPropChangeSupplyStatus
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_DELAYED_SUPPLY_INTERRUPT_VALUE_REMAINING,
-      ZCL_DATATYPE_UINT16,
-      ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE,
-      (void *)&espDelayedSuppIntValueRem
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
-    {  // Attribute record
-      ATTRID_SE_DELAYED_SUPPLY_INTERRUPT_VALUE_TYPE,
-      ZCL_DATATYPE_ENUM8,
-      ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE,
-      (void *)&espDelayedSuppIntValueType
-    }
-  }
-#endif  // SE_UK_EXT
 };
 
 /*********************************************************************
@@ -1040,7 +676,7 @@ zclOptionRec_t espOptions[ESP_MAX_OPTIONS] =
     ( AF_EN_SECURITY ),
   },
   {
-    ZCL_CLUSTER_ID_SE_PREPAYMENT,
+    ZCL_CLUSTER_ID_SE_PRE_PAYMENT,
     ( AF_EN_SECURITY ),
   },
 };
@@ -1050,7 +686,7 @@ zclOptionRec_t espOptions[ESP_MAX_OPTIONS] =
  */
 // This is the Cluster ID List and should be filled with Application
 // specific cluster IDs.
-#define ESP_MAX_INCLUSTERS       8
+#define ESP_MAX_INCLUSTERS       7
 const cId_t espInClusterList[ESP_MAX_INCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC,
@@ -1059,11 +695,10 @@ const cId_t espInClusterList[ESP_MAX_INCLUSTERS] =
   ZCL_CLUSTER_ID_SE_PRICING,
   ZCL_CLUSTER_ID_SE_LOAD_CONTROL,
   ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-  ZCL_CLUSTER_ID_SE_MESSAGE,
-  ZCL_CLUSTER_ID_SE_PREPAYMENT
+  ZCL_CLUSTER_ID_SE_MESSAGE
 };
 
-#define ESP_MAX_OUTCLUSTERS       8
+#define ESP_MAX_OUTCLUSTERS       7
 const cId_t espOutClusterList[ESP_MAX_OUTCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC,
@@ -1072,8 +707,7 @@ const cId_t espOutClusterList[ESP_MAX_OUTCLUSTERS] =
   ZCL_CLUSTER_ID_SE_PRICING,
   ZCL_CLUSTER_ID_SE_LOAD_CONTROL,
   ZCL_CLUSTER_ID_SE_SIMPLE_METERING,
-  ZCL_CLUSTER_ID_SE_MESSAGE,
-  ZCL_CLUSTER_ID_SE_PREPAYMENT
+  ZCL_CLUSTER_ID_SE_MESSAGE
 };
 
 SimpleDescriptionFormat_t espSimpleDesc =

@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       loadcontrol.h
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2009-12-16 11:22:56 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21340 $
 
   Description:    Header file for the Load Control Device functionality
 

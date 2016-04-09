@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       MT_AF.c
-  Revised:        $Date: 2011-05-27 16:00:27 -0700 (Fri, 27 May 2011) $
-  Revision:       $Revision: 26145 $
+  Revised:        $Date: 2010-01-08 16:52:37 -0800 (Fri, 08 Jan 2010) $
+  Revision:       $Revision: 21471 $
 
 
   Description:    MonitorTest functions for the AF layer.
 
 
-  Copyright 2007-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -39,10 +39,9 @@
 
 **************************************************************************************************/
 
-/* ------------------------------------------------------------------------------------------------
- *                                          Includes
- * ------------------------------------------------------------------------------------------------
- */
+/***************************************************************************************************
+ * INCLUDES
+ ***************************************************************************************************/
 #include "ZComDef.h"
 #include "OSAL.h"
 #include "MT.h"
@@ -56,67 +55,17 @@
 #include "stub_aps.h"
 #endif
 
-/* ------------------------------------------------------------------------------------------------
- *                                          Constants
- * ------------------------------------------------------------------------------------------------
- */
-
-#if !defined MT_AF_EXEC_CNT
-#define MT_AF_EXEC_CNT  15
-#endif
-
-#if !defined MT_AF_EXEC_DLY
-#define MT_AF_EXEC_DLY  1000
-#endif
-
-/* ------------------------------------------------------------------------------------------------
- *                                           Typedefs
- * ------------------------------------------------------------------------------------------------
- */
-
-typedef struct
-{
-  uint8 *data;
-  afAddrType_t dstAddr;
-  endPointDesc_t *epDesc;
-  uint16 cId;
-  uint16 dataLen;
-  uint8 transId;
-  uint8 txOpts;
-  uint8 radius;
-  uint8 tick;
-} mtAfDataReq_t;
-
-typedef struct _mtAfInMsgList_t
-{
-  struct _mtAfInMsgList_t *next;
-  uint8 *data;
-  uint32 timestamp;         // Receipt timestamp from MAC.
-  uint8 tick;
-} mtAfInMsgList_t;
-
-/* ------------------------------------------------------------------------------------------------
- *                                        Local Variables
- * ------------------------------------------------------------------------------------------------
- */
-
-mtAfInMsgList_t *pMtAfInMsgList = NULL;
-mtAfDataReq_t *pMtAfDataReq = NULL;
-
-/* ------------------------------------------------------------------------------------------------
- *                                        Global Variables
- * ------------------------------------------------------------------------------------------------
- */
+/***************************************************************************************************
+ * GLOBAL VARIABLES
+ ***************************************************************************************************/
 
 #if defined ( MT_AF_CB_FUNC )
 uint16 _afCallbackSub;
 #endif
 
-/* ------------------------------------------------------------------------------------------------
- *                                        Local Functions
- * ------------------------------------------------------------------------------------------------
- */
-
+/***************************************************************************************************
+ * LOCAL FUNCTIONS
+ ***************************************************************************************************/
 void MT_AfRegister(uint8 *pBuf);
 void MT_AfDataRequest(uint8 *pBuf);
 
@@ -128,74 +77,8 @@ void MT_AfDataRequestSrcRtg(uint8 *pBuf);
 static void MT_AfInterPanCtl(uint8 *pBuf);
 #endif
 
-static void MT_AfDataRetrieve(uint8 *pBuf);
-static void MT_AfDataStore(uint8 *pBuf);
-static void MT_AfAPSF_ConfigSet(uint8 *pBuf);
-
-/**************************************************************************************************
- * @fn          MT_AfExec
- *
- * @brief       This function is invoked by an MT timer event.
- *
- * input parameters
- *
- * None.
- *
- * output parameters
- *
- * None.
- *
- * @return      None.
- **************************************************************************************************
- */
-void MT_AfExec(void)
-{
-  mtAfInMsgList_t *pPrev, *pItem = pMtAfInMsgList;
-
-  while (pItem != NULL)
-  {
-    if (--(pItem->tick) == 0)
-    {
-      if (pMtAfInMsgList == pItem)
-      {
-        pMtAfInMsgList = pItem->next;
-        (void)osal_mem_free(pItem);
-        pItem = pMtAfInMsgList;
-      }
-      else
-      {
-        pPrev->next = pItem->next;
-        (void)osal_mem_free(pItem);
-        pItem = pPrev->next;
-      }
-    }
-    else
-    {
-      pPrev = pItem;
-      pItem = pItem->next;
-    }
-  }
-
-  if (pMtAfDataReq != NULL)
-  {
-    if (--(pMtAfDataReq->tick) == 0)
-    {
-      (void)osal_mem_free(pMtAfDataReq);
-      pMtAfDataReq = NULL;
-    }
-  }
-
-  if ((pMtAfInMsgList != NULL) || (pMtAfDataReq != NULL))
-  {
-    if (ZSuccess != osal_start_timerEx(MT_TaskID, MT_AF_EXEC_EVT, MT_AF_EXEC_DLY))
-    {
-      osal_set_event(MT_TaskID, MT_AF_EXEC_EVT);
-    }
-  }
-}
-
 /***************************************************************************************************
- * @fn      MT_AfCommandProcessing
+ * @fn      MT_afCommandProcessing
  *
  * @brief   Process all the AF commands that are issued by test tool
  *
@@ -217,31 +100,19 @@ uint8 MT_AfCommandProcessing(uint8 *pBuf)
     case MT_AF_DATA_REQUEST_EXT:
       MT_AfDataRequest(pBuf);
       break;
-
+      
 #if defined ( ZIGBEE_SOURCE_ROUTING )
     case MT_AF_DATA_REQUEST_SRCRTG:
       MT_AfDataRequestSrcRtg(pBuf);
       break;
 #endif
-
+      
 #if defined INTER_PAN
     case MT_AF_INTER_PAN_CTL:
       MT_AfInterPanCtl(pBuf);
-      break;
+      break; 
 #endif
-
-    case MT_AF_DATA_RETRIEVE:
-      MT_AfDataRetrieve(pBuf);
-      break;
-
-    case MT_AF_DATA_STORE:
-      MT_AfDataStore(pBuf);
-      break;
-
-    case MT_AF_APSF_CONFIG_SET:
-      MT_AfAPSF_ConfigSet(pBuf);
-      break;
-
+      
     default:
       status = MT_RPC_ERR_COMMAND_ID;
       break;
@@ -300,16 +171,13 @@ void MT_AfRegister(uint8 *pBuf)
  ***************************************************************************************************/
 void MT_AfDataRequest(uint8 *pBuf)
 {
-  #define MT_AF_REQ_MSG_LEN  10
-  #define MT_AF_REQ_MSG_EXT  10
-
+  uint8 cmd0, cmd1, tempLen = 0;
+  uint8 retValue = ZFailure;
   endPointDesc_t *epDesc;
+  byte transId;
   afAddrType_t dstAddr;
   cId_t cId;
-  uint8 transId, txOpts, radius;
-  uint8 cmd0, cmd1;
-  uint8 retValue = ZFailure;
-  uint16 dataLen, tempLen;
+  byte txOpts, radius, srcEP;
 
   /* Parse header */
   cmd0 = pBuf[MT_RPC_POS_CMD0];
@@ -347,7 +215,8 @@ void MT_AfDataRequest(uint8 *pBuf)
   }
 
   /* Source endpoint */
-  epDesc = afFindEndPointDesc(*pBuf++);
+  srcEP = *pBuf++;
+  epDesc = afFindEndPointDesc( srcEP );
 
   /* ClusterId */
   cId = BUILD_UINT16(pBuf[0], pBuf[1]);
@@ -363,56 +232,15 @@ void MT_AfDataRequest(uint8 *pBuf)
   radius = *pBuf++;
 
   /* Length */
-  if (cmd1 == MT_AF_DATA_REQUEST_EXT)
-  {
-    dataLen = BUILD_UINT16(pBuf[0], pBuf[1]);
-    tempLen = dataLen + MT_AF_REQ_MSG_LEN + MT_AF_REQ_MSG_EXT;
-    pBuf += 2;
-  }
-  else
-  {
-    dataLen = *pBuf++;
-    tempLen = dataLen + MT_AF_REQ_MSG_LEN;
-  }
+  tempLen = *pBuf++;
 
   if ( epDesc == NULL )
   {
     retValue = afStatus_INVALID_PARAMETER;
   }
-  else if (tempLen > (uint16)MT_RPC_DATA_MAX)
-  {
-    if (pMtAfDataReq != NULL)
-    {
-      retValue = afStatus_INVALID_PARAMETER;
-    }
-    else if ((pMtAfDataReq = osal_mem_alloc(sizeof(mtAfDataReq_t) + dataLen)) == NULL)
-    {
-      retValue = afStatus_MEM_FAIL;
-    }
-    else
-    {
-      retValue = afStatus_SUCCESS;
-
-      pMtAfDataReq->data = (uint8 *)(pMtAfDataReq+1);
-      (void)osal_memcpy(&(pMtAfDataReq->dstAddr), &dstAddr, sizeof(afAddrType_t));
-      pMtAfDataReq->epDesc = epDesc;
-      pMtAfDataReq->cId = cId;
-      pMtAfDataReq->dataLen = dataLen;
-      pMtAfDataReq->transId = transId;
-      pMtAfDataReq->txOpts = txOpts;
-      pMtAfDataReq->radius = radius;
-
-      // Setup to time-out the huge outgoing item if host does not MT_AF_DATA_STORE it.
-      pMtAfDataReq->tick = MT_AF_EXEC_CNT;
-      if (ZSuccess != osal_start_timerEx(MT_TaskID, MT_AF_EXEC_EVT, MT_AF_EXEC_DLY))
-      {
-        (void)osal_set_event(MT_TaskID, MT_AF_EXEC_EVT);
-      }
-    }
-  }
   else
   {
-    retValue = AF_DataRequest(&dstAddr, epDesc, cId, dataLen, pBuf, &transId, txOpts, radius);
+    retValue = AF_DataRequest( &dstAddr, epDesc, cId, tempLen, pBuf, &transId, txOpts, radius );
   }
 
   if (MT_RPC_CMD_SREQ == (cmd0 & MT_RPC_CMD_TYPE_MASK))
@@ -420,6 +248,7 @@ void MT_AfDataRequest(uint8 *pBuf)
     MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP|(uint8)MT_RPC_SYS_AF), cmd1, 1, &retValue);
   }
 }
+
 
 #if defined ( ZIGBEE_SOURCE_ROUTING )
 
@@ -450,7 +279,7 @@ void MT_AfDataRequestSrcRtg(uint8 *pBuf)
 
   /* Destination address */
   /* Initialize the panID field to zero to avoid inter-pan */
-  osal_memset( &dstAddr, 0, sizeof(afAddrType_t) );
+  osal_memset( &dstAddr, 0, sizeof(afAddrType_t) ); 
   dstAddr.addrMode = afAddr16Bit;
   dstAddr.addr.shortAddr = BUILD_UINT16(pBuf[0], pBuf[1]);
   pBuf += 2;
@@ -474,10 +303,10 @@ void MT_AfDataRequestSrcRtg(uint8 *pBuf)
 
   /* Radius */
   radius = *pBuf++;
-
+  
   /* Source route relay count */
   relayCnt = *pBuf++;
-
+  
   /* Convert the source route relay list */
   if( (pRelayList = osal_mem_alloc( relayCnt * sizeof( uint16 ))) != NULL )
   {
@@ -486,7 +315,7 @@ void MT_AfDataRequestSrcRtg(uint8 *pBuf)
       pRelayList[i]  = BUILD_UINT16( pBuf[0], pBuf[1] );
       pBuf += 2;
     }
-
+  
     /* Data payload Length */
     dataLen = *pBuf++;
 
@@ -496,10 +325,10 @@ void MT_AfDataRequestSrcRtg(uint8 *pBuf)
     }
     else
     {
-      retValue = AF_DataRequestSrcRtg( &dstAddr, epDesc, cId, dataLen, pBuf,
+      retValue = AF_DataRequestSrcRtg( &dstAddr, epDesc, cId, dataLen, pBuf, 
                                      &transId, txOpts, radius, relayCnt, pRelayList );
     }
-
+    
     /* Free the memory allocated */
     osal_mem_free( pRelayList );
   }
@@ -507,7 +336,7 @@ void MT_AfDataRequestSrcRtg(uint8 *pBuf)
   {
     retValue = afStatus_MEM_FAIL;
   }
-
+    
 
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_AF), cmdId, 1, &retValue);
@@ -529,7 +358,7 @@ static void MT_AfInterPanCtl(uint8 *pBuf)
   uint8 cmd, rtrn;
   uint16 panId;
   endPointDesc_t *pEP;
-
+  
   cmd = pBuf[MT_RPC_POS_CMD1];
   pBuf += MT_RPC_FRAME_HDR_SZ;
 
@@ -601,14 +430,10 @@ void MT_AfDataConfirm(afDataConfirm_t *pMsg)
  ***************************************************************************************************/
 void MT_AfIncomingMsg(afIncomingMSGPacket_t *pMsg)
 {
-  #define MT_AF_INC_MSG_LEN  17
-  #define MT_AF_INC_MSG_EXT  10
-
-  uint16 dataLen = pMsg->cmd.DataLength;  // Length of the data section in the response packet.
-  uint16 respLen = MT_AF_INC_MSG_LEN + dataLen;
+  uint8 dataLen = pMsg->cmd.DataLength;  /* Length of the data section in the response packet */
+  uint8 respLen = 17 + dataLen;          /* Length of the whole response packet */
   uint8 cmd = MT_AF_INCOMING_MSG;
-  uint8 *pRsp, *pTmp;
-  mtAfInMsgList_t *pItem = NULL;
+  uint8 *pRsp, *tempPtr;
 
 #if defined INTER_PAN
   if (StubAPS_InterPan(pMsg->srcAddr.panId, pMsg->srcAddr.endPoint))
@@ -617,300 +442,102 @@ void MT_AfIncomingMsg(afIncomingMSGPacket_t *pMsg)
   }
   else
 #endif
-  if ((pMsg->srcAddr.addrMode == afAddr64Bit) ||
-      (respLen > (uint16)(MT_RPC_DATA_MAX - MT_AF_INC_MSG_EXT)))
+  if (pMsg->srcAddr.addrMode == afAddr64Bit)
   {
     cmd = MT_AF_INCOMING_MSG_EXT;
   }
 
   if (cmd == MT_AF_INCOMING_MSG_EXT)
   {
-    respLen += MT_AF_INC_MSG_EXT;
-  }
-
-  if (respLen > (uint16)MT_RPC_DATA_MAX)
-  {
-    if ((pItem = (mtAfInMsgList_t *)osal_mem_alloc(sizeof(mtAfInMsgList_t) + dataLen)) == NULL)
-    {
-      return;  // If cannot hold a huge message, cannot give indication at all.
-    }
-
-    pItem->data = (uint8 *)(pItem+1);
-    respLen -= dataLen;  // Zero data bytes are sent with an over-sized incoming indication.
+    respLen += 9;
   }
 
   // Attempt to allocate memory for the response packet.
   if ((pRsp = osal_mem_alloc(respLen)) == NULL)
   {
-    if (pItem != NULL)
-    {
-      (void)osal_mem_free(pItem);
-    }
     return;
   }
-  pTmp = pRsp;
+  tempPtr = pRsp;
+
+  /* Fill in the data */
 
   /* Group ID */
-  *pTmp++ = LO_UINT16(pMsg->groupId);
-  *pTmp++ = HI_UINT16(pMsg->groupId);
+  *tempPtr++ = LO_UINT16(pMsg->groupId);
+  *tempPtr++ = HI_UINT16(pMsg->groupId);
 
   /* Cluster ID */
-  *pTmp++ = LO_UINT16(pMsg->clusterId);
-  *pTmp++ = HI_UINT16(pMsg->clusterId);
+  *tempPtr++ = LO_UINT16(pMsg->clusterId);
+  *tempPtr++ = HI_UINT16(pMsg->clusterId);
 
   if (cmd == MT_AF_INCOMING_MSG_EXT)
   {
-    *pTmp++ = pMsg->srcAddr.addrMode;
+    *tempPtr++ = pMsg->srcAddr.addrMode;
 
     if (pMsg->srcAddr.addrMode == afAddr64Bit)
     {
-      (void)osal_memcpy(pTmp, pMsg->srcAddr.addr.extAddr, Z_EXTADDR_LEN);
+      (void)osal_memcpy(tempPtr, pMsg->srcAddr.addr.extAddr, Z_EXTADDR_LEN);
     }
     else
     {
-      pTmp[0] = LO_UINT16(pMsg->srcAddr.addr.shortAddr);
-      pTmp[1] = HI_UINT16(pMsg->srcAddr.addr.shortAddr);
+      tempPtr[0] = LO_UINT16(pMsg->srcAddr.addr.shortAddr);
+      tempPtr[1] = HI_UINT16(pMsg->srcAddr.addr.shortAddr);
     }
-    pTmp += Z_EXTADDR_LEN;
+    tempPtr += Z_EXTADDR_LEN;
 
-    *pTmp++ = pMsg->srcAddr.endPoint;
+    *tempPtr++ = pMsg->srcAddr.endPoint;
 #if defined INTER_PAN
-    *pTmp++ = LO_UINT16(pMsg->srcAddr.panId);
-    *pTmp++ = HI_UINT16(pMsg->srcAddr.panId);
+    *tempPtr++ = LO_UINT16(pMsg->srcAddr.panId);
+    *tempPtr++ = HI_UINT16(pMsg->srcAddr.panId);
 #else
-    *pTmp++ = 0;
-    *pTmp++ = 0;
+    *tempPtr++ = 0;
+    *tempPtr++ = 0;
 #endif
   }
   else
   {
     /* Source Address */
-    *pTmp++ = LO_UINT16(pMsg->srcAddr.addr.shortAddr);
-    *pTmp++ = HI_UINT16(pMsg->srcAddr.addr.shortAddr);
+    *tempPtr++ = LO_UINT16(pMsg->srcAddr.addr.shortAddr);
+    *tempPtr++ = HI_UINT16(pMsg->srcAddr.addr.shortAddr);
 
     /* Source EP */
-    *pTmp++ = pMsg->srcAddr.endPoint;
+    *tempPtr++ = pMsg->srcAddr.endPoint;
   }
 
   /* Destination EP */
-  *pTmp++ = pMsg->endPoint;
+  *tempPtr++ = pMsg->endPoint;
 
   /* WasBroadCast */
-  *pTmp++ = pMsg->wasBroadcast;
+  *tempPtr++ = pMsg->wasBroadcast;
 
   /* LinkQuality */
-  *pTmp++ = pMsg->LinkQuality;
+  *tempPtr++ = pMsg->LinkQuality;
 
   /* SecurityUse */
-  *pTmp++ = pMsg->SecurityUse;
+  *tempPtr++ = pMsg->SecurityUse;
 
   /* Timestamp */
-  *pTmp++ = BREAK_UINT32(pMsg->timestamp, 0);
-  *pTmp++ = BREAK_UINT32(pMsg->timestamp, 1);
-  *pTmp++ = BREAK_UINT32(pMsg->timestamp, 2);
-  *pTmp++ = BREAK_UINT32(pMsg->timestamp, 3);
+  *tempPtr++ = BREAK_UINT32(pMsg->timestamp, 0);
+  *tempPtr++ = BREAK_UINT32(pMsg->timestamp, 1);
+  *tempPtr++ = BREAK_UINT32(pMsg->timestamp, 2);
+  *tempPtr++ = BREAK_UINT32(pMsg->timestamp, 3);
 
+  /* Transmit Sequence Number */
+  *tempPtr++ = pMsg->cmd.TransSeqNumber;
 
   /* Data Length */
-  if (cmd == MT_AF_INCOMING_MSG_EXT)
-  {
-    /* Z-Tool apparently takes the last Byte before the data buffer as the dynamic length and
-     * ignores the bigger UInt16 length of an EXT incoming message. But no data bytes will be sent
-     * with a huge message, so it's necessary to work-around and fake-out Z-Tool with a zero here.
-     */
-    *pTmp++ = 0;  // TODO - workaround Z-Tool shortcoming; should be: = pMsg->cmd.TransSeqNumber;
-    *pTmp++ = LO_UINT16(dataLen);
-    *pTmp++ = HI_UINT16(dataLen);
-  }
-  else
-  {
-    *pTmp++ = pMsg->cmd.TransSeqNumber;
-    *pTmp++ = dataLen;
-  }
+  *tempPtr++ = dataLen;
 
   /* Data */
-  if (pItem != NULL)
+  if (dataLen)
   {
-    // Enqueue the new huge incoming item.
-    pItem->next = pMtAfInMsgList;
-    pMtAfInMsgList = pItem;
-
-    // Setup to time-out the huge incoming item if host does not MT_AF_DATA_RETRIEVE it.
-    pItem->tick = MT_AF_EXEC_CNT;
-    if (ZSuccess != osal_start_timerEx(MT_TaskID, MT_AF_EXEC_EVT, MT_AF_EXEC_DLY))
-    {
-      (void)osal_set_event(MT_TaskID, MT_AF_EXEC_EVT);
-    }
-
-    pItem->timestamp = pMsg->timestamp;
-    (void)osal_memcpy(pItem->data, pMsg->cmd.Data, dataLen);
-  }
-  else
-  {
-    (void)osal_memcpy(pTmp, pMsg->cmd.Data, dataLen);
+    osal_memcpy(tempPtr, pMsg->cmd.Data, dataLen);
   }
 
   /* Build and send back the response */
   MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_AREQ|(uint8)MT_RPC_SYS_AF), cmd, respLen, pRsp);
 
-  (void)osal_mem_free(pRsp);
-}
-
-/**************************************************************************************************
- * @fn          MT_AfDataRetrieve
- *
- * @brief   Process AF Data Retrieve command to incrementally read out a very large
- *          incoming AF message.
- *
- * input parameters
- *
- * @param pBuf - pointer to the received buffer
- *
- * output parameters
- *
- * @param rtrn - AF-Status of the operation.
- *
- * @return      None.
- **************************************************************************************************
- */
-void MT_AfDataRetrieve(uint8 *pBuf)
-{
-  #define MT_AF_RTV_HDR_SZ  2
-
-  uint32 timestamp;
-  mtAfInMsgList_t *pPrev, *pItem = pMtAfInMsgList;
-  uint8 rtrn = afStatus_FAILED;
-  uint8 len = 0;
-
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-  timestamp = BUILD_UINT32(pBuf[0], pBuf[1], pBuf[2], pBuf[3]);
-
-  while (pItem != NULL)
-  {
-    pPrev = pItem;
-    if (pItem->timestamp == timestamp)
-    {
-      break;
-    }
-    pItem = pItem->next;
-  }
-
-  if (pItem != NULL)
-  {
-    uint16 idx;
-    uint8 *pRsp;
-
-    pBuf += 4;
-    idx = BUILD_UINT16(pBuf[0], pBuf[1]);
-    len = pBuf[2];
-
-    if (len == 0)  // Indication to delete the afIncomingMSGPacket.
-    {
-      if (pMtAfInMsgList == pItem)
-      {
-        pMtAfInMsgList = pItem->next;
-      }
-      else
-      {
-        pPrev->next = pItem->next;
-      }
-      (void)osal_mem_free(pItem);
-      rtrn = afStatus_SUCCESS;
-    }
-    else if ((pRsp = osal_mem_alloc(len + MT_AF_RTV_HDR_SZ)) == NULL)
-    {
-      rtrn = afStatus_MEM_FAIL;
-      len = 0;
-    }
-    else
-    {
-      pRsp[0] = ZSuccess;
-      pRsp[1] = len;
-      (void)osal_memcpy(pRsp + MT_AF_RTV_HDR_SZ, pItem->data+idx, len);
-      MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_AF),
-                                           MT_AF_DATA_RETRIEVE, len + MT_AF_RTV_HDR_SZ, pRsp);
-      (void)osal_mem_free(pRsp);
-      return;
-    }
-  }
-
-  pBuf[0] = rtrn;
-  pBuf[1] = len;
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_AF),
-                                       MT_AF_DATA_RETRIEVE, MT_AF_RTV_HDR_SZ, pBuf);
-}
-
-/**************************************************************************************************
- * @fn          MT_AfDataStore
- *
- * @brief   Process AF Data Store command to incrementally store the data buffer for very large
- *          outgoing AF message.
- *
- * input parameters
- *
- * @param pBuf - pointer to the received buffer
- *
- * output parameters
- *
- * @param rtrn - AF-Status of the operation.
- *
- * @return      None.
- **************************************************************************************************
- */
-void MT_AfDataStore(uint8 *pBuf)
-{
-  uint16 idx;
-  uint8 len, rtrn = afStatus_FAILED;
-
-  pBuf += MT_RPC_FRAME_HDR_SZ;
-  idx = BUILD_UINT16(pBuf[0], pBuf[1]);
-  len = pBuf[2];
-  pBuf += 3;
-
-  if (pMtAfDataReq == NULL)
-  {
-    rtrn = afStatus_MEM_FAIL;
-  }
-  else if (len == 0)  // Indication to send the message.
-  {
-    rtrn = AF_DataRequest(&(pMtAfDataReq->dstAddr), pMtAfDataReq->epDesc, pMtAfDataReq->cId,
-                            pMtAfDataReq->dataLen,  pMtAfDataReq->data,
-                          &(pMtAfDataReq->transId), pMtAfDataReq->txOpts, pMtAfDataReq->radius);
-    (void)osal_mem_free(pMtAfDataReq);
-    pMtAfDataReq = NULL;
-  }
-  else
-  {
-    (void)osal_memcpy(pMtAfDataReq->data+idx, pBuf, len);
-    rtrn = afStatus_SUCCESS;
-  }
-
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_AF),
-                                                                MT_AF_DATA_STORE, 1, &rtrn);
-}
-
-/**************************************************************************************************
- * @fn          MT_AfAPSF_ConfigSet
- *
- * @brief       This function is the MT proxy for afAPSF_ConfigSet().
- *
- * input parameters
- *
- * @param       pBuf - Pointer to the received buffer.
- *
- * output parameters
- *
- * None.
- *
- * @return      None.
- */
-static void MT_AfAPSF_ConfigSet(uint8 *pBuf)
-{
-  afAPSF_Config_t cfg = { pBuf[MT_RPC_POS_DAT0+1], pBuf[MT_RPC_POS_DAT0+2] };
-  afStatus_t rtrn = afAPSF_ConfigSet(pBuf[MT_RPC_POS_DAT0], &cfg);
-
-  MT_BuildAndSendZToolResponse(((uint8)MT_RPC_CMD_SRSP | (uint8)MT_RPC_SYS_AF),
-                                       MT_AF_APSF_CONFIG_SET, 1, (uint8 *)&rtrn);
+  /* Free memory */
+  osal_mem_free(pRsp);
 }
 
 /***************************************************************************************************

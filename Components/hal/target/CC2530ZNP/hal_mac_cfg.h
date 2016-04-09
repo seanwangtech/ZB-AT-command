@@ -1,7 +1,7 @@
 /**************************************************************************************************
   Filename:       hal_mac_cfg.h
-  Revised:        $Date: 2010-08-10 19:12:51 -0700 (Tue, 10 Aug 2010) $
-  Revision:       $Revision: 23375 $
+  Revised:        $Date: 2009-06-05 09:21:31 -0700 (Fri, 05 Jun 2009) $
+  Revision:       $Revision: 20106 $
 
   Description:    Describe the purpose and contents of the file.
 

@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       hal_board_cfg.h
-  Revised:        $Date: 2012-03-29 12:09:02 -0700 (Thu, 29 Mar 2012) $
-  Revision:       $Revision: 29943 $
+  Revised:        $Date: 2010-01-05 14:40:47 -0800 (Tue, 05 Jan 2010) $
+  Revision:       $Revision: 21435 $
 
-  Description:    Declarations for the CC2530EM used on the SmartRF05EB.
+  Description:    Describe the purpose and contents of the file.
 
 
-  Copyright 2006-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2006-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -40,6 +40,16 @@
 #ifndef HAL_BOARD_CFG_H
 #define HAL_BOARD_CFG_H
 
+/*
+ *     =============================================================
+ *     |        Chipcon SmartRF05EB Evaluation Board, plus         |
+ *     |            Texas Instruments CC2530EM Evaluation Module   |
+ *     | --------------------------------------------------------- |
+ *     |  mcu   : 8051 core                                        |
+ *     |  clock : 32MHz                                            |
+ *     =============================================================
+ */
+
 
 /* ------------------------------------------------------------------------------------------------
  *                                           Includes
@@ -70,20 +80,14 @@
  */
 
 #if !defined (HAL_BOARD_CC2530EB_REV17) && !defined (HAL_BOARD_CC2530EB_REV13)
-#define HAL_BOARD_CC2530EB_REV17
+  #define HAL_BOARD_CC2530EB_REV17
 #endif
 
 /* ------------------------------------------------------------------------------------------------
  *                                          Clock Speed
  * ------------------------------------------------------------------------------------------------
  */
-
 #define HAL_CPU_CLOCK_MHZ     32
-
-/* This flag should be defined if the SoC uses the 32MHz crystal
- * as the main clock source (instead of DCO).
- */
-#define HAL_CLOCK_CRYSTAL
 
 /* 32 kHz clock source select in CLKCONCMD */
 #if !defined (OSC32K_CRYSTAL_INSTALLED) || (defined (OSC32K_CRYSTAL_INSTALLED) && (OSC32K_CRYSTAL_INSTALLED == TRUE))
@@ -91,8 +95,6 @@
 #else
   #define OSC_32KHZ  0x80 /* internal 32 KHz rcosc */
 #endif
-
-#define HAL_CLOCK_STABLE()    st( while (CLKCONSTA != (CLKCONCMD_32MHZ | OSC_32KHZ)); )
 
 /* ------------------------------------------------------------------------------------------------
  *                                       LED Configuration
@@ -169,7 +171,6 @@
 #define HAL_FLASH_PAGE_MAP         0x8000
 
 // The last 16 bytes of the last available page are reserved for flash lock bits.
-// NV page definitions must coincide with segment declaration in project *.xcl file.
 #if defined NON_BANKED
 #define HAL_FLASH_LOCK_BITS        16
 #define HAL_NV_PAGE_END            30
@@ -186,10 +187,6 @@
 #define HAL_FLASH_IEEE_OSET       (HAL_FLASH_PAGE_SIZE - HAL_FLASH_LOCK_BITS - HAL_FLASH_IEEE_SIZE)
 #define HAL_INFOP_IEEE_OSET        0xC
 
-#define HAL_FLASH_DEV_PRIVATE_KEY_OSET     0x7D2
-#define HAL_FLASH_CA_PUBLIC_KEY_OSET       0x7BC
-#define HAL_FLASH_IMPLICIT_CERT_OSET       0x78C
-
 #define HAL_NV_PAGE_BEG           (HAL_NV_PAGE_END-HAL_NV_PAGE_CNT+1)
 
 // Used by DMA macros to shift 1 to create a mask for DMA registers.
@@ -200,15 +197,6 @@
 #define HAL_NV_DMA_GET_DESC()      HAL_DMA_GET_DESC0()
 #define HAL_NV_DMA_SET_ADDR(a)     HAL_DMA_SET_ADDR_DESC0((a))
 
-/* ------------------------------------------------------------------------------------------------
- *  Serial Boot Loader: reserving the first 4 pages of flash and other memory in cc2530-sb.xcl.
- * ------------------------------------------------------------------------------------------------
- */
-
-#define HAL_SB_IMG_ADDR       0x2000
-#define HAL_SB_CRC_ADDR       0x2090
-// Size of internal flash less 4 pages for boot loader, 6 pages for NV, & 1 page for lock bits.
-#define HAL_SB_IMG_SIZE      (0x40000 - 0x2000 - 0x3000 - 0x0800)
 
 /* ------------------------------------------------------------------------------------------------
  *                                            Macros
@@ -245,11 +233,9 @@ extern void MAC_RfFrontendSetup(void);
   /* Turn on cache prefetch mode */                              \
   PREFETCH_ENABLE();                                             \
                                                                  \
-  HAL_TURN_OFF_LED1();                                           \
+  /* set direction for GPIO outputs  */                          \
   LED1_DDR |= LED1_BV;                                           \
-  HAL_TURN_OFF_LED2();                                           \
   LED2_DDR |= LED2_BV;                                           \
-  HAL_TURN_OFF_LED3();                                           \
   LED3_DDR |= LED3_BV;                                           \
                                                                  \
   /* configure tristates */                                      \
@@ -386,16 +372,6 @@ st( \
   P1_1 = 1; \
 )
 
-/* ----------- Minimum safe bus voltage ---------- */
-
-// Vdd/3 / Internal Reference X ENOB --> (Vdd / 3) / 1.15 X 127
-#define VDD_2_0  74   // 2.0 V required to safely read/write internal flash.
-#define VDD_2_7  100  // 2.7 V required for the Numonyx device.
-
-#define VDD_MIN_RUN   VDD_2_0
-#define VDD_MIN_NV   (VDD_2_0+4)  // 5% margin over minimum to survive a page erase and compaction.
-#define VDD_MIN_XNV  (VDD_2_7+5)  // 5% margin over minimum to survive a page erase and compaction.
-
 /* ------------------------------------------------------------------------------------------------
  *                                     Driver Configuration
  * ------------------------------------------------------------------------------------------------
@@ -432,7 +408,7 @@ st( \
 
 /* Set to TRUE enable LCD usage, FALSE disable it */
 #ifndef HAL_LCD
-#define HAL_LCD FALSE
+#define HAL_LCD TRUE
 #endif
 
 /* Set to TRUE enable LED usage, FALSE disable it */
@@ -451,37 +427,36 @@ st( \
 /* Set to TRUE enable UART usage, FALSE disable it */
 #ifndef HAL_UART
 #if (defined ZAPP_P1) || (defined ZAPP_P2) || (defined ZTOOL_P1) || (defined ZTOOL_P2)
-#define HAL_UART TRUE 
+#define HAL_UART TRUE
 #else
 #define HAL_UART FALSE
 #endif
 #endif
 
 #if HAL_UART
-#ifndef HAL_UART_DMA
+// Always prefer to use DMA over ISR.
 #if HAL_DMA
-#if (defined ZAPP_P2) || (defined ZTOOL_P2)
+#ifndef HAL_UART_DMA
+#if (defined ZAPP_P1) || (defined ZTOOL_P1)
+#define HAL_UART_DMA  1
+#elif (defined ZAPP_P2) || (defined ZTOOL_P2)
 #define HAL_UART_DMA  2
 #else
 #define HAL_UART_DMA  1
 #endif
-#else
-#define HAL_UART_DMA  0
 #endif
-#endif
-
-#ifndef HAL_UART_ISR
-#if HAL_UART_DMA           // Default preference for DMA over ISR.
 #define HAL_UART_ISR  0
+#else
+#ifndef HAL_UART_ISR
+#if (defined ZAPP_P1) || (defined ZTOOL_P1)
+#define HAL_UART_ISR  1
 #elif (defined ZAPP_P2) || (defined ZTOOL_P2)
 #define HAL_UART_ISR  2
 #else
 #define HAL_UART_ISR  1
 #endif
 #endif
-
-#if (HAL_UART_DMA && (HAL_UART_DMA == HAL_UART_ISR))
-#error HAL_UART_DMA & HAL_UART_ISR must be different.
+#define HAL_UART_DMA  0
 #endif
 
 // Used to set P2 priority - USART0 over USART1 if both are defined.
@@ -498,6 +473,7 @@ st( \
 
 /* USB is not used for CC2530 configuration */
 #define HAL_UART_USB  0
-#endif
+
 /*******************************************************************************************************
 */
+#endif

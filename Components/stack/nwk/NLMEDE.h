@@ -1,12 +1,12 @@
 /**************************************************************************************************
   Filename:       NLMEDE.h
-  Revised:        $Date: 2011-05-05 15:49:12 -0700 (Thu, 05 May 2011) $
-  Revision:       $Revision: 25881 $
+  Revised:        $Date: 2009-03-19 13:41:00 -0700 (Thu, 19 Mar 2009) $
+  Revision:       $Revision: 19470 $
 
   Description:    Network layer interface NLME and NLDE.
 
 
-  Copyright 2004-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2004-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -79,10 +79,10 @@ extern "C" {
 #define BEACON_ORDER_120_MSEC        3
 #define BEACON_ORDER_60_MSEC         2
 #define BEACON_ORDER_30_MSEC         1
-#define BEACON_ORDER_15_MSEC         0
+#define BEACON_ORDER_15_MSEC                 0
 
-#define STARTING_SCAN_DURATION       0
-#define MAX_SCAN_DURATION            15  
+#define STARTING_SCAN_DURATION       5
+#define MAX_SCAN_DURATION           15
 #define ENERGY_SCAN_INCREMENT       16
 
 /* Definition of scan application */
@@ -90,7 +90,7 @@ extern "C" {
 #define NLME_DISC_SCAN               1
 #define NLME_PID_SCAN                2
   
-// CapabilityFlags Bitmap values
+// Capability Information Field Bitmap values
 #define CAPINFO_ALTPANCOORD           0x01
 #define CAPINFO_DEVICETYPE_FFD        0x02
 #define CAPINFO_DEVICETYPE_RFD        0x00
@@ -137,9 +137,6 @@ typedef enum addr_filter_e addr_filter_t;
 #define NWK_ASSOC_JOIN                  0
 #define NWK_ASSOC_REJOIN_UNSECURE       1
 #define NWK_ASSOC_REJOIN_SECURE         2
-
-#define NWK_FRAME_TYPE_MASK         0x03
-#define NWK_FRAMETYPE_FORCE_SEQ     0x80
 
 // ***********************   END BROADCAST SUPPORT  **********************************
 
@@ -197,10 +194,13 @@ typedef struct
 {
   uint16 panId;
   byte logicalChannel;
+  byte beaconOrder;
+  byte superFrameOrder;
   byte routerCapacity;
   byte deviceCapacity;
   byte version;
   byte stackProfile;
+//byte securityLevel;
   uint16 chosenRouter;
   uint8 chosenRouterLinkQuality;
   uint8 chosenRouterDepth;
@@ -335,21 +335,6 @@ typedef struct
   uint8  rejoin;
 } NLME_LeaveInd_t;
 
-typedef struct
-{
-  uint16 sourceAddr;         
-  uint16 panID;  
-  uint8  logicalChannel;
-  uint8	 permitJoining;
-  uint8	 routerCapacity; 	
-  uint8	 deviceCapacity;  	
-  uint8  protocolVersion;  		 
-  uint8  stackProfile ;
-  uint8	 LQI ;
-  uint8  depth ;
-  uint8  updateID;
-  uint8  extendedPanID[Z_EXTADDR_LEN];
-} NLME_beaconInd_t;
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -446,8 +431,7 @@ extern void NLME_NetworkFormationConfirm( ZStatus_t Status );
  * @MT SPI_CMD_NLME_NWK_DISC_REQ
  *
  */
-extern ZStatus_t NLME_NetworkDiscoveryRequest( uint32 ScanChannels, 
-                                               uint8  scanDuration);
+extern ZStatus_t NLME_NetworkDiscoveryRequest( uint32 ScanChannels, byte scanDuration);
 
 /* This function allows the NWK layer to discover neighboring routers
  * without affecting the current nwk state
@@ -459,12 +443,24 @@ extern ZStatus_t NLME_NwkDiscReq2( NLME_ScanFields_t* fields );
  */
 extern void NLME_NwkDiscTerm( void );
 
-/* This function returns network discovery confirmation
+/* This function returns list of neighboring networks
  *
  * @MT SPI_CB_NLME_NWK_DISC_CNF
+ * (byte Number,
+ *  byte RouterCapacity,
+ *  byte DeviceCapacity,
+ *  byte Version,
+ *  byte StackProfile,
+ *  byte SecurityLevel,
+ *  uint16 PanID,
+ *  byte LogicalChannel,
+ *  byte BeaconOrder,
+ *  byte SuperFrameOrder)
  *
  */
-extern void NLME_NetworkDiscoveryConfirm(uint8 status);
+
+extern void NLME_NetworkDiscoveryConfirm( byte ResultCount,
+                                          networkDesc_t *NetworkList );
 
 /*
  * This function defines how the next higher layer of a coordinator device
@@ -488,9 +484,8 @@ extern void NLME_PermitJoiningEvent( void );
  * @MT SPI_CMD_NLME_JOIN_REQ
  *
  */
-extern ZStatus_t NLME_JoinRequest( uint8 *extendedPANID, uint16 PanId,
-                             uint8 channel, uint8 CapabilityFlags, 
-                             uint16 chosenParent, uint8 parentDepth );
+extern ZStatus_t NLME_JoinRequest( uint8 *extendedPANID, uint16 PanId, byte Channel, byte CapabilityInfo);
+
 /*
  * This function allows the next higher layer to request to directly join
  * another device to this device
@@ -500,13 +495,6 @@ extern ZStatus_t NLME_JoinRequest( uint8 *extendedPANID, uint16 PanId,
  *
  */
 extern ZStatus_t NLME_DirectJoinRequest( byte *DevExtAddress, byte capInfo );
-
-/*
- * This function allows the next higher layer to request to directly join
- * another device, specified by the short address, to this device
- * The result is contained in the return value and there is no confirm primitive
- */
-extern ZStatus_t NLME_DirectJoinRequestWithAddr( byte *DevExtAddress, uint16 shortAddress, uint8 capInfo );
 
 /*
  * This function allows the next higher layer to request the device
@@ -522,12 +510,6 @@ extern ZStatus_t NLME_OrphanJoinRequest( uint32 ScanChannels, byte ScanDuration 
  * to rejoin the network.
  */
 extern ZStatus_t NLME_ReJoinRequest( uint8 *ExtendedPANID, uint8 channel );
-
-/*
- * This function allows the next higher layer to request the device
- * to rejoin the network "non-securely".
- */
-extern ZStatus_t NLME_ReJoinRequestUnsecure( uint8 *ExtendedPANID, uint8 channel );
 
 /*
  * This function allows the next higher layer to be notified of the
@@ -550,7 +532,7 @@ extern void NLME_JoinConfirm( uint16 PanId, ZStatus_t Status );
  */
 extern ZStatus_t NLME_JoinIndication( uint16 ShortAddress,
                                       uint8 *ExtendedAddress,
-                                      uint8 CapabilityFlags,
+                                      uint8 CapabilityInformation,
                                       uint8 type );
 
 /*
@@ -574,13 +556,6 @@ extern ZStatus_t NLME_StartRouterRequest( byte BeaconOrder,
  *
  */
 extern void NLME_StartRouterConfirm( ZStatus_t Status );
-
-/*
- * This function reports the beacon notification received due
- * to network discovery
- *
- */
-extern void NLME_beaconNotifyInd(NLME_beaconInd_t *pBeacon);
 
 /*
  * This function allows the next higher layer to request that itself
@@ -694,7 +669,7 @@ extern ZStatus_t NLME_RouteDiscoveryRequest( uint16 DstAddress, byte options, ui
  * This function allow to indicate to higher layer the existence of 
  * concentrator and its nwk address
  */
-extern void NLME_ConcentratorIndication( uint16 nwkAddr, uint8 *extAddr, uint8 pktCost );
+extern void NLME_ConcentratorIndication( uint16 nwkAddr );
 
 /* 
  * This function allows the next higher layer to request an energy scan
@@ -816,7 +791,7 @@ extern ZStatus_t NLME_CheckNewAddrSet( uint16 shortAddr, uint8 *extAddr );
  * Issues a Router Error with Address conflict and handles the 
  * conflict locally for itself and children (RFDs).
  */
-extern void NLME_ReportAddressConflict( uint16 shortAddr, uint8 forceSpecialMode );
+extern void NLME_ReportAddressConflict( uint16 shortAddr );
 
 
 extern void NLME_CoordinatorInit( void );
@@ -830,7 +805,6 @@ extern void (*pNLME_NetworkFormationConfirm)( ZStatus_t Status );
 extern void NLME_InitStochasticAddressing( void );
 extern void NLME_InitTreeAddressing( void );
 
-extern ZStatus_t NLME_ReadNwkKeyInfo(uint16 index, uint16 len, void *keyinfo, uint16 NvId);
 
 
 /****************************************************************************

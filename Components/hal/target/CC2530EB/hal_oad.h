@@ -5,7 +5,7 @@
 
   Description:    This module defines optionally-compiled Boot Code parameters for the CC2x3x.
 
-  Copyright 2008-2010 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2008-2009 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -94,12 +94,6 @@
 
 // To run OAD with the legacy ZOAD.exe PC tool, place the preamble in this legacy location.
 #define PREAMBLE_OFFSET            0x8C
-
-#if HAL_OAD_XNV_IS_INT
-#define VDD_MIN_OAD  VDD_MIN_NV
-#else
-#define VDD_MIN_OAD  VDD_MIN_XNV
-#endif
 
 /*********************************************************************
  * TYPEDEFS

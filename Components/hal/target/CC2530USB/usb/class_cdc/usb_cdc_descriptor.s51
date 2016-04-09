@@ -158,7 +158,7 @@ endpoint1Desc:  ; Endpoint descriptor (EP4 OUT)
                 DB 84H                    ; bEndpointAddress
                 DB EP_ATTR_BULK           ; bmAttributes
                 DB 40H, 00H               ; wMaxPacketSize
-                DB 00H                    ; bInterval
+                DB 01H                    ; bInterval
 endpoint1DescEnd:
 
 endpoint2Desc:  ; Endpoint descriptor (EP4 IN)
@@ -167,10 +167,84 @@ endpoint2Desc:  ; Endpoint descriptor (EP4 IN)
                 DB 04H                    ; bEndpointAddress
                 DB EP_ATTR_BULK           ; bmAttributes
                 DB 40H, 00H               ; wMaxPacketSize
-                DB 00H                    ; bInterval
+                DB 01H                    ; bInterval
 endpoint2DescEnd:
 config1LengthEnd:
 ;;-------------------------------------------------------------------------------------------------------
+
+
+;;-------------------------------------------------------------------------------------------------------
+;; String descriptors
+string0Desc:    ; Language ID
+                DB string0DescEnd - string0Desc
+                DB DESC_TYPE_STRING       ; bDescriptorType
+                DB 09H                    ; US-EN
+                DB 04H
+string0DescEnd:
+
+string1Desc:    ; Manufacturer
+                DB string1DescEnd - string1Desc
+                DB DESC_TYPE_STRING       ; bDescriptorType
+                DB 'T', 0
+                DB 'e', 0
+                DB 'x', 0
+                DB 'a', 0
+                DB 's', 0
+                DB ' ', 0
+                DB 'I', 0
+                DB 'n', 0
+                DB 's', 0
+                DB 't', 0
+                DB 'r', 0
+                DB 'u', 0
+                DB 'm', 0
+                DB 'e', 0
+                DB 'n', 0
+                DB 't', 0
+                DB 's', 0
+
+string1DescEnd:
+
+string2Desc:    ; Product
+                DB string2DescEnd - string2Desc
+                DB DESC_TYPE_STRING       ; bDescriptorType
+                DB 'C', 0
+                DB 'C', 0
+
+                #if (chip==2531)
+                DB '2', 0
+                DB '5', 0
+                DB '3', 0
+                DB '1', 0
+                #elif (chip==2511)
+                DB '2', 0
+                DB '5', 0
+                DB '1', 0
+                DB '1', 0
+                #else
+                DB '1', 0
+                DB '1', 0
+                DB '1', 0
+                DB '1', 0
+                #endif
+
+                DB ' ', 0
+                DB 'U', 0
+                DB 'S', 0
+                DB 'B', 0
+                DB ' ', 0
+                DB 'C', 0
+                DB 'D', 0
+                DB 'C', 0
+string2DescEnd:
+
+string3Desc:    ; Serial number
+                DB string3DescEnd - string3Desc
+                DB DESC_TYPE_STRING       ; bDescriptorType
+                DB '0', 0
+                DB '0', 0
+                DB '1', 0
+string3DescEnd:
 
 usbDescEnd:
 ;;-------------------------------------------------------------------------------------------------------
@@ -201,7 +275,7 @@ usbDblbufLutEnd:
 
 /*
 +------------------------------------------------------------------------------
-|  Copyright 2004-2010 Texas Instruments Incorporated. All rights reserved.
+|  Copyright 2004-2007 Texas Instruments Incorporated. All rights reserved.
 |
 |  IMPORTANT: Your use of this Software is limited to those specific rights
 |  granted under the terms of a software license agreement between the user who

@@ -1,13 +1,13 @@
 /**************************************************************************************************
   Filename:       rangeext.c
-  Revised:        $Date: 2012-04-02 17:02:19 -0700 (Mon, 02 Apr 2012) $
-  Revision:       $Revision: 29996 $
+  Revised:        $Date: 2009-12-16 11:25:27 -0800 (Wed, 16 Dec 2009) $
+  Revision:       $Revision: 21342 $
 
   Description:    This module implements the Range Extender functionality and
                   contains the init and event loop functions
 
 
-  Copyright 2009-2011 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2009-2010 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -61,7 +61,6 @@
 #include "OSAL.h"
 #include "OSAL_Clock.h"
 #include "ZDApp.h"
-#include "ZDObject.h"
 #include "AddrMgr.h"
 
 #include "se.h"
@@ -122,6 +121,11 @@ static void rangeext_HandleKeys( uint8 shift, uint8 keys );
 static uint8 rangeext_KeyEstablish_ReturnLinkKey( uint16 shortAddr );
 #endif
 
+#if defined ( ZCL_ALARMS )
+static void rangeext_ProcessAlarmCmd( uint8 srcEP, afAddrType_t *dstAddr,
+                        uint16 clusterID, zclFrameHdr_t *hdr, uint8 len, uint8 *data );
+#endif // ZCL_ALARMS
+
 static void rangeext_ProcessIdentifyTimeChange( void );
 
 /*************************************************************************/
@@ -136,14 +140,6 @@ static void rangeext_BasicResetCB( void );
 static void rangeext_IdentifyCB( zclIdentify_t *pCmd );
 static void rangeext_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp );
 static void rangeext_AlarmCB( zclAlarm_t *pAlarm );
-#ifdef SE_UK_EXT
-static void rangeext_GetEventLogCB( uint8 srcEP, afAddrType_t *srcAddr,
-                                    zclGetEventLog_t *pEventLog, uint8 seqNum );
-static void rangeext_PublishEventLogCB( afAddrType_t *srcAddr, zclPublishEventLog_t *pEventLog );
-#endif // SE_UK_EXT
-
-// Function to process ZDO callback messages
-static void rangeext_ProcessZDOMsgs( zdoIncomingMsg_t *pMsg );
 
 /************************************************************************/
 /***               Functions to process ZCL Foundation                ***/
@@ -179,10 +175,6 @@ static zclGeneral_AppCallbacks_t rangeext_GenCmdCallbacks =
   NULL,                                  // Scene Recall Request command
   NULL,                                  // Scene Response command
   rangeext_AlarmCB,                      // Alarm (Response) command
-#ifdef SE_UK_EXT
-  rangeext_GetEventLogCB,                // Get Event Log command
-  rangeext_PublishEventLogCB,            // Publish Event Log command
-#endif
   NULL,                                  // RSSI Location command
   NULL,                                  // RSSI Location Response command
 };
@@ -225,9 +217,6 @@ void rangeext_Init( uint8 task_id )
 
   // Register for all key events - This app will handle all key events
   RegisterForKeys( rangeExtTaskID );
-
-  // Register with the ZDO to receive Match Descriptor Responses
-  ZDO_RegisterForZDOMsg(task_id, Match_Desc_rsp);
 }
 
 /*********************************************************************
@@ -250,10 +239,6 @@ uint16 rangeext_event_loop( uint8 task_id, uint16 events )
     {
       switch ( MSGpkt->hdr.event )
       {
-        case ZDO_CB_MSG:
-          rangeext_ProcessZDOMsgs( (zdoIncomingMsg_t *)MSGpkt );
-          break;
-
         case ZCL_INCOMING_MSG:
           // Incoming ZCL foundation command/response messages
           rangeext_ProcessZCLMsg( (zclIncomingMsg_t *)MSGpkt );
@@ -273,29 +258,13 @@ uint16 rangeext_event_loop( uint8 task_id, uint16 events )
 
               if (linkKeyStatus != ZSuccess)
               {
-                cId_t cbkeCluster = ZCL_CLUSTER_ID_GEN_KEY_ESTABLISHMENT;
-                zAddrType_t dstAddr;
-
-                // Send out a match for the key establishment
-                dstAddr.addrMode = AddrBroadcast;
-                dstAddr.addr.shortAddr = NWK_BROADCAST_SHORTADDR;
-                ZDP_MatchDescReq( &dstAddr, NWK_BROADCAST_SHORTADDR, ZCL_SE_PROFILE_ID,
-                                  1, &cbkeCluster, 0, NULL, FALSE );
+                // send out key establishment request
+                osal_set_event( rangeExtTaskID, RANGEEXT_KEY_ESTABLISHMENT_REQUEST_EVT);
               }
             }
 #endif
           }
           break;
-
-#if defined( ZCL_KEY_ESTABLISH )
-        case ZCL_KEY_ESTABLISH_IND:
-          if ((MSGpkt->hdr.status) == TermKeyStatus_Success)
-          {
-            ESPAddr.endPoint = RANGEEXT_ENDPOINT; // set destination endpoint back to application endpoint
-          }
-
-          break;
-#endif
 
         default:
           break;
@@ -335,36 +304,6 @@ uint16 rangeext_event_loop( uint8 task_id, uint16 events )
   return 0;
 }
 
-/*********************************************************************
- * @fn      rangeext_ProcessZDOMsgs
- *
- * @brief   Called to process callbacks from the ZDO.
- *
- * @param   none
- *
- * @return  none
- */
-static void rangeext_ProcessZDOMsgs( zdoIncomingMsg_t *pMsg )
-{
-  if (pMsg->clusterID == Match_Desc_rsp)
-  {
-    ZDO_ActiveEndpointRsp_t *pRsp = ZDO_ParseEPListRsp( pMsg );
-
-    if (pRsp)
-    {
-      if (pRsp->cnt)
-      {
-        // Record the trust center
-        ESPAddr.endPoint = pRsp->epList[0];
-        ESPAddr.addr.shortAddr = pMsg->srcAddr.addr.shortAddr;
-
-        // send out key establishment request
-        osal_set_event( rangeExtTaskID, RANGEEXT_KEY_ESTABLISHMENT_REQUEST_EVT);
-      }
-      osal_mem_free(pRsp);
-    }
-  }
-}
 
 /*********************************************************************
  * @fn      rangeext_ProcessIdentifyTimeChange
@@ -401,6 +340,7 @@ static void rangeext_ProcessIdentifyTimeChange( void )
  */
 static uint8 rangeext_KeyEstablish_ReturnLinkKey( uint16 shortAddr )
 {
+  APSME_LinkKeyData_t* keyData;
   uint8 status = ZFailure;
   AddrMgrEntry_t entry;
 
@@ -411,8 +351,10 @@ static uint8 rangeext_KeyEstablish_ReturnLinkKey( uint16 shortAddr )
 
   if ( AddrMgrEntryLookupNwk( &entry ) )
   {
-    // check if APS link key has been established
-    if ( APSME_IsLinkKeyValid( entry.extAddr ) == TRUE )
+    // check for APS link key data
+    APSME_LinkKeyDataGet( entry.extAddr, &keyData );
+
+    if ( (keyData != NULL) && (keyData->key != NULL) )
     {
       status = ZSuccess;
     }
@@ -533,7 +475,7 @@ static void rangeext_BasicResetCB( void )
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Command for this application.
  *
- * @param   pCmd - pointer to structure for Identify command
+ * @param   pCmd - pointer to structure for identify command
  *
  * @return  none
  */
@@ -549,7 +491,7 @@ static void rangeext_IdentifyCB( zclIdentify_t *pCmd )
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Query Response Command for this application.
  *
- * @param   pRsp - pointer to structure for Identity Query Response command
+ * @param   pRsp - pointer to structure for identify query response
  *
  * @return  none
  */
@@ -565,7 +507,7 @@ static void rangeext_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp )
  *          it received an Alarm request or response command for
  *          this application.
  *
- * @param   pAlarm - pointer to structure for Alarm command
+ * @param   pAlarm - pointer to structure for alarm command
  *
  * @return  none
  */
@@ -573,51 +515,6 @@ static void rangeext_AlarmCB( zclAlarm_t *pAlarm )
 {
   // add user code here
 }
-
-#ifdef SE_UK_EXT
-/*********************************************************************
- * @fn      rangeext_GetEventLogCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a Get Event Log command for this
- *          application.
- *
- * @param   srcEP - source endpoint
- * @param   srcAddr - pointer to source address
- * @param   pEventLog - pointer to structure for Get Event Log command
- * @param   seqNum - sequence number of this command
- *
- * @return  none
- */
-static void rangeext_GetEventLogCB( uint8 srcEP, afAddrType_t *srcAddr,
-                                    zclGetEventLog_t *pEventLog, uint8 seqNum )
-{
-  // add user code here, which could fragment the event log payload if
-  // the entire payload doesn't fit into one Publish Event Log Command.
-  // Note: the Command Index starts at 0 and is incremented for each
-  // fragment belonging to the same command.
-
-  // There's no event log for now! The Metering Device will support
-  // logging for all events configured to do so.
-}
-
-/*********************************************************************
- * @fn      rangeext_PublishEventLogCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a Publish Event Log command for this
- *          application.
- *
- * @param   srcAddr - pointer to source address
- * @param   pEventLog - pointer to structure for Publish Event Log command
- *
- * @return  none
- */
-static void rangeext_PublishEventLogCB( afAddrType_t *srcAddr, zclPublishEventLog_t *pEventLog )
-{
-  // add user code here
-}
-#endif // SE_UK_EXT
 
 /******************************************************************************
  *
