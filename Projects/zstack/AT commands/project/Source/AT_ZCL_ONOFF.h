@@ -12,6 +12,7 @@
 #define AT_ZCL_GEN_ON                        0x01
 
 #define AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT    0x0001
+#define AT_ZCL_ONOFF_WDG_TIMEOUT_EVT         0x0002   //for watch dog of switch
 /*********************************************************************
  * Global variable
  */

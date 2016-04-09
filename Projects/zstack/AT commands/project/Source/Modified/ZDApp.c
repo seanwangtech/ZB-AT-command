@@ -1061,8 +1061,8 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
           {
             devState = DEV_NWK_JOINING;
 
-            ZDApp_NodeProfileSync( pChosenNwk->stackProfile);
-
+            ZDApp_NodeProfileSync( pChosenNwk->stackProfile);  
+              
             if ( NLME_JoinRequest( pChosenNwk->extendedPANID, pChosenNwk->panId,
                                   pChosenNwk->logicalChannel,
                                   ZDO_Config_Node_Descriptor.CapabilityFlags,
@@ -1070,6 +1070,9 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
             {
               ZDApp_NetworkInit( (uint16)(NWK_START_DELAY
                                           + ((uint16)(osal_rand()& EXTENDED_JOINING_RANDOM_MASK))) );
+            }else{
+              //ninglvfeihong modified
+              halSleep( 400);
             }
           } // if ( devStartMode == MODE_JOIN )
           else if ( devStartMode == MODE_REJOIN )
@@ -1112,6 +1115,7 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
             NLME_SetPollRate( 0 );
             NLME_SetQueuedPollRate( 0 );
             NLME_SetResponseRate( 0 );
+            
           }
           else
           {
@@ -1120,6 +1124,8 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
               ZDApp_SavedPollRate = zgPollRate;
               NLME_SetPollRate( zgRejoinPollRate );
             }
+             //ninglvfeihong modified
+             // halSleep( 400);
           }
         }
         else

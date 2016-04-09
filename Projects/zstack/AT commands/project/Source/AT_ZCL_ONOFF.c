@@ -22,6 +22,7 @@
 #include "hal_led.h"
 #include "hal_key.h"
 
+#define WDG_PIN P1_5
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -80,6 +81,10 @@ void AT_ZCL_ONOFF_Init( byte task_id )
   //initialize the ONOFF device such as: a relay
   relay_init();
   
+  //set WDG pin to OUTPUT P1_5 and initilized volatage is high
+  WDG_PIN =1;
+  P1DIR |= BV(5);
+  osal_start_reload_timer( AT_ZCL_ONOFF_TaskID, AT_ZCL_ONOFF_WDG_TIMEOUT_EVT, 150 );
 }
 
 
@@ -123,6 +128,30 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
     AT_ZCL_ONOFF_ProcessIdentifyTimeChange();
 
     return ( events ^ AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT );
+  }
+
+  if ( events & AT_ZCL_ONOFF_WDG_TIMEOUT_EVT )
+  {
+    //feed WDG
+    WDG_PIN=1;
+    //delay more than 1 us for watch dog chip
+    uint8 k = 4;
+    while (k--)
+    {
+      asm("NOP");
+      asm("NOP");
+      asm("NOP");
+      asm("NOP");
+      asm("NOP");
+      asm("NOP");
+      asm("NOP");
+      asm("NOP"); 
+      asm("NOP");  
+    }
+    //finish feed WDG
+    WDG_PIN=0;
+    
+    return ( events ^ AT_ZCL_ONOFF_WDG_TIMEOUT_EVT );
   }
   
   // Discard unknown events

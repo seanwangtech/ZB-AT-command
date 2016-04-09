@@ -116,11 +116,11 @@
 #define LED1_POLARITY     ACTIVE_HIGH
 
 #if defined (HAL_BOARD_CC2530EB_REV17)
-  /* 2 - Red */
+  /* 2 - Red */ //watch dog
   #define LED2_BV           BV(6)
   #define LED2_SBIT         P1_6
   #define LED2_DDR          P1DIR
-  #define LED2_POLARITY     ACTIVE_LOW
+  #define LED2_POLARITY     ACTIVE_HIGH
 
   /* 3 - Yellow */
   #define LED3_BV           BV(7)
