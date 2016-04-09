@@ -274,7 +274,7 @@ static void processHalKeyTimeEvt(void ){
       osal_start_timerEx( Hal_TaskID, HAL_KEY_TIME_EVT, 5000);
     }else{
       //ERROR
-      PICTL |= 0x01; //set to falling edge to wait next press //for robust
+      PICTL &= ~0x02; //set to rising edge to wait next press //for robust
     }
   }
 }

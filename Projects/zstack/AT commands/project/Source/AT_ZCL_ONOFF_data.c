@@ -23,9 +23,9 @@
 
 // Basic Cluster
 const uint8 AT_ZCL_ONOFF_ManufacturerName[] = { 5, 'E','S','S','E','X' };
-const uint8 AT_ZCL_ONOFF_ModelId[] = { 5, 'R','E','L','A','Y' };
-const uint8 AT_ZCL_ONOFF_DateCode[] = { 8, '2','0','1','5','0','4','1','0'};
-const uint8 AT_ZCL_ONOFF_PowerSource = POWER_SOURCE_BATTERY;
+const uint8 AT_ZCL_ONOFF_ModelId[] = { 6, 'S','O','C','K','E','T' };
+const uint8 AT_ZCL_ONOFF_DateCode[] = { 8, '2','0','1','5','0','7','0','2'};
+const uint8 AT_ZCL_ONOFF_PowerSource = POWER_SOURCE_DC;
 uint8 AT_ZCL_ONOFF_LocationDescription[]={ 10, 'L','A','B','0','0','7',' ',' ',' ',' ' };
 uint8 AT_ZCL_ONOFF_DeviceEnable = DEVICE_ENABLED;
 

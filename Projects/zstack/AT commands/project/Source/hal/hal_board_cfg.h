@@ -110,21 +110,21 @@
 #define HAL_LED_BLINK_DELAY()   st( { volatile uint32 i; for (i=0; i<0x5800; i++) { }; } )
 
 /* 1 - Green */
-#define LED1_BV           BV(0)
-#define LED1_SBIT         P1_0
-#define LED1_DDR          P1DIR
-#define LED1_POLARITY     ACTIVE_LOW
+#define LED1_BV           BV(7)
+#define LED1_SBIT         P0_7
+#define LED1_DDR          P0DIR
+#define LED1_POLARITY     ACTIVE_HIGH
 
 #if defined (HAL_BOARD_CC2530EB_REV17)
   /* 2 - Red */
-  #define LED2_BV           BV(1)
-  #define LED2_SBIT         P1_1
+  #define LED2_BV           BV(6)
+  #define LED2_SBIT         P1_6
   #define LED2_DDR          P1DIR
   #define LED2_POLARITY     ACTIVE_LOW
 
   /* 3 - Yellow */
-  #define LED3_BV           BV(4)
-  #define LED3_SBIT         P1_4
+  #define LED3_BV           BV(7)
+  #define LED3_SBIT         P1_7
   #define LED3_DDR          P1DIR
   #define LED3_POLARITY     ACTIVE_LOW
 #endif
@@ -138,13 +138,13 @@
 #define ACTIVE_HIGH       !!    /* double negation forces result to be '1' */
 
 /* S1 */
-#define PUSH1_BV          BV(1)
-#define PUSH1_SBIT        P0_1
-#define PUSH1_POLARITY    ACTIVE_LOW
+#define PUSH1_BV          BV(2)
+#define PUSH1_SBIT        P1_2
+#define PUSH1_POLARITY    ACTIVE_HIGH
 
 /* S2 */
-#define PUSH2_BV          BV(0)
-#define PUSH2_SBIT        P2_0
+#define PUSH2_BV          BV(3)
+#define PUSH2_SBIT        P1_3
 #define PUSH2_POLARITY    ACTIVE_LOW
 
 /* ------------------------------------------------------------------------------------------------
