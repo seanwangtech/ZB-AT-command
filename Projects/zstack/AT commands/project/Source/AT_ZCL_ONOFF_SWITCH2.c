@@ -163,10 +163,7 @@ static void AT_ZCL_ONOFF_SWITCH2_update(void){
     }
     
   }
-  
-  if(AT_ZCL_ONOFF_SWITCH2_action==ON_OFF_SWITCH_ACTIONS_0) 
-      HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
-  else HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
+
   
 }
 
@@ -243,11 +240,9 @@ static void AT_ZCL_ONOFF_SWITCH2_OnOffCB( uint8 cmd )
 
   // In this sample app, we use LED2 to simulate
   if ( AT_ZCL_ONOFF_SWITCH2_OnOff == AT_ZCL_GEN_ON ){
-    HalLedSet( HAL_LED_2, HAL_LED_MODE_ON );
     osal_start_timerEx( AT_ZCL_ONOFF_SWITCH2_TaskID, AT_ZCL_ONOFF_SWITCH2_UPDATE_EVT, 10 );
   }
   else{
-    HalLedSet( HAL_LED_2, HAL_LED_MODE_OFF );
     osal_stop_timerEx( AT_ZCL_ONOFF_SWITCH2_TaskID, AT_ZCL_ONOFF_SWITCH2_UPDATE_EVT );
     AT_ZCL_ONOFF_SWITCH2_action=0xFF;   //0xFF indicates that the value is invalid.
   }
@@ -272,10 +267,7 @@ static void AT_ZCL_ONOFF_SWITCH2_ProcessIdentifyTimeChange( void )
   }
   else
   {
-    if ( AT_ZCL_ONOFF_SWITCH2_OnOff )
-      HalLedSet ( HAL_LED_2, HAL_LED_MODE_ON );
-    else
-      HalLedSet ( HAL_LED_2, HAL_LED_MODE_OFF );
+
     osal_stop_timerEx( AT_ZCL_ONOFF_SWITCH2_TaskID, AT_ZCL_ONOFF_SWITCH2_IDENTIFY_TIMEOUT_EVT );
    }
 }

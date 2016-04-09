@@ -199,10 +199,7 @@ static void AT_ZCL_DHT_ProcessIdentifyTimeChange( void )
   }
   else
   {
-    if ( AT_ZCL_DHT_OnOff )
-      HalLedSet ( HAL_LED_1, HAL_LED_MODE_ON );
-    else
-      HalLedSet ( HAL_LED_1, HAL_LED_MODE_OFF );
+
     osal_stop_timerEx( AT_ZCL_DHT_TaskID, AT_ZCL_DHT_IDENTIFY_TIMEOUT_EVT );
   }
 }

@@ -21,7 +21,7 @@
 
 #include "At_include.h"
 
-const char* Revision = "Private Revision:3.2 \n\rThe New Stack";
+const char* Revision = "Private Revision:3.2 \n\rFor Socket";
 byte AT_Uart_TaskID;
 const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
 const uint8 AT_CMD_EPs_Num = sizeof(AT_CMD_EP_ARRAY);
@@ -116,7 +116,7 @@ const AT_smap_unit_t AT_smap[] = {
   {0,AT_SMAP_READ|AT_SMAP_WRITTEN , AT_S_UART_SETUP_ID},
   {0,AT_SMAP_READ|AT_SMAP_WRITTEN , AT_S_MANUFACTURE_CODE_ID},
   {0,AT_SMAP_READ|AT_SMAP_WRITTEN , AT_S_PMW_PRESCALER_VAL_ID},
-  {0,AT_SMAP_READ|AT_SMAP_WRITTEN , AT_S_BUTTON_FUN_ID}
+  {1,AT_SMAP_READ|AT_SMAP_WRITTEN , AT_S_BUTTON_FUN_ID}//ninglvfeihong modified for light sensor
 };
 
 /*********************************************************************

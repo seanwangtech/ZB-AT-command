@@ -15,6 +15,7 @@
 #include "AT_uart.h"
 #include "AT_ZCL_ONOFF_SWITCH.h"
 #include "AT_switch.h"
+#include "OSAL_Nv.h"
 
 #include "onboard.h"
 
@@ -34,7 +35,12 @@ static void AT_ZCL_ONOFF_SWITCH_IdentifyCB( zclIdentify_t *pCmd );
 static void AT_ZCL_ONOFF_SWITCH_BasicResetCB( void );
 static void AT_ZCL_ONOFF_SWITCH_ProcessIdentifyTimeChange( void );
 static void AT_ZCL_ONOFF_SWITCH_update(void);
-static void AT_ZCL_ONOFF_SWITCH_OnOffCB( uint8 cmd );
+
+//ninglvfeihong Modified
+void AT_ZCL_ONOFF_SWITCH_OnOffCB( uint8 cmd );
+static uint8 light_setting_reverse = FALSE;
+void AT_ZCL_ONOFF_SWITCH_setting(uint8 reverse);
+
 static void AT_ZCL_ONOFF_SWITCH_EP_ENABLE( bool isEnable);
 
 /*********************************************************************
@@ -78,10 +84,21 @@ void AT_ZCL_ONOFF_SWITCH_Init( byte task_id )
   //initialize the switch device
   switch_init();
   
+  //ninglvfeihong for light sensor: record the setting of light endpoint
+  //uint8 osal_nv_read( uint16 id, uint16 ndx, uint16 len, void *buf )
+  osal_nv_item_init( AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 1, NULL );
+  osal_nv_read(AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 0, 1, &light_setting_reverse);
+}
+//ninglvfeihong modified for light sensor
+void AT_ZCL_ONOFF_SWITCH_setting(uint8 reverse){
+  if(AT_ZCL_ONOFF_SWITCH_setting_Reverse==reverse)
+    light_setting_reverse = !light_setting_reverse;
+  else
+    light_setting_reverse=reverse;
+  osal_nv_item_init( AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 1, NULL );
+  osal_nv_write( AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 0,1, &light_setting_reverse );
   
 }
-
-
 
 /*********************************************************************
  * @fn          zclSample_event_loop
@@ -151,23 +168,34 @@ uint16 AT_ZCL_ONOFF_SWITCH_event_loop( uint8 task_id, uint16 events )
 ************************************************************/
 static void AT_ZCL_ONOFF_SWITCH_update(void){
   uint8 sw = switch_status();
-  if(AT_ZCL_ONOFF_SWITCH_action != sw){
-    AT_ZCL_ONOFF_SWITCH_action=sw;
-    
-    afAddrType_t dstAddr;
-    dstAddr.addrMode = afAddrNotPresent;
-    if(AT_ZCL_ONOFF_SWITCH_action==ON_OFF_SWITCH_ACTIONS_0 ){
-      zclGeneral_SendOnOff_CmdOff(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
-    }else{
-      zclGeneral_SendOnOff_CmdOn(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
+  if(light_setting_reverse){
+    if(AT_ZCL_ONOFF_SWITCH_action != !sw){
+      AT_ZCL_ONOFF_SWITCH_action= !sw;
+      
+      afAddrType_t dstAddr;
+      dstAddr.addrMode = afAddrNotPresent;
+      if(AT_ZCL_ONOFF_SWITCH_action==ON_OFF_SWITCH_ACTIONS_0 ){
+        zclGeneral_SendOnOff_CmdOff(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
+      }else{
+        zclGeneral_SendOnOff_CmdOn(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
+      }
     }
-    
+      
   }
-  
-  if(AT_ZCL_ONOFF_SWITCH_action==ON_OFF_SWITCH_ACTIONS_0) 
-      HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
-  else HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
-  
+  else{
+    if(AT_ZCL_ONOFF_SWITCH_action != sw){
+        AT_ZCL_ONOFF_SWITCH_action= sw;
+      
+      afAddrType_t dstAddr;
+      dstAddr.addrMode = afAddrNotPresent;
+      if(AT_ZCL_ONOFF_SWITCH_action==ON_OFF_SWITCH_ACTIONS_0 ){
+        zclGeneral_SendOnOff_CmdOff(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
+      }else{
+        zclGeneral_SendOnOff_CmdOn(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
+      }
+    }
+  }
+
 }
 
 
@@ -222,7 +250,8 @@ static void AT_ZCL_ONOFF_SWITCH_IdentifyCB( zclIdentify_t *pCmd )
  *
  * @return  none
  */
-static void AT_ZCL_ONOFF_SWITCH_OnOffCB( uint8 cmd )
+//ninglvfeihong Modified
+void AT_ZCL_ONOFF_SWITCH_OnOffCB( uint8 cmd )
 {
   // Turn on the light
   if ( cmd == COMMAND_ON )
@@ -243,11 +272,11 @@ static void AT_ZCL_ONOFF_SWITCH_OnOffCB( uint8 cmd )
 
   // In this sample app, we use LED2 to simulate
   if ( AT_ZCL_ONOFF_SWITCH_OnOff == AT_ZCL_GEN_ON ){
-    HalLedSet( HAL_LED_2, HAL_LED_MODE_ON );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
     osal_start_timerEx( AT_ZCL_ONOFF_SWITCH_TaskID, AT_ZCL_ONOFF_SWITCH_UPDATE_EVT, 10 );
   }
   else{
-    HalLedSet( HAL_LED_2, HAL_LED_MODE_OFF );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
     osal_stop_timerEx( AT_ZCL_ONOFF_SWITCH_TaskID, AT_ZCL_ONOFF_SWITCH_UPDATE_EVT );
     AT_ZCL_ONOFF_SWITCH_action=0xFF;   //0xFF indicates that the value is invalid.
   }
@@ -272,10 +301,6 @@ static void AT_ZCL_ONOFF_SWITCH_ProcessIdentifyTimeChange( void )
   }
   else
   {
-    if ( AT_ZCL_ONOFF_SWITCH_OnOff )
-      HalLedSet ( HAL_LED_2, HAL_LED_MODE_ON );
-    else
-      HalLedSet ( HAL_LED_2, HAL_LED_MODE_OFF );
     osal_stop_timerEx( AT_ZCL_ONOFF_SWITCH_TaskID, AT_ZCL_ONOFF_SWITCH_IDENTIFY_TIMEOUT_EVT );
    }
 }

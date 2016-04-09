@@ -39,4 +39,6 @@ extern void AT_ZCL_ONOFF_SWITCH_Init( byte task_id );
 extern UINT16 AT_ZCL_ONOFF_SWITCH_event_loop( byte task_id, UINT16 events );
 
 extern void AT_ZCL_ONOFF_SWITCH_EP_ENABLE( bool isEnable);
+extern void AT_ZCL_ONOFF_SWITCH_setting(uint8 reverse);
+#define AT_ZCL_ONOFF_SWITCH_setting_Reverse 2
 #endif
