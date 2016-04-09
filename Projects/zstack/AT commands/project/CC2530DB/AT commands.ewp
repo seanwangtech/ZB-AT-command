@@ -3398,6 +3398,9 @@
       <file>
         <name>$PROJ_DIR$\..\Source\Modified\ZDObject.c</name>
       </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\Modified\ZMain.c</name>
+      </file>
     </group>
     <group>
       <name>others</name>
@@ -4028,9 +4031,6 @@
     <name>ZMain</name>
     <file>
       <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\chipcon_cstartup.s51</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\ZMain.c</name>
     </file>
   </group>
 </project>
