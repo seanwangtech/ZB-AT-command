@@ -159,7 +159,7 @@
 
 /* S3 */
 #define PUSH3_BV          BV(3)
-#define PUSH3_SBIT        P1_3
+#define PUSH3_SBIT        P1_3  //ninglvfeihong:temperary changed
 #define PUSH3_POLARITY    ACTIVE_HIGH
 
 /* ------------------------------------------------------------------------------------------------

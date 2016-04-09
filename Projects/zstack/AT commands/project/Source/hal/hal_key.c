@@ -107,7 +107,7 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback)
     
     P1INP |= PUSH1_BV;              //ninglvfeihong tri-state resistance pin
     P1INP |= PUSH2_BV;              //ninglvfeihong tri-state resistance pin
-    P1INP |= PUSH3_BV;              //ninglvfeihong tri-state resistance pin
+    P1INP |= PUSH3_BV;              //ninglvfeihong tri-state resistance pin don't forget to uncomment this!
     
   }
   else

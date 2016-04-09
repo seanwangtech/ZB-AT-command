@@ -2446,6 +2446,7 @@
           <state>xMT_SYS_FUNC</state>
           <state>xMT_ZDO_FUNC</state>
           <state>xLCD_SUPPORTED=DEBUG</state>
+          <state>xWDT_IN_PM1</state>
           <state>xMT_UART_DEFAULT_OVERFLOW=FALSE</state>
         </option>
         <option>
