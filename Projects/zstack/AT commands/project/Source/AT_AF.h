@@ -35,7 +35,6 @@
   AT_AF_POWER_SVING_EXP_CLUSTERID               \
 }
 
-
 #define AT_AF_Cmd_send_simple(nwkAddr,CID,len, pBuf)  \
   AT_AF_Cmd_send_simple_(nwkAddr,CID,len, (uint8*)pBuf)
 
@@ -112,6 +111,7 @@ typedef struct{
   AT_AF_hdr hdr;
   uint8 list[];
 } AT_AF_Cmd_RCIDDISC_req_t;
+
 
 //the necessary structure for POWER SVING experiment structure
 #define AT_AT_PSE_RSSI_req 0x01

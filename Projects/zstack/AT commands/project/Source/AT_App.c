@@ -409,30 +409,40 @@ uint8 AT_App_Power_saving_exp(AT_App_Cmd_POWER_SAVING_EXP_t* pBuf){
   AT_App_Cmd_POWER_SAVING_EXP.interval= pBuf->interval;
   
   //start timer to start send task
-  osal_start_timerEx( AT_App_TaskID, AT_POWER_SAVING_EXP_EVENT, 500 );  
+  osal_start_timerEx( AT_App_TaskID, AT_POWER_SAVING_EXP_EVENT, 2000 );  
+  printf("\n\rThe experiment will start in 2s!!");
   return AT_NO_ERROR;
 }
 
 
 static void AT_App_process_Power_Saving_Exp_Evt(){
-  AT_AF_hdr buf;
-  buf.cmd =AT_AT_PSE_EXP_req;
+  static uint16 count=0;
+  AT_AF_Cmd_POWER_SAVING_EXP_t buf;
+  buf.hdr.cmd =AT_AT_PSE_EXP_req;
   if(AT_App_Cmd_POWER_SAVING_EXP.count==0) {
     AT_App_Cmd_POWER_SAVING_EXP.interval=0;//not necessay but for robust;
     //send end information
-    buf.info =AT_AF_PSE_info_end;
+    buf.hdr.info =AT_AF_PSE_info_end;
     AT_AF_Cmd_send_simple(AT_App_Cmd_POWER_SAVING_EXP.nwkAddr,AT_AF_POWER_SVING_EXP_CLUSTERID,sizeof(buf), &buf);
     
     HalLedSet ( HAL_LED_1, HAL_LED_MODE_OFF );
     AT_RESP_START();
-    printf("Power Saving Experiment finished");
+    printf("sent:%d",count);
+    printf("\n\rPower Saving Experiment finished");
     AT_RESP_END();
+    
+    count=0;
     return;
   }
+  
+  extern uint8 AT_ZMacACK_disable;
+  AT_ZMacACK_disable=TRUE;
+    
   HalLedSet ( HAL_LED_1, HAL_LED_MODE_TOGGLE );
-  buf.info =AT_AF_PSE_info_ing;
+  buf.hdr.info =AT_AF_PSE_info_ing;
   AT_App_Cmd_POWER_SAVING_EXP.count--;
-  AT_AF_Cmd_send_simple(AT_App_Cmd_POWER_SAVING_EXP.nwkAddr,AT_AF_POWER_SVING_EXP_CLUSTERID,sizeof(buf), &buf);
+  buf.count = AT_App_Cmd_POWER_SAVING_EXP.count;
+  if(afStatus_SUCCESS==AT_AF_Cmd_send_simple(AT_App_Cmd_POWER_SAVING_EXP.nwkAddr,AT_AF_POWER_SVING_EXP_CLUSTERID,sizeof(buf), &buf)) count++;
   osal_start_timerEx( AT_App_TaskID, AT_POWER_SAVING_EXP_EVENT, AT_App_Cmd_POWER_SAVING_EXP.interval );
 }
 /*********************************************************************

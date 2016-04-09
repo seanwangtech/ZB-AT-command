@@ -61,6 +61,7 @@ void AT_AF_Cmd_HA_CIDDISC_CB(afIncomingMSGPacket_t *pkt );
 void AT_AF_Cmd_HA_CIDDISC_req(afIncomingMSGPacket_t *pkt  );
 void AT_AF_Cmd_HA_CIDDISC_rsp(afIncomingMSGPacket_t *pkt );
 
+
 void AT_AF_Cmd_R_CIDDISC_CB(afIncomingMSGPacket_t *pkt );
 void AT_AF_Cmd_R_CIDDISC_req(afIncomingMSGPacket_t *pkt  );
 void AT_AF_Cmd_R_CIDDISC_rsp(afIncomingMSGPacket_t *pkt );
@@ -526,6 +527,7 @@ void AT_AF_Cmd_HA_CIDDISC_rsp(afIncomingMSGPacket_t *pkt ){
 }
 
 
+
 /*******************************************************************
 for AT+R command
 **************************************************************************/
@@ -594,15 +596,17 @@ static void AT_AF_Cmd_RSSI_rsp(afIncomingMSGPacket_t *pkt ){
 static void AT_AF_Cmd_PSE_req(afIncomingMSGPacket_t *pkt){
   AT_AF_Cmd_POWER_SAVING_EXP_t *req = (AT_AF_Cmd_POWER_SAVING_EXP_t *)pkt->cmd.Data;
   static uint16 package_count=0;
+  static uint8 isDisplayAllPackage = FALSE;
   switch(req->hdr.info){
   case AT_AF_PSE_info_pre:
     package_count=0;
     AT_RESP_START();
-    printf("%d packages are coming with interval %dms...",
+    printf("%d packages are coming with interval %dms...\n\rcount id",
            req->count,
            req->interval);
     AT_RESP_END();
-    
+    if(req->count<=0x100)  isDisplayAllPackage=TRUE;
+    else  isDisplayAllPackage=FALSE;
     printf("Package Received:");
     AT_NEXT_LINE();
     break;
@@ -612,11 +616,11 @@ static void AT_AF_Cmd_PSE_req(afIncomingMSGPacket_t *pkt){
     package_count++;
     
     HalLedSet ( HAL_LED_1, HAL_LED_MODE_TOGGLE );
-    printf("\r%d",package_count);
+    if(isDisplayAllPackage)  printf("\r\n%d %d",package_count,req->count);
+    else printf("\r%d",package_count);
     break;
   case AT_AF_PSE_info_end:
-    printf("\r%d",package_count);
-    
+    printf("\r\ntotal:%d",package_count);
     HalLedSet ( HAL_LED_1, HAL_LED_MODE_OFF );
     AT_NEXT_LINE();
     printf("Receive finished!");
