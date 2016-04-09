@@ -18,8 +18,7 @@
 #include "ZDProfile.h"
 #include "hal_led.h"
 #include "AT_App.h"
-#include "zcl.h"
-#include "zcl_general.h"
+
 
 const char* Revision = "Private Revision:1.0";
 const uint8 Revision_len = sizeof("Private Revision:1.0");
@@ -44,7 +43,7 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"PJOIN",   AT_Cmd_PJOIN,   "Permit joining cmmmand"},
   {"JPAN",    AT_Cmd_JPAN,    "Join Specific PAN:ch,PAN,EPAN"},
   {"JN",      AT_Cmd_JN,      "Join Network"},
-  {"READATR", AT_Cmd_READATR, "READATR:Addr,EP,SendMode,CID,AttrI...,AttrID"},
+  {"READATR", AT_Cmd_READATR, "Gets an Attribute From Specified Cluster Server cmmmand"},
   {"WRITEATR",AT_Cmd_WRITEATR,"Sets An Attribute to Specified Cluster Client cmmmand"},
   {"RONOFF",  AT_Cmd_RONOFF,  "Switching Target Devices Between ＆On＊ and ＆Off＊ States cmmmand"},
   {"LONOFF",  AT_Cmd_LONOFF,  "Switch Local Device On/Off"},
@@ -56,7 +55,6 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"INITNV",  AT_Cmd_INITNV, "Initialize NV ID,lenth"},
   {"IDREQ",  AT_Cmd_IDREQ, "Request Node＊s NodeID:Address,XX"},
   {"EUIREQ",  AT_Cmd_EUIREQ, "Request Node＊s EUI64:Address,nodeID,XX"},
-  {"IDENTIFY",  AT_Cmd_IDENTIFY, "Identify Claster :Address,EP,SendMode,Time"},  
   {"TEST", AT_Cmd_TEST, "JUST for test and development"}
 };
   
@@ -104,8 +102,8 @@ uint8 AT_UartInit( uint8 taskID )
   uartConfig.baudRate             = AT_UART_BR;
   uartConfig.flowControl          = FALSE;
   uartConfig.flowControlThreshold = MT_UART_THRESHOLD;
-  uartConfig.rx.maxBufSize        = AT_UART_RX_BUFF_MAX;
-  uartConfig.tx.maxBufSize        = AT_UART_TX_BUFF_MAX;
+  uartConfig.rx.maxBufSize        = MT_UART_RX_BUFF_MAX;
+  uartConfig.tx.maxBufSize        = MT_UART_TX_BUFF_MAX;
   uartConfig.idleTimeout          = MT_UART_IDLE_TIMEOUT;
   uartConfig.intEnable            = TRUE;
   uartConfig.callBackFunc         = AT_UartProcess;
@@ -408,7 +406,6 @@ uint8 AT_strLen(char * str){
 
 void AT_HandleCMD(uint8 *msg){
   uint8 start_point=0;
-  AT_DEBUG( "\n", 1);
   AT_DEBUG( msg, getAT_CMDlength(msg));
   AT_CmdUnit cmdUnit;
   uint16 i;
@@ -434,8 +431,9 @@ void AT_HandleCMD(uint8 *msg){
     
     for(i=0;i<sizeof(AT_Cmd_Arr)/sizeof(AT_Cmd_Arr[0]);i++){
       if(AT_CmpCmd(&cmdUnit,(uint8*)AT_Cmd_Arr[i].AT_Cmd_str)==0){
-        AT_NEXT_LINE();
+        AT_DEBUG("\r\n",2);
         AT_DEBUG(AT_Cmd_Arr[i].description_str,AT_strLen(AT_Cmd_Arr[i].description_str));
+        AT_DEBUG("\r\n",2);
         AT_Cmd_Arr[i].AT_CmdFn(start_point,msg);
         break;
       }
@@ -1283,100 +1281,9 @@ void AT_Cmd_JN(uint8 start_point, uint8* msg){
     AT_OK();
   }else AT_ERROR(state);
 }
-/*****************************************************
-AT+READATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,＃< AttrID >
-          <Address> - 16 bit hexadecimal number.
-                       The node ID of a remote device if the command is 
-                       sent directly to a node or a group ID if the command 
-                       is sent to a group.
 
-          <EP> - 8 bit hexadecimal number, endpoint of a remote device. 
-                    Valid end point is 0x01 to 0xF0. 
-
-          <SendMode> - A Boolean type to choose transmission mode, 
-                    0 每 means sending command directly; 
-                    1 每 means sending command to a group 
-
-          <ClusterID> 16 bit hexadecimal number which represents the cluster ID
-
-          <AttrID> - 16 bit hexadecimal number which represents the attribute ID
-                      according to the ZigBee Home Automation specification.support
-                      5 attributes per AT command
-
-RESPATTR:<NodeID>,<EP>,<ClusterID>,<AttrID>,<Status>,<dataType>,<AttrInfo>
-          <NodeID> - 16 bit hexadecimal number. It is the source Node ID 
-                     of response. 
-
-          <EP> - 8 bit hexadecimal number, the source endpoint of the response. 
-
-          <ClusterID> - cluster ID, 16 bit hexadecimal number
-
-          <AttrID>: attribute ID 16 bit hexadecimal number 
-
-          <Status> - 8 bit hexadecimal number which indicates the result of
-                      the requested operation. 
-
-          <dataType> - 8 bit hexadecimal number which indicates the type of the data
-          
-          <AttrInfo> - hexadecimal number of char string (size depends on 
-                      the attribute requested). <AttrInfo> shall only be 
-                      valid if <Status> = 0x00. If <Status> indicates error, 
-                      <AttrInfo> is not returned.
-
-example:
-AT+READATR:0,4,0,0,6,5,4
-
-*******************************************************/
 void AT_Cmd_READATR(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[10];
-  uint8 i;
-  uint8 parameterN=1;
-  char pattern[11];
-  for(i=0;i<10;i++){
-    start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-    if(cmdUnitArr[i].symbol == ',') parameterN++;
-  }
-  
-#if AT_CMD_PATTERN_CHECK
-  //built check pattern
-  pattern[0]=':';
-  for(i=1;i<5;i++) pattern[i]=',';
-  for(i=5;i<parameterN;i++) pattern[i]=',';
-  pattern[i]='\r';
-  pattern[i+1]='\0';
-#endif
-  
-  //check pattern
-  AT_PARSE_CMD_PATTERN_ERROR(pattern,cmdUnitArr);
-  
-  
-  uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
-  uint8 sendmode=AT_ChartoInt8(&cmdUnitArr[2]);
-  
-  //build destination address
-  afAddrType_t dstAddr;
-  dstAddr.endPoint = endpoint;
-  dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);
-  dstAddr.addrMode = sendmode==0 ? (afAddrMode_t)Addr16Bit : (afAddrMode_t) AddrGroup;
-  
-  //build ZCL readCmd
-  zclReadCmd_t* readCmd = (zclReadCmd_t*) osal_mem_alloc(1+2*(parameterN-4));
-  readCmd->numAttr=parameterN-4;
-  for(i=0;i<parameterN-4;i++)
-      readCmd->attrID[i] = AT_ChartoInt16(&cmdUnitArr[4+i]);
-  
-  //send zcl read
-  uint8 state;
-  state = zcl_SendRead( endpoint, &dstAddr,
-                               AT_ChartoInt16(&cmdUnitArr[3]), readCmd,
-                               ZCL_FRAME_CLIENT_SERVER_DIR, 0, 1);
-  osal_mem_free(readCmd);
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  
 }
-
-
-
 void AT_Cmd_WRITEATR(uint8 start_point, uint8* msg){
 }
 
@@ -1398,85 +1305,18 @@ void AT_Cmd_DISABLE(uint8 start_point, uint8* msg){
 }
 #endif
 
-
-/**************************************************************************
-AT+IDENTIFY:<Address>,<EP>,<SendMode>,<Time>
-            <Address> - 16 bit hexadecimal number. It shall be Node ID of a remote device 
-                        if the command is sent directly to a node 
-                         or it shall be a group ID if the command is sent to a group.
-
-            <EP> - 8 bit hexadecimal number represent the Endpoint of the target
-
-            <SendMode> - A Boolean type to choose transmission mode, 
-                          0 每 means sending command directly; 
-                          1 每 means sending command to a group 
-
-            <Time> - 16 bit hexadecimal number represents the identification time
-*******************************************************************************/
-void AT_Cmd_IDENTIFY(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[5];
-  uint8 i;
-  for(i=0;i<5;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  AT_PARSE_CMD_PATTERN_ERROR(":,,,\r",cmdUnitArr);
-  
-  uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
-  uint8 sendmode=AT_ChartoInt8(&cmdUnitArr[2]);
-  
-  //build destination address
-  afAddrType_t dstAddr;
-  dstAddr.endPoint = endpoint;
-  dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);
-  dstAddr.addrMode = sendmode==0 ? (afAddrMode_t)Addr16Bit : (afAddrMode_t) AddrGroup;
-  
-  uint8 state;
-  state = zclGeneral_SendIdentify( endpoint,&dstAddr,AT_ChartoInt16(&cmdUnitArr[3]),0, 0 );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-  
-}
-
 void AT_Cmd_TEST(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[1];
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
   AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
-  
-  
-  
-  afAddrType_t dstAddr;
-  dstAddr.endPoint = 4;
-  dstAddr.addr.shortAddr =0;
-  //dstAddr.panId =2016;//0;
-  dstAddr.addrMode = (afAddrMode_t)Addr16Bit;  
-  
-  zclReadCmd_t* readCmd = (zclReadCmd_t*) osal_mem_alloc(1+2*3 );
-  readCmd->numAttr=3;
-  readCmd->attrID[0] = ATTRID_BASIC_MANUFACTURER_NAME;
-  readCmd->attrID[1] = ATTRID_BASIC_MODEL_ID;
-  readCmd->attrID[2] = ATTRID_BASIC_DATE_CODE;
  
-  uint8 state;
-  state = zcl_SendRead( 4, &dstAddr,
-                                ZCL_CLUSTER_ID_GEN_BASIC, readCmd,
-                               ZCL_FRAME_CLIENT_SERVER_DIR, 0, 1);
-  osal_mem_free(readCmd);
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  /*
-  uint16 buf[]={ATTRID_DEV_TEMP_CURRENT};
-  uint8 state;
-  state = zcl_SendCommand( 4, &dstAddr, ZCL_CLUSTER_ID_GEN_DEVICE_TEMP_CONFIG, ZCL_CMD_READ, FALSE,
-                              ZCL_FRAME_CLIENT_SERVER_DIR,0, 0, 0, 2, (uint8*) buf );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-  */
-  
-/* 
   AT_RESP_START();
   char str[20];
   AT_Int8toChar(_NIB.nwkState,str);
   AT_RESP(str,2);
   AT_RESP_END(); 
   AT_OK();
-  
+  /*
   typedef enum
 {
   NWK_INIT,

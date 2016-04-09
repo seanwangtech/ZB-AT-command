@@ -19,9 +19,6 @@
 //#define AT_UART_BR HAL_UART_BR_57600
 #define AT_UART_BR HAL_UART_BR_115200
 
-#define AT_UART_RX_BUFF_MAX     100
-#define AT_UART_TX_BUFF_MAX     128
-
 #define AT_FCS_VERIFY              FALSE          //for being convenient for Serial Portdebugging 
 #define AT_CMD_PATTERN_CHECK       TRUE
 #define AT_DEBUG_INFORMATION_SHOW  TRUE
@@ -167,7 +164,7 @@ byte AT_UartCalcFCS( uint8 *msg_ptr, uint8 len );
 void AT_HandleCMD(uint8 *msg);
 void AT_UARTWriteErrMsg(uint8 error_code);
 
-/**********for parsing  command (TOOLS)*****************/
+/**********for parsing  command*****************/
 uint8 _AT_ChartoInt(uint8 n);
 uint8 AT_ChartoInt8(AT_CmdUnit *cmdUnit);
 uint16 AT_ChartoInt16(AT_CmdUnit *cmdUnit);
@@ -201,6 +198,5 @@ void AT_Cmd_WRITENV(uint8 start_point, uint8* msg);
 void AT_Cmd_INITNV(uint8 start_point, uint8* msg);
 void AT_Cmd_IDREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_EUIREQ(uint8 start_point, uint8* msg);
-void AT_Cmd_IDENTIFY(uint8 start_point, uint8* msg);
 void AT_Cmd_TEST(uint8 start_point, uint8* msg);
 #endif

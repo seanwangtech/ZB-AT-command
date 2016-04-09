@@ -1,12 +1,13 @@
 /**************************************************************************************************
-  Filename:       zcl_ha.c
-  Revised:        $Date: 2009-12-22 17:20:57 -0800 (Tue, 22 Dec 2009) $
-  Revision:       $Revision: 21402 $
+  Filename:       OSAL_SampleApp.c
+  Revised:        $Date: 2008-02-07 12:10:00 -0800 (Thu, 07 Feb 2008) $
+  Revision:       $Revision: 16360 $
 
-  Description:    Describe the purpose and contents of the file.
+  Description:    This file contains all the settings and other functions
+                  that the user should set and change.
 
 
-  Copyright 2006-2007 Texas Instruments Incorporated. All rights reserved.
+  Copyright 2007 Texas Instruments Incorporated. All rights reserved.
 
   IMPORTANT: Your use of this Software is limited to those specific rights
   granted under the terms of a software license agreement between the user
@@ -22,8 +23,8 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE, 
+  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
   NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
@@ -34,85 +35,99 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com. 
+  contact Texas Instruments Incorporated at www.TI.com.
 **************************************************************************************************/
 
 /*********************************************************************
  * INCLUDES
  */
+
 #include "ZComDef.h"
+#include "hal_drivers.h"
 #include "OSAL.h"
+#include "OSAL_Tasks.h"
 
-#include "zcl.h"
-#include "zcl_general.h"
-#include "zcl_closures.h"
-#include "zcl_HVAC.h"
-#include "zcl_ss.h"
-#include "zcl_ms.h"
-#include "zcl_lighting.h"
-#include "zcl_ha.h"
+#if defined ( MT_TASK )
+  #include "MT.h"
+  #include "MT_TASK.h"
+#endif
 
-/*********************************************************************
- * MACROS
- */
+#include "nwk.h"
+#include "APS.h"
+#include "ZDApp.h"
+#if defined ( ZIGBEE_FREQ_AGILITY ) || defined ( ZIGBEE_PANID_CONFLICT )
+  #include "ZDNwkMgr.h"
+#endif
+#if defined ( ZIGBEE_FRAGMENTATION )
+  #include "aps_frag.h"
+#endif
 
-/*********************************************************************
- * CONSTANTS
- */
-
-/*********************************************************************
- * TYPEDEFS
- */
+#include "SampleApp.h"
+#include "AT_App.h"
 
 /*********************************************************************
  * GLOBAL VARIABLES
  */
 
-/*********************************************************************
- * EXTERNAL VARIABLES
- */
+// The order in this table must be identical to the task initialization calls below in osalInitTask.
+const pTaskEventHandlerFn tasksArr[] = {
+  macEventLoop,
+  nwk_event_loop,
+  Hal_ProcessEvent,
+#if defined( MT_TASK )
+  MT_ProcessEvent,
+#endif
+  APS_event_loop,
+#if defined ( ZIGBEE_FRAGMENTATION )
+  APSF_ProcessEvent,
+#endif
+  ZDApp_event_loop,
+#if defined ( ZIGBEE_FREQ_AGILITY ) || defined ( ZIGBEE_PANID_CONFLICT )
+  ZDNwkMgr_event_loop,
+#endif
+  SampleApp_ProcessEvent,
+  AT_App_ProcessEvent
+};
+
+const uint8 tasksCnt = sizeof( tasksArr ) / sizeof( tasksArr[0] );
+uint16 *tasksEvents;
 
 /*********************************************************************
- * EXTERNAL FUNCTIONS
- */
+ * FUNCTIONS
+ *********************************************************************/
 
 /*********************************************************************
- * LOCAL VARIABLES
- */
-
-/*********************************************************************
- * LOCAL FUNCTIONS
- */
-
-/*********************************************************************
- * @fn      zclHA_Init
+ * @fn      osalInitTasks
  *
- * @brief   Register the Simple descriptor with the HA profile.
- *          This function also registers the profile's cluster
- *          conversion table.
+ * @brief   This function invokes the initialization function for each task.
  *
- * @param   simpleDesc - a pointer to a valid SimpleDescriptionFormat_t, must not be NULL.
+ * @param   void
  *
  * @return  none
  */
-void zclHA_Init( SimpleDescriptionFormat_t *simpleDesc )
+void osalInitTasks( void )
 {
-  endPointDesc_t *epDesc;
+  uint8 taskID = 0;
 
-  // Register the application's endpoint descriptor
-  //  - This memory is allocated and never freed.
-  epDesc = osal_mem_alloc( sizeof ( endPointDesc_t ) );
-  if ( epDesc )
-  {
-    // Fill out the endpoint description.
-    epDesc->endPoint = simpleDesc->EndPoint;
-    epDesc->task_id = &zcl_TaskID;   // all messages get sent to ZCL first
-    epDesc->simpleDesc = simpleDesc;
-    epDesc->latencyReq = noLatencyReqs;
+  tasksEvents = (uint16 *)osal_mem_alloc( sizeof( uint16 ) * tasksCnt);
+  osal_memset( tasksEvents, 0, (sizeof( uint16 ) * tasksCnt));
 
-    // Register the endpoint description with the AF
-    afRegister( epDesc );
-  }
+  macTaskInit( taskID++ );
+  nwk_init( taskID++ );
+  Hal_Init( taskID++ );
+#if defined( MT_TASK )
+  MT_TaskInit( taskID++ );
+#endif
+  APS_Init( taskID++ );
+#if defined ( ZIGBEE_FRAGMENTATION )
+  APSF_Init( taskID++ );
+#endif
+  ZDApp_Init( taskID++ );
+#if defined ( ZIGBEE_FREQ_AGILITY ) || defined ( ZIGBEE_PANID_CONFLICT )
+  ZDNwkMgr_Init( taskID++ );
+#endif
+  SampleApp_Init( taskID++ );
+  AT_App_Init(taskID++ );
 }
 
 /*********************************************************************
