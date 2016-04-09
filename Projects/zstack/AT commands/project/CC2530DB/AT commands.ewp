@@ -3361,6 +3361,9 @@
       <file>
         <name>$PROJ_DIR$\..\Source\Modified\ZDApp.c</name>
       </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\Modified\ZDObject.c</name>
+      </file>
     </group>
     <group>
       <name>others</name>
@@ -3368,7 +3371,7 @@
         <name>$PROJ_DIR$\..\Source\AT_EXTERN.h</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\Source\At_include.h</name>
+        <name>$PROJ_DIR$\..\Source\AT_include.h</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_ONOFF_output.c</name>
@@ -3958,9 +3961,6 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDNwkMgr.h</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.h</name>

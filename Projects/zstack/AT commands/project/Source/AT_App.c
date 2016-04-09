@@ -19,6 +19,7 @@
 #include "AT_include.h"
 
 #include "AT_printf.h"
+#include "OSAL_PwrMgr.h"
 
 
 uint8 AT_App_TaskID;   // Task ID for internal task/event processing
@@ -73,6 +74,9 @@ void AT_App_Init(uint8 task_id ){
   NLME_PermitJoiningRequest(0);      //disable permit joining
   
   osal_set_event(task_id, AT_ENTRY_EVENT);
+  
+  //ninglvfeihong very inmportant for Switch. because the device have to enter power saving mode once power on
+  osal_pwrmgr_device( PWRMGR_BATTERY );
   
 }
 

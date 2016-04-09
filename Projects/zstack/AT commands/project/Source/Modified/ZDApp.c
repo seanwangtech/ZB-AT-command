@@ -1081,6 +1081,7 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
             if ( _NIB.nwkDevAddress == INVALID_NODE_ADDR )
             {
               _NIB.nwkDevAddress = osal_rand();
+              
               ZMacSetReq( ZMacShortAddress, (byte*)&_NIB.nwkDevAddress );
             }
 
@@ -1095,9 +1096,9 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
               _NIB.nwkPanId = pChosenNwk->panId;
               ZMacSetReq( ZMacPanId, (byte*)&(_NIB.nwkPanId) );
             }
-
-            tmp = true;
-            ZMacSetReq( ZMacRxOnIdle, &tmp ); // Set receiver always on during rejoin
+            //ninglvfeihong
+            tmp = false;
+            ZMacSetReq( ZMacRxOnIdle, &tmp ); // change receiver to not always on during rejoin
             if ( NLME_ReJoinRequest( ZDO_UseExtendedPANID, pChosenNwk->logicalChannel) != ZSuccess )
             {
               ZDApp_NetworkInit( (uint16)(NWK_START_DELAY
@@ -1151,7 +1152,8 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
         devStartMode = MODE_RESUME;
         _tmpRejoinState = true;
         osal_cpyExtAddr( ZDO_UseExtendedPANID, _NIB.extendedPANID );
-        zgDefaultStartingScanDuration = BEACON_ORDER_60_MSEC;
+        //ninglvfeihong modified
+        zgDefaultStartingScanDuration = BEACON_ORDER_15_MSEC;
         ZDApp_NetworkInit( 0 );
       }
       break;
