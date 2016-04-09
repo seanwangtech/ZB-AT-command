@@ -462,8 +462,6 @@
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
           <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\Source\hal</state>
-          <state>$PROJ_DIR$\..\Source\Modified</state>
           <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB</state>
@@ -1539,8 +1537,8 @@
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
           <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\Source\Modified</state>
           <state>$PROJ_DIR$\..\Source\hal</state>
+          <state>$PROJ_DIR$\..\Source\Modified</state>
           <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB</state>
@@ -2616,8 +2614,6 @@
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$</state>
           <state>$PROJ_DIR$\..\Source</state>
-          <state>$PROJ_DIR$\..\Source\hal</state>
-          <state>$PROJ_DIR$\..\Source\Modified</state>
           <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
           <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB</state>
@@ -3345,6 +3341,12 @@
       <file>
         <name>$PROJ_DIR$\..\Source\hal\hal_key.h</name>
       </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\hal\hal_led.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\hal\hal_led.h</name>
+      </file>
     </group>
     <group>
       <name>Modified</name>
@@ -3353,6 +3355,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Source\Modified\OnBoard.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\Modified\ZDApp.c</name>
       </file>
     </group>
     <group>
@@ -3436,9 +3441,6 @@
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_lcd.h</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_led.h</name>
-      </file>
-      <file>
         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_sleep.h</name>
       </file>
       <file>
@@ -3468,9 +3470,6 @@
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_lcd.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_led.c</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_sleep.c</name>
@@ -3943,9 +3942,6 @@
   </group>
   <group>
     <name>ZDO</name>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDApp.c</name>
-    </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDApp.h</name>
     </file>

@@ -33,7 +33,9 @@ byte AT_ZCL_ONOFF_TaskID;
 static void AT_ZCL_ONOFF_IdentifyCB( zclIdentify_t *pCmd );
 static void AT_ZCL_ONOFF_BasicResetCB( void );
 static void AT_ZCL_ONOFF_ProcessIdentifyTimeChange( void );
-static void AT_ZCL_ONOFF_OnOffCB( uint8 cmd );
+
+//ninglvfeihong Modified for Socket
+void AT_ZCL_ONOFF_OnOffCB( uint8 cmd );
 static void AT_ZCL_ONOFF_EP_ENABLE( bool isEnable);
 
 /*********************************************************************
@@ -211,7 +213,9 @@ static void AT_ZCL_ONOFF_ProcessIdentifyTimeChange( void )
  *
  * @return  none
  */
-static void AT_ZCL_ONOFF_OnOffCB( uint8 cmd )
+
+//ninglvfeihong Modified for Socket
+void AT_ZCL_ONOFF_OnOffCB( uint8 cmd )
 {
   // Turn on the light
   if ( cmd == COMMAND_ON )
@@ -232,11 +236,11 @@ static void AT_ZCL_ONOFF_OnOffCB( uint8 cmd )
 
   // In this sample app, we use LED4 to simulate the Light
   if ( AT_ZCL_ONOFF_OnOff == AT_ZCL_GEN_ON ){
-    //HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
     relay_on();
   }
   else{
-    //HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
     relay_off();
   }
 }
