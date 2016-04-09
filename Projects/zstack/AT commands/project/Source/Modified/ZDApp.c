@@ -165,6 +165,7 @@ uint8 ZDO_UseExtendedPANID[Z_EXTADDR_LEN];
 
 pfnZdoCb zdoCBFunc[MAX_ZDO_CB_FUNC];
 
+
 /*********************************************************************
  * EXTERNAL VARIABLES
  */
@@ -210,7 +211,8 @@ void ZDApp_NodeProfileSync( uint8 stackProfile );
 void ZDApp_ProcessMsgCBs( zdoIncomingMsg_t *inMsg );
 void ZDApp_RegisterCBs( void );
 void ZDApp_InitZdoCBFunc(void);
-
+//ninglvfeihong added
+static uint8 AT_get_next_channel(void);
 /*********************************************************************
  * LOCAL VARIABLES
  */
@@ -258,6 +260,11 @@ uint16 ZDApp_SavedPollRate = POLL_RATE;
  */
 void ZDApp_Init( uint8 task_id )
 {
+  //ninglvfeihong added 
+  //initilize the default channel list in ZDO layer
+  zgDefaultChannelList = BV(AT_get_next_channel());
+  
+  
   // Save the task ID
   ZDAppTaskID = task_id;
 
@@ -1055,14 +1062,23 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
         // Process the network discovery scan results and choose a parent
         // device to join/rejoin itself
         networkDesc_t *pChosenNwk;
-        if ( ( (pChosenNwk = ZDApp_NwkDescListProcessing()) != NULL ) && (zdoDiscCounter > NUM_DISC_ATTEMPTS) )
+        //ninglvfeihong modified here
+        //modify zgDefaultChannelList
+        pChosenNwk = ZDApp_NwkDescListProcessing();
+        if(pChosenNwk==NULL){
+          //ninglvfeihong if there isn't any PAN which can be join, scan another channel
+          zgDefaultChannelList = BV(AT_get_next_channel());
+        }
+        
+        //ninglvfeihong modified
+        if ( ( (pChosenNwk) != NULL ) && (zdoDiscCounter > NUM_DISC_ATTEMPTS) )
         {
           if ( devStartMode == MODE_JOIN )
           {
             devState = DEV_NWK_JOINING;
 
-            ZDApp_NodeProfileSync( pChosenNwk->stackProfile);
-
+            ZDApp_NodeProfileSync( pChosenNwk->stackProfile);  
+              
             if ( NLME_JoinRequest( pChosenNwk->extendedPANID, pChosenNwk->panId,
                                   pChosenNwk->logicalChannel,
                                   ZDO_Config_Node_Descriptor.CapabilityFlags,
@@ -1070,6 +1086,9 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
             {
               ZDApp_NetworkInit( (uint16)(NWK_START_DELAY
                                           + ((uint16)(osal_rand()& EXTENDED_JOINING_RANDOM_MASK))) );
+            }else{
+              //ninglvfeihong modified
+              halSleep( 400);
             }
           } // if ( devStartMode == MODE_JOIN )
           else if ( devStartMode == MODE_REJOIN )
@@ -1081,6 +1100,7 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
             if ( _NIB.nwkDevAddress == INVALID_NODE_ADDR )
             {
               _NIB.nwkDevAddress = osal_rand();
+              
               ZMacSetReq( ZMacShortAddress, (byte*)&_NIB.nwkDevAddress );
             }
 
@@ -1095,9 +1115,9 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
               _NIB.nwkPanId = pChosenNwk->panId;
               ZMacSetReq( ZMacPanId, (byte*)&(_NIB.nwkPanId) );
             }
-
-            tmp = true;
-            ZMacSetReq( ZMacRxOnIdle, &tmp ); // Set receiver always on during rejoin
+            //ninglvfeihong
+            tmp = false;
+            ZMacSetReq( ZMacRxOnIdle, &tmp ); // change receiver to not always on during rejoin
             if ( NLME_ReJoinRequest( ZDO_UseExtendedPANID, pChosenNwk->logicalChannel) != ZSuccess )
             {
               ZDApp_NetworkInit( (uint16)(NWK_START_DELAY
@@ -1111,6 +1131,7 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
             NLME_SetPollRate( 0 );
             NLME_SetQueuedPollRate( 0 );
             NLME_SetResponseRate( 0 );
+            
           }
           else
           {
@@ -1119,12 +1140,15 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
               ZDApp_SavedPollRate = zgPollRate;
               NLME_SetPollRate( zgRejoinPollRate );
             }
+             //ninglvfeihong modified
+             // halSleep( 400);
           }
         }
         else
         {
           if ( continueJoining )
-          {
+          {       
+            
     #if defined ( MANAGED_SCAN )
             ZDApp_NetworkInit( MANAGEDSCAN_DELAY_BETWEEN_SCANS );
     #else
@@ -1151,7 +1175,8 @@ void ZDApp_ProcessOSALMsg( osal_event_hdr_t *msgPtr )
         devStartMode = MODE_RESUME;
         _tmpRejoinState = true;
         osal_cpyExtAddr( ZDO_UseExtendedPANID, _NIB.extendedPANID );
-        zgDefaultStartingScanDuration = BEACON_ORDER_60_MSEC;
+        //ninglvfeihong modified
+        zgDefaultStartingScanDuration = BEACON_ORDER_15_MSEC;
         ZDApp_NetworkInit( 0 );
       }
       break;
@@ -3032,3 +3057,12 @@ ZStatus_t ZDO_DeregisterForZdoCB( uint8 indID )
 
 /*********************************************************************
 *********************************************************************/
+//ninglvfeihong added
+static uint8 AT_get_next_channel(){
+  static uint8 previous_channel=31;
+  previous_channel++;
+  while((BV(previous_channel%32)&DEFAULT_CHANLIST)==0){
+       previous_channel++;
+  }
+  return previous_channel%32;
+}

@@ -3349,6 +3349,9 @@
       <file>
         <name>$PROJ_DIR$\..\Source\hal\hal_led.h</name>
       </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\hal\hal_sleep.c</name>
+      </file>
     </group>
     <group>
       <name>Modified</name>
@@ -3360,6 +3363,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Source\Modified\ZDApp.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\Modified\ZDObject.c</name>
       </file>
     </group>
     <group>
@@ -3472,9 +3478,6 @@
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_lcd.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_sleep.c</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_startup.c</name>
@@ -3958,9 +3961,6 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDNwkMgr.h</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.h</name>
