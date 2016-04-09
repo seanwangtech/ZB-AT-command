@@ -232,11 +232,11 @@ static void AT_ZCL_ONOFF_OnOffCB( uint8 cmd )
 
   // In this sample app, we use LED4 to simulate the Light
   if ( AT_ZCL_ONOFF_OnOff == AT_ZCL_GEN_ON ){
-    //HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
     relay_on();
   }
   else{
-    //HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
     relay_off();
   }
 }

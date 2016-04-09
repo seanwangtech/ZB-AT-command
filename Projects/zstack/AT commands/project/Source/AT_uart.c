@@ -21,7 +21,7 @@
 
 #include "At_include.h"
 
-const char* Revision = "Private Revision:3.2 \n\rThe New Stack";
+const char* Revision = "Private Revision:3.2 \n\r For Dongle";
 byte AT_Uart_TaskID;
 const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
 const uint8 AT_CMD_EPs_Num = sizeof(AT_CMD_EP_ARRAY);

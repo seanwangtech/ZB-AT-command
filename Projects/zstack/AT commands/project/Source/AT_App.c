@@ -70,9 +70,10 @@ void AT_App_Init(uint8 task_id ){
   HalKeyConfig (1, NULL);//enable interrupt
   RegisterForKeys( task_id );
   
-  NLME_PermitJoiningRequest(0);      //Do not permit joining
+  NLME_PermitJoiningRequest(0);      //do not allow join
   
   osal_set_event(task_id, AT_ENTRY_EVENT);
+  
 }
 
 
@@ -109,10 +110,20 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
           AT_ZCL_ProcessIncomingMsg( (zclIncomingMsg_t *)MSGpkt );
           break;
           
-          
         // Received whenever the device changes state in the network
         case ZDO_STATE_CHANGE:
-          break;
+          // If the device has started up, notify the application
+          if (((osal_event_hdr_t *) MSGpkt)->status == DEV_END_DEVICE ||
+              ((osal_event_hdr_t *) MSGpkt)->status == DEV_ROUTER ||
+              ((osal_event_hdr_t *) MSGpkt)->status == DEV_ZB_COORD )
+          {
+            HalLedSet (HAL_LED_2, HAL_LED_MODE_ON);
+          }
+          else  if (((osal_event_hdr_t *) MSGpkt)->status == DEV_HOLD ||
+                  ((osal_event_hdr_t *) MSGpkt)->status == DEV_INIT)
+          {
+            HalLedSet ( HAL_LED_2, HAL_LED_MODE_FLASH );
+          }
 #if AT_MSG_SEND_MODE
         case AT_CMD_MSG:
           //HalUARTWrite ( 0, " received \n", sizeof(" received \n") );
@@ -176,6 +187,7 @@ void AT_handleZCL_EP(void){
       //enable the ZCL layer
       AT_ZCL_EP_ENABLE( 0,AT_CMD_EP_ARRAY[i]);
     }
+    
   }
 }
 
@@ -213,6 +225,13 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
   case 0: //pressing time less than 5 seconds
     if ( keys & HAL_KEY_SW_1 )
     {
+      AT_Cmd_RONOFF(0,":,1,0,\r");//toggle switch
+    }
+    break;
+  case 1: //pressing time during 5 to 10 seconds
+    
+    if ( keys & HAL_KEY_SW_1 )
+    {
       AT_Cmd_ANNCE(0,"\r");//announce in the network
       //build broadcast address
       afAddrType_t AT_AF_broad_addr={
@@ -228,17 +247,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
                          &AT_AF_TransID,
                          AF_DISCV_ROUTE,
                          AF_DEFAULT_RADIUS );
-     HalLedBlink( HAL_LED_2, 4, 50, 250 );
-    }else if(keys & HAL_KEY_SW_2){
-     HalLedBlink( HAL_LED_2, 4, 50, 250 );
-    }
-    break;
-  case 1: //pressing time during 5 to 10 seconds
-    
-    if ( keys & HAL_KEY_SW_1 )
-    {
-      NLME_PermitJoiningRequest(30);//allow join in 30 seconds
-      HalLedBlink( HAL_LED_2, 30, 10, 1000 );
+      
     }
     break;
   case 2: //pressing time during 10 to 15 
