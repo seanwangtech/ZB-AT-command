@@ -78,6 +78,7 @@ void AT_App_Init(uint8 task_id ){
   //ninglvfeihong very inmportant for Switch. because the device have to enter power saving mode once power on
   osal_pwrmgr_device( PWRMGR_BATTERY );
   
+
 }
 
 
@@ -232,6 +233,8 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
   case 0: //pressing time less than 5 seconds
     if ( keys & HAL_KEY_SW_1 )
     {
+      
+     
       
       afAddrType_t dstAddr;
       dstAddr.endPoint = 1;

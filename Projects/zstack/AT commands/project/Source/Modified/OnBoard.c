@@ -254,7 +254,7 @@ void OnBoard_KeyCallback ( uint8 keys, uint8 state )
     if(hal_key_pre_interval_time<60) return;//check the period which users presses
     else if(hal_key_pre_interval_time <5000) shift =0;
     else {
-      HalLedBlink( HAL_LED_2, 1, 50, 150 );//cancel Blink
+      HalLedBlink( HAL_LED_3, 1, 10, 150 );//cancel Blink
       if(hal_key_pre_interval_time <10000) shift =1;
       else if(hal_key_pre_interval_time <15000) shift =2;
       else return;

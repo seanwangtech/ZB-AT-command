@@ -272,6 +272,9 @@ void AT_ZCL_ONOFF_OnOffCB( uint8 cmd )
     HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
     relay_off();
   }
+  
+   //sound the speaker
+      HalLedBlink( HAL_LED_3, 1,30,50 ); 
 }
 
 

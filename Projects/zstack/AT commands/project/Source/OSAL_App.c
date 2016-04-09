@@ -92,11 +92,7 @@ const pTaskEventHandlerFn tasksArr[] = {
 #endif
   zcl_event_loop,
   AT_App_ProcessEvent,
-  AT_ZCL_TEMP_event_loop,
   AT_ZCL_ONOFF_event_loop,
-  AT_ZCL_ONOFF_SWITCH_event_loop,
-  AT_ZCL_ONOFF_SWITCH2_event_loop,
-  AT_ZCL_DHT_event_loop
 };
 
 const uint8 tasksCnt = sizeof( tasksArr ) / sizeof( tasksArr[0] );
@@ -138,11 +134,7 @@ void osalInitTasks( void )
 #endif
   zcl_Init( taskID++ );
   AT_App_Init(taskID++ );
-  AT_ZCL_TEMP_Init( taskID++ );
   AT_ZCL_ONOFF_Init( taskID++ );
-  AT_ZCL_ONOFF_SWITCH_Init( taskID++ );
-  AT_ZCL_ONOFF_SWITCH2_Init( taskID++ );
-  AT_ZCL_DHT_Init( taskID++ );
 }
 
 /*********************************************************************

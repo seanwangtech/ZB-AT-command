@@ -237,6 +237,7 @@ HAL_ISR_FUNCTION( usbKeyISR, P1INT_VECTOR )
   HAL_ENTER_ISR();
   if(PICTL&0x02){//previous seting is flling edge
     hal_key_pre_interval_time =osal_GetSystemClock()-hal_key_pre_faliing_time;
+    osal_stop_timerEx( Hal_TaskID, HAL_KEY_TIME_EVT);
   }else{
     hal_key_pre_faliing_time = osal_GetSystemClock();
     osal_start_timerEx( Hal_TaskID, HAL_KEY_TIME_EVT, 5000);
@@ -253,11 +254,13 @@ HAL_ISR_FUNCTION( usbKeyISR, P1INT_VECTOR )
   }*/
   //execute when a rising edge iterrupt comes
   if( PICTL&0x02) {
-    if(hal_key_pre_interval_time>10)//ensure the time slot which is less than 10 ms to be filtered
+    if(hal_key_pre_interval_time>1)//ensure the time slot which is less than 10 ms to be filtered
       osal_set_event(Hal_TaskID, HAL_KEY_EVENT);
   }
   if(PUSH1_SBIT) PICTL |= 0x02; //set to falling edge//anti-shake of the button
-  else PICTL &= ~0x02; //set to rising edge
+  else {
+    PICTL &= ~0x02; //set to rising edge
+  }
   HAL_KEY_CLR_INT();
 
   HAL_EXIT_ISR();

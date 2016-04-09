@@ -262,15 +262,15 @@ uint16 Hal_ProcessEvent( uint8 task_id, uint16 events )
 
 }
 static void processHalKeyTimeEvt(void ){
-  if(! PUSH1_SBIT){//ensure the key pin is pressed (low)
+  if(PUSH1_SBIT){//ensure the key pin is pressed (high)
     uint32 interval = osal_GetSystemClock()-hal_key_pre_faliing_time;
     if(interval >14999){
       
     }else if(interval >9999){//stage 2
-      HalLedBlink( HAL_LED_2, 10, 50, 600 ); //slow flashing
+      HalLedBlink( HAL_LED_3, 10, 3, 600 ); //slow flashing
       osal_start_timerEx( Hal_TaskID, HAL_KEY_TIME_EVT, 5000);
     }else if(interval >4999){//stage 1
-      HalLedBlink( HAL_LED_2, 35, 50, 150 ); //fast flashing
+      HalLedBlink( HAL_LED_3, 35, 10, 150 ); //fast flashing
       osal_start_timerEx( Hal_TaskID, HAL_KEY_TIME_EVT, 5000);
     }else{
       //ERROR
