@@ -105,6 +105,10 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback)
     P1IEN |= PUSH1_BV|PUSH2_BV|PUSH3_BV;                // Enable specific P1 bits for ints by bit mask.
     IEN2 |=(0x01<<4);               // Enable general P1 interrupts.
     
+    P1INP |= PUSH1_BV;              //ninglvfeihong tri-state resistance pin
+    P1INP |= PUSH2_BV;              //ninglvfeihong tri-state resistance pin
+    P1INP |= PUSH3_BV;              //ninglvfeihong tri-state resistance pin
+    
   }
   else
   {
