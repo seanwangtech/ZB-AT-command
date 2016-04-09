@@ -24,7 +24,7 @@
 // Basic Cluster
 const uint8 AT_ZCL_TEMP_ManufacturerName[] = { 5, 'E','S','S','E','X' };
 const uint8 AT_ZCL_TEMP_ModelId[] = { 7, 'D','S','1','8','B','2','0' };
-const uint8 AT_ZCL_TEMP_DateCode[] = { 8, '2','0','1','5','0','4','0','7'};
+const uint8 AT_ZCL_TEMP_DateCode[] = { 8, '2','0','1','5','0','7','1','7'};
 const uint8 AT_ZCL_TEMP_PowerSource = POWER_SOURCE_BATTERY;
 uint8 AT_ZCL_TEMP_LocationDescription[]={ 11, 'I',' ','l','o','v','e',' ','U',' ',':',')' };
 const int16 AT_ZCL_TEMP_min_value = -5500;  //stand for -55 C

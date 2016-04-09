@@ -290,7 +290,7 @@ void ZDApp_Init( uint8 task_id )
   {
     ZDOInitDevice( ZDO_INIT_HOLD_NWK_START );
     // Blink LED to indicate HOLD_START
-    HalLedBlink ( HAL_LED_2, 1, 70, 500 );
+    HalLedBlink ( HAL_LED_2, 0, 50, 500 );
   }
 
   // Initialize the ZDO callback function pointers zdoCBFunc[]

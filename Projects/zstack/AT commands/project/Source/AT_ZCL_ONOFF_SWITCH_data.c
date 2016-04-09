@@ -23,8 +23,8 @@
 
 // Basic Cluster
 const uint8 AT_ZCL_ONOFF_SWITCH_ManufacturerName[] = { 5, 'E','S','S','E','X' };
-const uint8 AT_ZCL_ONOFF_SWITCH_ModelId[] = { 6, 'S','W','I','T','C','H' };
-const uint8 AT_ZCL_ONOFF_SWITCH_DateCode[] = { 8, '2','0','1','5','0','4','1','0'};
+const uint8 AT_ZCL_ONOFF_SWITCH_ModelId[] = { 8, 'L','i','g','h','t',' ','E','B' };
+const uint8 AT_ZCL_ONOFF_SWITCH_DateCode[] = { 8, '2','0','1','5','0','7','1','7'};
 const uint8 AT_ZCL_ONOFF_SWITCH_PowerSource = POWER_SOURCE_BATTERY;
 const uint8 AT_ZCL_ONOFF_SWITCH_type =0xFF;   //stand for unknown
 uint8 AT_ZCL_ONOFF_SWITCH_LocationDescription[]={ 10, 'L','A','B','0','0','7',' ',' ',' ',' ' };

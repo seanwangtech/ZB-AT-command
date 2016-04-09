@@ -4,8 +4,8 @@
 
 #include "zcl.h"
 
-
-#define AT_ZCL_ONOFF_SWITCH_ENDPOINT            5
+//ninglvfeihong modified for body sensor
+#define AT_ZCL_ONOFF_SWITCH_ENDPOINT            7
 #define AT_ZCL_ONOFF_SWITCH_MAX_ATTRIBUTES      12
 
 #define AT_ZCL_GEN_OFF                       0x00
@@ -39,4 +39,6 @@ extern void AT_ZCL_ONOFF_SWITCH_Init( byte task_id );
 extern UINT16 AT_ZCL_ONOFF_SWITCH_event_loop( byte task_id, UINT16 events );
 
 extern void AT_ZCL_ONOFF_SWITCH_EP_ENABLE( bool isEnable);
+extern void AT_ZCL_ONOFF_SWITCH_setting(uint8 reverse);
+#define AT_ZCL_ONOFF_SWITCH_setting_Reverse 2
 #endif

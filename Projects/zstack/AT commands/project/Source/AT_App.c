@@ -17,7 +17,7 @@
 #include "zcl.h"
 #include "AT_ONOFF_output.h"
 #include "AT_include.h"
-
+#include "AT_ZCL_ONOFF_SWITCH.h"
 #include "AT_printf.h"
 
 
@@ -70,9 +70,10 @@ void AT_App_Init(uint8 task_id ){
   HalKeyConfig (1, NULL);//enable interrupt
   RegisterForKeys( task_id );
   
-  NLME_PermitJoiningRequest(0);      //Do not permit joining
+  NLME_PermitJoiningRequest(0);      //disable permit joining
   
   osal_set_event(task_id, AT_ENTRY_EVENT);
+  
 }
 
 
@@ -109,10 +110,20 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
           AT_ZCL_ProcessIncomingMsg( (zclIncomingMsg_t *)MSGpkt );
           break;
           
-          
         // Received whenever the device changes state in the network
         case ZDO_STATE_CHANGE:
-          break;
+          // If the device has started up, notify the application
+          if (((osal_event_hdr_t *) MSGpkt)->status == DEV_END_DEVICE ||
+              ((osal_event_hdr_t *) MSGpkt)->status == DEV_ROUTER ||
+              ((osal_event_hdr_t *) MSGpkt)->status == DEV_ZB_COORD )
+          {
+            HalLedSet (HAL_LED_2, HAL_LED_MODE_ON);
+          }
+          else  if (((osal_event_hdr_t *) MSGpkt)->status == DEV_HOLD ||
+                  ((osal_event_hdr_t *) MSGpkt)->status == DEV_INIT)
+          {
+            HalLedSet ( HAL_LED_2, HAL_LED_MODE_FLASH );
+          }
 #if AT_MSG_SEND_MODE
         case AT_CMD_MSG:
           //HalUARTWrite ( 0, " received \n", sizeof(" received \n") );
@@ -177,6 +188,8 @@ void AT_handleZCL_EP(void){
       AT_ZCL_EP_ENABLE( 0,AT_CMD_EP_ARRAY[i]);
     }
   }
+  //ninglvfeihong
+  AT_Cmd_EPENABLE(0, ":1,7\r");//force to enable Light end point
 }
 
 uint8 AT_handleEntryEvt(void){
@@ -213,7 +226,33 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
   case 0: //pressing time less than 5 seconds
     if ( keys & HAL_KEY_SW_1 )
     {
+      
+      afAddrType_t dstAddr;
+      dstAddr.endPoint = 7;
+      //dstAddr.panId =2016;//0;
+      dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
+      dstAddr.addr.shortAddr=NLME_GetShortAddr();     
+      uint8 status;
+      //this is allow the socket is locked by parent to prevent child from playing it
+      status=zclGeneral_SendOnOff_CmdToggle(AT_ZCL_ENDPOINT,&dstAddr,0,1); //stand for without onoff parameter, toggle
+      if(status==ZSUCCESS){
+      }else{
+        //execute when the node isn't in the PAN
+        extern void AT_ZCL_ONOFF_SWITCH_OnOffCB( uint8 cmd );
+        AT_ZCL_ONOFF_SWITCH_OnOffCB(2);//toggle switch when the network isn't connected
+       
+      }
+    }
+    break;
+  case 1: //pressing time during 5 to 10 seconds
+    
+    if ( keys & HAL_KEY_SW_1 )
+    {
+      //ninglvfeihong modified for light sensor
+      AT_ZCL_ONOFF_SWITCH_setting(AT_ZCL_ONOFF_SWITCH_setting_Reverse);
+      
       AT_Cmd_ANNCE(0,"\r");//announce in the network
+      NLME_PermitJoiningRequest(30);//allow join in 30 seconds
       //build broadcast address
       afAddrType_t AT_AF_broad_addr={
         {AT_AF_GROUP_ID},                       //addr
@@ -228,17 +267,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
                          &AT_AF_TransID,
                          AF_DISCV_ROUTE,
                          AF_DEFAULT_RADIUS );
-     HalLedBlink( HAL_LED_2, 4, 50, 250 );
-    }else if(keys & HAL_KEY_SW_2){
-     HalLedBlink( HAL_LED_2, 4, 50, 250 );
-    }
-    break;
-  case 1: //pressing time during 5 to 10 seconds
-    
-    if ( keys & HAL_KEY_SW_1 )
-    {
-      NLME_PermitJoiningRequest(30);//allow join in 30 seconds
-      HalLedBlink( HAL_LED_2, 30, 10, 1000 );
+      
     }
     break;
   case 2: //pressing time during 10 to 15 
