@@ -1,5 +1,7 @@
 Projects/zstack/AT commands/AT command 3.2 - Develop board/CC2530DB/*.dep
 Projects/zstack/AT commands/AT command 3.2 - Develop board/CC2530DB/CoordinatorEB/
+Projects/zstack/AT commands/AT command 3.2 - Develop board/CC2530DB/RouterEB/
+Projects/zstack/AT commands/AT command 3.2 - Develop board/CC2530DB/EndDeviceEB/
 Projects/zstack/AT commands/AT command 3.2 - Develop board/CC2530DB/settings/
 # Windows image file caches
 Thumbs.db
