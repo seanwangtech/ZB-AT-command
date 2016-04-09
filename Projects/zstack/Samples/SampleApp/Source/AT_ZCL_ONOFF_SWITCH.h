@@ -5,7 +5,7 @@
 #include "zcl.h"
 
 
-#define AT_ZCL_ONOFF_SWITCH_ENDPOINT            5
+#define AT_ZCL_ONOFF_SWITCH_ENDPOINT            2
 #define AT_ZCL_ONOFF_SWITCH_MAX_ATTRIBUTES      12
 
 #define AT_ZCL_GEN_OFF                       0x00

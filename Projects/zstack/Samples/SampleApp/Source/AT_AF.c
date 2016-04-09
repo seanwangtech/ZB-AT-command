@@ -12,9 +12,10 @@
 #include "aps_groups.h"
 #include "ZDApp.h"
 
-
-#include "At_include.h"
-
+#include "AT_AF.h"
+#include "AT_App.h"
+#include "AT_printf.h"
+#include "AT_uart.h"
 #include "hal_led.h"
 #include "zcl.h"
 /*************************************global variable*****************
@@ -68,7 +69,7 @@ void AT_AF_Register(uint8 *task_id){
   // Register the endpoint description with the AF
   afRegister( &AT_AF_epDesc );
   
-  aps_AddGroup( AT_AF_ENDPOINT, &AT_AF_Group );
+  AT_ERROR(aps_AddGroup( AT_AF_ENDPOINT, &AT_AF_Group ));
 }
 
 

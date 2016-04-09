@@ -34,7 +34,7 @@
 #define AT_CMD_HELP_DESC_OMIT        3     //omit displaying last several command which is keep for interal use.
 #define AT_CMD_HELP_DESC_OFFSET     14      //define the offset characters of the help command when display.
 
-#define AT_CMD_EPs                  {0x01,0x04,0x05}    //whitch will display when perform print the end point command, sorted end point
+#define AT_CMD_EPs                  {0x01,0x02,0x04}    //whitch will display when perform print the end point command, sorted end point
 
 
 /********************************************************
@@ -205,20 +205,11 @@ void AT_Cmd_EPPRINT(uint8 start_point, uint8* msg);
 void AT_Cmd_REPPRINT(uint8 start_point, uint8* msg);
 void AT_Cmd_EN(uint8 start_point, uint8* msg);
 void AT_Cmd_DASSL(uint8 start_point, uint8* msg);
-void AT_Cmd_DASSR(uint8 start_point, uint8* msg);
 void AT_Cmd_PJOIN(uint8 start_point, uint8* msg);
 void AT_Cmd_JPAN(uint8 start_point, uint8* msg);
 void AT_Cmd_JN(uint8 start_point, uint8* msg);
 void AT_Cmd_NTABLE(uint8 start_point, uint8* msg);
 void AT_Cmd_RTABLE(uint8 start_point, uint8* msg);
-void AT_Cmd_LBTABLE(uint8 start_point, uint8* msg);
-void AT_Cmd_BSET(uint8 start_point, uint8* msg);
-void AT_Cmd_BCLR(uint8 start_point, uint8* msg);
-void AT_Cmd_BTABLE(uint8 start_point, uint8* msg);
-void AT_Cmd_BIND(uint8 start_point, uint8* msg);
-void AT_Cmd_UNBIND(uint8 start_point, uint8* msg);
-void AT_Cmd_EBIND(uint8 start_point, uint8* msg);
-void AT_Cmd_CLEARBIND(uint8 start_point, uint8* msg);
 void AT_Cmd_READATR(uint8 start_point, uint8* msg);
 void AT_Cmd_WRITEATR(uint8 start_point, uint8* msg);
 void AT_Cmd_DISCOVER(uint8 start_point, uint8* msg);

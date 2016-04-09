@@ -174,20 +174,22 @@ CONST zclAttrRec_t AT_ZCL_TEMP_Attrs[AT_ZCL_TEMP_MAX_ATTRIBUTES] =
  * SIMPLE DESCRIPTOR
  */
 
-#define AT_ZCL_TEMP_MAX_INCLUSTERS       5
+#define AT_ZCL_TEMP_MAX_INCLUSTERS       2
 const cId_t AT_ZCL_TEMP_InClusterList[AT_ZCL_TEMP_MAX_INCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC,
-  ZCL_CLUSTER_ID_GEN_IDENTIFY,
-  ZCL_CLUSTER_ID_GEN_DEVICE_TEMP_CONFIG,
-  ZCL_CLUSTER_ID_GEN_ON_OFF,
-  ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT
+  ZCL_CLUSTER_ID_GEN_IDENTIFY
 };
-/*
+
 #define AT_ZCL_TEMP_MAX_OUTCLUSTERS       5
 const cId_t AT_ZCL_TEMP_OutClusterList[AT_ZCL_TEMP_MAX_OUTCLUSTERS] =
 {
-};*/
+  ZCL_CLUSTER_ID_GEN_BASIC,
+  ZCL_CLUSTER_ID_GEN_DEVICE_TEMP_CONFIG,
+  ZCL_CLUSTER_ID_GEN_IDENTIFY,
+  ZCL_CLUSTER_ID_GEN_ON_OFF,
+  ZCL_CLUSTER_ID_GEN_DEVICE_TEMP_CONFIG
+};
 
 SimpleDescriptionFormat_t AT_ZCL_TEMP_SimpleDesc =
 {
@@ -198,6 +200,6 @@ SimpleDescriptionFormat_t AT_ZCL_TEMP_SimpleDesc =
   AT_ZCL_TEMP_FLAGS,                     //  int   AppFlags:4;
   AT_ZCL_TEMP_MAX_INCLUSTERS,            //  byte  AppNumInClusters;
   (cId_t *)AT_ZCL_TEMP_InClusterList,    //  byte *pAppInClusterList;
-  0,                                      //  byte  AppNumInClusters;
-  (cId_t *)NULL                           //  byte *pAppInClusterList;
+  AT_ZCL_TEMP_MAX_OUTCLUSTERS,           //  byte  AppNumInClusters;
+  (cId_t *)AT_ZCL_TEMP_OutClusterList    //  byte *pAppInClusterList;
 };

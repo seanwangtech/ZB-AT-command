@@ -136,12 +136,12 @@ const cId_t AT_ZCL_ONOFF_InClusterList[AT_ZCL_ONOFF_MAX_INCLUSTERS] =
   ZCL_CLUSTER_ID_GEN_IDENTIFY,
   ZCL_CLUSTER_ID_GEN_ON_OFF
 };
-/*
+
 #define AT_ZCL_ONOFF_MAX_OUTCLUSTERS       1
 const cId_t AT_ZCL_ONOFF_OutClusterList[AT_ZCL_ONOFF_MAX_OUTCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC
-};*/
+};
 
 SimpleDescriptionFormat_t AT_ZCL_ONOFF_SimpleDesc =
 {
@@ -152,6 +152,6 @@ SimpleDescriptionFormat_t AT_ZCL_ONOFF_SimpleDesc =
   AT_ZCL_ONOFF_FLAGS,                     //  int   AppFlags:4;
   AT_ZCL_ONOFF_MAX_INCLUSTERS,            //  byte  AppNumInClusters;
   (cId_t *)AT_ZCL_ONOFF_InClusterList,    //  byte *pAppInClusterList;
-  0,                                       //  byte  AppNumInClusters;
-  (cId_t *)NULL                           //  byte *pAppInClusterList;
+  AT_ZCL_ONOFF_MAX_OUTCLUSTERS,           //  byte  AppNumInClusters;
+  (cId_t *)AT_ZCL_ONOFF_OutClusterList    //  byte *pAppInClusterList;
 };

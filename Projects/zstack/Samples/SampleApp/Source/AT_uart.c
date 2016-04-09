@@ -9,16 +9,20 @@
 #include "ZComDef.h"
 #include "OSAL.h"
 #include "OSAL_Nv.h"
+#include "hal_uart.h"
 #include "OSAL_Memory.h"
+#include "AF.h"
+#include "AT_uart.h"
+#include "AT_ONOFF_output.h"
+#include "AT_AF.h"
 #include "ZDNwkMgr.h"
 #include "ZDProfile.h"
 #include "hal_led.h"
-#include "zcl_general.h"
-#include "BindingTable.h"
+#include "AT_App.h"
 #include "zcl.h"
-
-#include "At_include.h"
-
+#include "zcl_general.h"
+#include "AT_ZCL.h"
+#include "AT_printf.h"
 const char* Revision = "Private Revision:2.2 \n\rwith ZCL layer";
 const uint8 Revision_len = sizeof("Private Revision:2.2 \n\rwith ZCL layer");
 byte AT_Uart_TaskID;
@@ -40,25 +44,16 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"ENABLE",  AT_Cmd_ENABLE,  "Enable the AT command AT+ENABLE:<password>"},
 #endif
   {"EPENABLE",AT_Cmd_EPENABLE,"Enable/Disable Local Endpoint EPENABLE:<Enable/Disable>,<EP>"},
-  {"REPENABLE",AT_Cmd_REPENABLE,"Enable/Disable Remote Endpoint EPENABLE:[<nodeID>],<Enable/Disable>,<EP>"},
+  {"REPENABLE",AT_Cmd_REPENABLE,"Enable/Disable Remote Endpoint EPENABLE:<nodeID><Enable/Disable>,<EP>"},
   {"EPPRINT" ,AT_Cmd_EPPRINT, "Print Local Endpoints Status"},
   {"REPPRINT",AT_Cmd_REPPRINT,"Print Remote Endpoints Status REPPRIN:<noteID>"},
   {"EN" ,     AT_Cmd_EN,      "Establish Network EN:<channel>,<POWER>,<PANID>"},
   {"DASSL",   AT_Cmd_DASSL,   "Disassociate Local Device From PAN cmmmand"},
-  {"DASSR",   AT_Cmd_DASSR,   "Disassociate Remote Node from PAN AT+DASSR:<address>"},
   {"PJOIN",   AT_Cmd_PJOIN,   "Permit joining cmmmand PJOIN:<sec>"},
   {"JPAN",    AT_Cmd_JPAN,    "Join Specific JPAN:[<channel>],[<PANID>],[<EPANID>]"},
   {"JN",      AT_Cmd_JN,      "Join Network"},
   {"NTABLE",  AT_Cmd_NTABLE,  "Display Neighbour Table NTABLE:XX,<address>"},
   {"RTABLE",  AT_Cmd_RTABLE,  "Display Routing Table   RTABLE:XX,<address>"},
-  {"LBTABLE", AT_Cmd_LBTABLE, "Display Local Binding Table"},
-  {"BSET",    AT_Cmd_BSET,    "Set local Binding Table Entry BSET:<type>,<LocalEP>,<ClusterID>,<DstAddress>[,<DstEP>]"},
-  {"BCLR",    AT_Cmd_BCLR,    "Clear local Binding Table Entry BCLR:XX[,<ClusterID>]"},
-  {"BTABLE",  AT_Cmd_BTABLE,  "Display Binding Table BTABLE:XX,<address>"},
-  {"BIND",    AT_Cmd_BIND,    "Create Binding on Remote Device BIND:[<address>],[<SrcAddress>],<SrcEP>,<ClusterID>,[<DstAddress>][,<DstEP>]"},
-  {"UNBIND",  AT_Cmd_UNBIND,  "Delete Binding on Remote Device UNBIND:[<address>],[<SrcAddress>],<SrcEP>,<ClusterID>,[<DstAddress>][,<DstEP>]"},
-  {"EBIND",   AT_Cmd_EBIND,    "End Device Bind EBIND:<EP>"},
-  {"CLEARBIND",AT_Cmd_CLEARBIND,"Clear Local Binding Table"},
   {"READATR", AT_Cmd_READATR, "READATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,...,< AttrID >"},
   {"WRITEATR",AT_Cmd_WRITEATR,"WRITEATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,<DataType>,<Data>"},
   {"DISCOVER",AT_Cmd_DISCOVER,"Discover HA Devices On The HAN DISCOVER:<Cluster ID>[,<option>]"},
@@ -104,12 +99,12 @@ const AT_smap_unit_t AT_smap[] = {
 /*********************************************************************
  * LOCAL FUNCTIONS
  *******************************************************************/
-static int8 AT_CmpCmd(AT_CmdUnit* cmdUnit,uint8* str2);
-static uint8 AT_get_next_cmdUnit(AT_CmdUnit* cmdUnit,uint8 start_point, uint8* msg);
-static uint8 getAT_CMDlength(uint8 *msg);
-static uint8 AT_strLen(char * str);
-static uint8 AT_get_smap_index(uint8 S_ID);
-static uint8 AT_display_pre_cmd(void);
+int8 AT_CmpCmd(AT_CmdUnit* cmdUnit,uint8* str2);
+uint8 AT_get_next_cmdUnit(AT_CmdUnit* cmdUnit,uint8 start_point, uint8* msg);
+uint8 getAT_CMDlength(uint8 *msg);
+uint8 AT_strLen(char * str);
+uint8 AT_get_smap_index(uint8 S_ID);
+uint8 AT_display_pre_cmd(void);
 
 
 uint8 AT_UartInit( uint8 taskID )
@@ -551,7 +546,7 @@ void AT_HandleCMD(uint8 *msg){
     else AT_ERROR(AT_LACK_OPERATOR);
   }
   else if(cmdUnit.symbol =='+'){  
-    //deal with all the command in the command array
+    
     for(i=0;i<sizeof(AT_Cmd_Arr)/sizeof(AT_Cmd_Arr[0]);i++){
       if(AT_CmpCmd(&cmdUnit,(uint8*)AT_Cmd_Arr[i].AT_Cmd_str)==0){
         AT_NEXT_LINE();
@@ -567,6 +562,35 @@ void AT_HandleCMD(uint8 *msg){
         AT_ERROR(AT_CMD_ERROR);
       }
     }
+    /*
+    if(AT_CmpCmd(&cmdUnit,"EN")==0) {
+      AT_DEBUG("\r\nEstablish Network cmmmand\r\n", sizeof("\r\nEstablish Network cmmmand\r\n"));
+    }else if(AT_CmpCmd(&cmdUnit,"DASSL")==0){
+      AT_DEBUG("\r\nDisassociate Local Device From PAN cmmmand\r\n", sizeof("\r\nDisassociate Local Device From PAN cmmmand\r\n"));
+    }else if(AT_CmpCmd(&cmdUnit,"PJOIN")==0){
+      AT_DEBUG("\r\nPermit joining cmmmand\r\n", sizeof("\r\nPermit joining cmmmand\r\n"));
+    }else if(AT_CmpCmd(&cmdUnit,"READATR")==0){
+      AT_DEBUG("\r\nGets an Attribute From Specified Cluster Server cmmmand\r\n", sizeof("\r\nGets an Attribute From Specified Cluster Server cmmmand\r\n"));
+    }else if(AT_CmpCmd(&cmdUnit,"WRITEATR")==0){
+      AT_DEBUG("\r\nSets An Attribute to Specified Cluster Client cmmmand\r\n", sizeof("\r\nSets An Attribute to Specified Cluster Client cmmmand\r\n"));
+    }else if(AT_CmpCmd(&cmdUnit,"RONOFF")==0){
+      AT_DEBUG("\r\nSwitching Target Devices Between ＆On＊ and ＆Off＊ States cmmmand\r\n", sizeof("\r\nSwitching Target Devices Between ＆On＊ and ＆Off＊ States cmmmand\r\n"));
+      AT_Cmd_RONOFF(start_point,msg);
+    }else if(AT_CmpCmd(&cmdUnit,"LONOFF")==0){
+      AT_Cmd_LONOFF(start_point,msg);
+    }else if(AT_CmpCmd(&cmdUnit,"ESCAN")==0){
+      AT_DEBUG("\r\nScan The Energy Of All Channels\r\n", sizeof("\r\nScan The Energy Of All Channels\r\n"));
+      AT_DEBUG("\r\nPlease waitting...\r\n", sizeof("\r\nPlease waitting...\r\n"));
+      AT_Cmd_ESCAN(start_point,msg);
+    }else if(AT_CmpCmd(&cmdUnit,"PANSCAN")==0){
+      AT_DEBUG("\r\nScan For Active PANs\r\n", sizeof("\r\nScan For Active PANs\r\n"));
+      AT_DEBUG("\r\nPlease waitting...\r\n", sizeof("\r\nPlease waitting...\r\n"));
+      AT_Cmd_PANSCAN(start_point,msg);
+    }else if(AT_CmpCmd(&cmdUnit,"")==0){
+      AT_ERROR(AT_LACK_CMD);
+    }else{
+      AT_ERROR(AT_CMD_ERROR);
+    }*/
   }
   else if(cmdUnit.symbol =='&'){
     if(AT_CmpCmd(&cmdUnit,"F")==0){
@@ -863,7 +887,7 @@ void AT_Cmd_REPENABLE(uint8 start_point, uint8* msg){
   buf.hdr.cmd = AT_AF_Cmd_req;
   buf.enable=enable; 
   buf.ep=ep; 
-  state =  AT_AF_Cmd_send_simple(cmdUnitArr[0].unitLen ? AT_ChartoInt16(&cmdUnitArr[0]):NLME_GetShortAddr() ,
+  state =  AT_AF_Cmd_send_simple(AT_ChartoInt16(&cmdUnitArr[0]),
                       AT_AF_Cmd_REPENABLE_CLUSTERID,
                       sizeof(AT_AF_Cmd_REPENABLE_req_t),&buf);
   if(state!=afStatus_SUCCESS) AT_ERROR(state);
@@ -1535,7 +1559,7 @@ void AT_Cmd_IDREQ(uint8 start_point, uint8* msg){
  
     uint8 ext[8];
     AT_ChartoIntx(&cmdUnitArr[0],ext, 64);
-    if(cmdUnitArr[0].unitLen==0) {
+    if(cmdUnitArr[1].unitLen==0) {
       AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr);
       uint8 state;
       state = ZDP_IEEEAddrReq( NLME_GetShortAddr(), ZDP_ADDR_REQTYPE_SINGLE,
@@ -1615,7 +1639,7 @@ void AT_Cmd_EN(uint8 start_point, uint8* msg){
   uint8 status;
   uint32 channel=1;
   
-  if (ZG_BUILD_COORDINATOR_TYPE && NODETYPE_COORDINATOR )
+  if (1|| ZG_BUILD_COORDINATOR_TYPE && NODETYPE_COORDINATOR )
   {
     status = NLME_NetworkFormationRequest( AT_ChartoInt16(&cmdUnitArr[2]), _NIB.extendedPANID, channel<<AT_ChartoInt8(&cmdUnitArr[0]),
                                           STARTING_SCAN_DURATION, BEACON_ORDER_NO_BEACONS,
@@ -1631,7 +1655,6 @@ void AT_Cmd_EN(uint8 start_point, uint8* msg){
   }
   AT_OK();
 }
-
 void AT_Cmd_DASSL(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[1];
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
@@ -1645,9 +1668,8 @@ void AT_Cmd_DASSL(uint8 start_point, uint8* msg){
     uint8 silent;
     } NLME_LeaveReq_t;
   */
-
   NLME_LeaveReq_t req={
-    NULL, //NULL: remove this device. otherwise remove child device
+    aExtendedAddress,
     false,
     false,
     true
@@ -1656,49 +1678,8 @@ void AT_Cmd_DASSL(uint8 start_point, uint8* msg){
   if((state=NLME_LeaveReq( &req ))==ZSUCCESS){
     AT_OK();
   }else AT_ERROR(state);
-}
-/*****************************************************************
-+DASSR 每 Disassociate Remote Node from PAN (ZDO) 
-      Execute Command AT+DASSR:<address> 
-              Where 
-              <address> can be a node＊s EUI64, NodeID or address table index 
-              Use on All Devices 
-
-
-      Note
-              Use with care when targeting a Coordinator. 
-              It will not be able to rejoin the PAN
-
-
-********************************************************************/
-void AT_Cmd_DASSR(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[2];
-  uint8 i;
-  for(i=0;i<2;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr); 
   
-
-  zAddrType_t addr;
-  if(cmdUnitArr[0].unitLen==0){
-    AT_ERROR(AT_LACK_PARA);
-    return;
-  }else if(cmdUnitArr[0].unitLen>10){               
-    AT_ChartoIntx(&cmdUnitArr[0],addr.addr.extAddr, 64);  
-    addr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    addr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);            
-    addr.addrMode = (afAddrMode_t)Addr16Bit;       
-  }
-  uint8 state;
-  uint8 nonValidIEEEAddr[8] ={0,0,0,0,0,0,0,0};
-  state = ZDP_MgmtLeaveReq( &addr,nonValidIEEEAddr, 
-                                   false,
-                                   false, 
-                                   false );
-
-  if(state==ZSUCCESS){
-    AT_OK();
-  }else AT_ERROR(state);
+  
 }
 /****************************************************************
 AT+PJOIN:<sec> or AT+PJOIN 
@@ -1866,455 +1847,6 @@ void AT_Cmd_RTABLE(uint8 start_point, uint8* msg){
   state = ZDP_MgmtRtgReq( &dstAddr, startIndex, 0 );
   if(state!=afStatus_SUCCESS) AT_ERROR(state);
   else AT_OK();
-}
-
-/*****************************************************************************
-+LBTABLE 每 Display Local Binding Table
-        AT+LBTABLE 
-              Use on All Devices The binding table is cleared by a reset
-Response 
-              No. | Type | Active | LocalEP | ClusterID | Addr | RemEP 
-              10. | Ucast | No | 01 | DEAD | 1234567887654321 | 01 
-              11. | MTO | No | 01 | DEAD | E012345678876543 | 88 
-              12. | Mcast | No | 01 | DEAD | CDAB 
-              13. | Unused 
-              14. | Unused 
-              15. | Unused 
-              16. | Unused 
-              17. | Unused 
-              18. | Unused 
-              19. | Unused
-******************************************************************************/
-
-void AT_Cmd_LBTABLE(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[1];
-  uint8 i;
-  for(i=0;i<1;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
-  
-  AT_RESP_START();
-  uint8 j;
-  uint16 maxEntries,usedEntries;
-  bindCapacity( &maxEntries,&usedEntries );
-  printf("maxEntries %d, maxCID %d", maxEntries,gMAX_BINDING_CLUSTER_IDS);
-  AT_NEXT_LINE();
-  printf("No. |  Type  | Active | LocalEP | ClusterIDs |      Address     | RemEP");
-  char* type;
-  zAddrType_t addr;
-  char address[17];
-  char dstEP[5];
-  //j = bindAddClusterIdToList(BindingTable,2);
-  uint16 cnt=0;
-  for(i=0;i<maxEntries;i++){
-    if(BindingTable[i].srcEP !=0xff){ //valid check
-      if(BindingTable[i].dstGroupMode==1) {
-        type="Mcast";
-        sprintf(address,"%04X",BindingTable[i].dstIdx);
-        dstEP[0]='\0';
-      }
-      else{
-        bindingAddrMgsHelperConvert(BindingTable[i].dstIdx, &addr );
-        if(addr.addrMode== Addr64Bit){
-          type="Ucast";
-          AT_EUI64toChar(addr.addr.extAddr,address);
-          address[16]='\0';
-          sprintf(dstEP,"| %02X",BindingTable[i].dstEP);
-        }else{
-          type="??";
-          sprintf(address,"???????");
-          sprintf(dstEP,"| %02X",BindingTable[i].dstEP);
-        }
-      }
-      if(BindingTable[i].numClusterIds==0) {
-          AT_NEXT_LINE();
-          printf("%02X. | %-6s |  ????  |   %02X    |   unused   | %-16s %s",
-                 cnt,type,BindingTable[i].srcEP,address, dstEP);
-      }
-      for(j=0;j<gMAX_BINDING_CLUSTER_IDS;j++){
-        
-        AT_NEXT_LINE();
-        if(j<BindingTable[i].numClusterIds){
-          printf("%02X. | %-6s |  ????  |   %02X    |    %04X    | %-16s %s",
-                 cnt,type,BindingTable[i].srcEP,BindingTable[i].clusterIdList[j],address, dstEP);
-        }else{
-          printf("%02X. | %-6s |  ????  |   %02X    |   unused   | %-16s %s",
-                 cnt,type,BindingTable[i].srcEP,address, dstEP);
-        }
-      }
-    }else{
-      AT_NEXT_LINE();
-      printf("%d. | Unused", cnt);
-    }
-    cnt++;
-  }
-  AT_RESP_END();
-  AT_OK();
-}
-
-
-/*****************************************************************************
-+BSET 每 Set local Binding Table Entry 
-      AT+BSET:<type>,<LocalEP>,<ClusterID>,<DstAddress>[,<DstEP>]  Where: 
-            <Type> is the type of binding: 
-                    1= Unicast Binding with EUI64 and remote EP specified 
-                    2= Many to one Binding with EUI64 and remote EP Specified 
-                    3= Multicast Binding with Multicast ID Specified 
-            <LocalEP> is the local endpoint 
-            <ClusterID> is the t cluster ID, Address is either the EUI64 of the 
-                    target device, or a multicast ID 
-            <DstEP> the remote endpoint which is not specified in case of a multicast 
-                    binding. 
-
-            The new binding is created in the next available free binding table entry.
-******************************************************************************/
-void AT_Cmd_BSET(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[6];
-  uint8 i;
-  for(i=0;i<6;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":,,,,\r",cmdUnitArr); 
-  
-  uint8 type    = AT_ChartoInt8(&cmdUnitArr[0]);
-  uint8 localEP = AT_ChartoInt8(&cmdUnitArr[1]);
-  uint8 dstEP   = AT_ChartoInt8(&cmdUnitArr[4]);
-  uint16 CID    = AT_ChartoInt16(&cmdUnitArr[2]);
-  
-  zAddrType_t dstAddr;
-  
-
-  if(type==1 || type==2) {
-    /*if(cmdUnitArr[3].unitLen!=16) {
-      AT_ERROR(AT_PARA_ERROR);
-      return;
-    }*/
-    dstAddr.addrMode =Addr64Bit;
-    AT_ChartoIntx(&cmdUnitArr[3],dstAddr.addr.extAddr, 64);
-  }
-  else if(type==3) {
-    dstAddr.addrMode =AddrGroup;
-    dstAddr.addr.shortAddr = AT_ChartoInt16(&cmdUnitArr[3]);
-  }
-  else {
-    AT_ERROR(AT_PARA_ERROR);
-    return;
-  }
-  
-  if(NULL==bindAddEntry( localEP,&dstAddr,dstEP, 1,&CID )){
-       AT_ERROR(AT_FATAL_ERROR);            
-  }else{
-       AT_OK();
-       // up data the NwkAddr
-       if ( dstAddr.addrMode == Addr64Bit ){
-         uint16 nwkAddr=0;
-         if ( APSME_LookupNwkAddr( dstAddr.addr.extAddr, &nwkAddr ) == FALSE ){
-           ZDP_NwkAddrReq( dstAddr.addr.extAddr, ZDP_ADDR_REQTYPE_SINGLE, 0, 0 );
-         }
-       }
-       BindWriteNV();
-  }  
-}
-
-
-/*****************************************************************************
-+BCLR 每 Clear local Binding Table Entry
-      AT+BCLR:XX [,<ClusterID>]
-          Where 
-          XX is the entry number of the binding table which is to be cleared.
-          <clsusterID> is the cluster ID to be removed. without this parameter,will
-              the whole entry.
-
-******************************************************************************/
-void AT_Cmd_BCLR(uint8 start_point, uint8* msg){
-   AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  uint8 XX    = AT_ChartoInt8(&cmdUnitArr[0]);
-  if(cmdUnitArr[1].symbol ==','){
-    uint16 CID = AT_ChartoInt16(&cmdUnitArr[1]);
-    AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr);
-    if(bindRemoveClusterIdFromList( BindingTable+XX,CID )){//true if at least 1 cluster ID is left in the list after the delete, 
-                                                           //false if cluster list is empty. If the cluster list is empty itshould be deleted by the calling function.
-      AT_OK();
-    }else{
-      if(bindRemoveEntry( BindingTable+XX )){
-        AT_OK();
-        BindWriteNV();
-      }else{
-        AT_ERROR(AT_FATAL_ERROR); 
-      }
-    }
-  }else{
-    AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr);
-    if(bindRemoveEntry( BindingTable+XX )){
-      AT_OK();
-      BindWriteNV();
-    }else{
-      AT_ERROR(AT_FATAL_ERROR); 
-    }
-  }
-}
-
-
-
-/*****************************************************************************
-+BTABLE 每 Display Binding Table (ZDO)
-      AT+BTABLE:XX,<address> 
-            Where 
-            XX is the start index of the remote binding table and 
-            <address> can be the remote node＊s EUI64, NodeID or address/binding table entry.
-
-      AT+BTABLE:00,0000 
-      SEQ:01 
-      OK 
-      BTable:0000,00 
-      Length:03 
-      No. | SrcAddr | SrcEP | ClusterID | DstAddr | DstEP 
-      00. | 000D6F000059474E | 01 | DEAD |1234567887654321 | 12 
-      01. | 000D6F000059474E | 01 | DEAD |E012345678876543 | E0 
-      02. | 000D6F000059474E | 01 | DEAD | ABCD 
-      ACK:01
-
-
-******************************************************************************/
-void AT_Cmd_BTABLE(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
-
-  zAddrType_t dstAddr;
-  uint8 startIndex = AT_ChartoInt16(&cmdUnitArr[0]);
-  if(cmdUnitArr[1].unitLen==16){               
-    AT_ChartoIntx(&cmdUnitArr[1],dstAddr.addr.extAddr, 64);  
-    dstAddr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[1]);            
-    dstAddr.addrMode = (afAddrMode_t)Addr16Bit;       
-  }
-  uint8 state;
-  state = ZDP_MgmtBindReq( &dstAddr, startIndex, 0 );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-  
-}
-
-/*****************************************************************************
-+BIND 每 Create Binding on Remote Device (ZDO) 
-    AT+BIND:<address>,[<SrcAddress>],<SrcEP>,<ClusterID>,[<DstAddress>][,<DstEP>] 
-          Create Binding on a remote device with 
-
-          <address> the target Node＊s EUI64, Node ID, or Address Table entry 
-
-          [<SrcAddress>] The EUI64 of the Source 
-
-          <SrcEP> The source Endpoint <ClusterID> The Cluster ID on the source Device 
-
-          <DstAddress> The EUI64 or 16-bit multicast ID
-
-          <DstEP> Only in Mode 2: The destination endpoint
-
-
-
-Prompt 
-          Bind:<NodeID>,<status>
-
-          In case of an error an status other than 00 will be displayed 
-          <NodeID> is the Remote node＊s Node ID.
-
-
-******************************************************************************/
-void AT_Cmd_BIND(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[7];
-  uint8 i;
-  for(i=0;i<7;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  
-  uint8 dstEP;
-  uint8 srcEP   = AT_ChartoInt8(&cmdUnitArr[2]);
-  uint16 CID    = AT_ChartoInt16(&cmdUnitArr[3]);
-  zAddrType_t dstAddr;
-  zAddrType_t addr;
-  uint8 srcAddr[8];
-  
-  if(cmdUnitArr[5].symbol==','){
-    AT_PARSE_CMD_PATTERN_ERROR(":,,,,,\r",cmdUnitArr); 
-    dstEP   = AT_ChartoInt8(&cmdUnitArr[5]);
-  }else{
-    AT_PARSE_CMD_PATTERN_ERROR(":,,,,\r",cmdUnitArr);
-    dstEP =0;
-  }
-  
-
-  //<address>,<SrcAddress>,<SrcEP>,<ClusterID>,<DstAddress>[,<DstEP>]
-  if(cmdUnitArr[1].unitLen==0){//if the user din't type this parameter, it will filled in by self address;
-    osal_memcpy(srcAddr,NLME_GetExtAddr(),8);
-  }else{
-    AT_ChartoIntx(&cmdUnitArr[1],srcAddr, 64); 
-  }
-  
-  if(cmdUnitArr[0].unitLen==0){
-    addr.addr.shortAddr=NLME_GetShortAddr();              
-    addr.addrMode = (afAddrMode_t)Addr16Bit; 
-  }else if(cmdUnitArr[0].unitLen>10){               
-    AT_ChartoIntx(&cmdUnitArr[0],addr.addr.extAddr, 64);  
-    addr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    addr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);            
-    addr.addrMode = (afAddrMode_t)Addr16Bit;       
-  }
-  
-  if(cmdUnitArr[4].unitLen==0){//if the user din't type this parameter, it will filled in by self address;
-    osal_memcpy(dstAddr.addr.extAddr,NLME_GetExtAddr(),8);
-    dstAddr.addrMode = (afAddrMode_t)Addr64Bit;
-  }else if(cmdUnitArr[4].unitLen>10){ 
-    AT_ChartoIntx(&cmdUnitArr[4],dstAddr.addr.extAddr, 64);  
-    dstAddr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[4]);            
-    dstAddr.addrMode = (afAddrMode_t)AddrGroup;       
-  }
-  uint8 state;
-  state = ZDP_BindReq( &addr, srcAddr, srcEP, CID, &dstAddr, dstEP,0 );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-}
-/*****************************************************************************
-+UNBIND 每 Delete Binding on Remote Device 
-    AT+UNBIND:<address>,[<SrcAddress>],<SrcEP>,<ClusterID>,[<DstAddress>][,<DstEP>] 
-          Create Binding on a remote device with 
-
-          <address> the target Node＊s EUI64, Node ID, or Address Table entry 
-
-          [<SrcAddress>] The EUI64 of the Source 
-
-          <SrcEP> The source Endpoint <ClusterID> The Cluster ID on the source Device 
-
-          <DstAddress> The EUI64 or 16-bit multicast ID
-
-          <DstEP> Only in Mode 2: The destination endpoint
-
-
-
-Prompt 
-          Unbind:<NodeID>,<status>
-
-          In case of an error an status other than 00 will be displayed 
-          <NodeID> is the Remote node＊s Node ID.
-
-
-******************************************************************************/
-void AT_Cmd_UNBIND(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[7];
-  uint8 i;
-  for(i=0;i<7;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  
-  uint8 dstEP;
-  uint8 srcEP   = AT_ChartoInt8(&cmdUnitArr[2]);
-  uint16 CID    = AT_ChartoInt16(&cmdUnitArr[3]);
-  zAddrType_t dstAddr;
-  zAddrType_t addr;
-  uint8 srcAddr[8];
-  
-  if(cmdUnitArr[5].symbol==','){
-    AT_PARSE_CMD_PATTERN_ERROR(":,,,,,\r",cmdUnitArr); 
-    dstEP   = AT_ChartoInt8(&cmdUnitArr[5]);
-  }else{
-    AT_PARSE_CMD_PATTERN_ERROR(":,,,,\r",cmdUnitArr);
-    dstEP =0;
-  }
-  
-
-  //<address>,<SrcAddress>,<SrcEP>,<ClusterID>,<DstAddress>[,<DstEP>]
-  if(cmdUnitArr[1].unitLen==0){//if the user din't type this parameter, it will filled in by self address;
-    osal_memcpy(srcAddr,NLME_GetExtAddr(),8);
-  }else{
-    AT_ChartoIntx(&cmdUnitArr[1],srcAddr, 64); 
-  }
-  
-  if(cmdUnitArr[0].unitLen==0){//if the user din't type this parameter, it will filled in by self address;
-    addr.addr.shortAddr=NLME_GetShortAddr();              
-    addr.addrMode = (afAddrMode_t)Addr16Bit; 
-  }else if(cmdUnitArr[0].unitLen>10){               
-    AT_ChartoIntx(&cmdUnitArr[0],addr.addr.extAddr, 64);  
-    addr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    addr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);            
-    addr.addrMode = (afAddrMode_t)Addr16Bit;       
-  }
-  
-  if(cmdUnitArr[4].unitLen==0){//if the user din't type this parameter, it will filled in by self address;
-    osal_memcpy(dstAddr.addr.extAddr,NLME_GetExtAddr(),8);
-    dstAddr.addrMode = (afAddrMode_t)Addr64Bit;
-  }else if(cmdUnitArr[4].unitLen>10){ 
-    AT_ChartoIntx(&cmdUnitArr[4],dstAddr.addr.extAddr, 64);  
-    dstAddr.addrMode = (afAddrMode_t)Addr64Bit;                  
-  }else{                                                         
-    dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[4]);            
-    dstAddr.addrMode = (afAddrMode_t)AddrGroup;       
-  }
-  uint8 state;
-  state = ZDP_UnbindReq( &addr, srcAddr, srcEP, CID, &dstAddr, dstEP,0 );
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-}
-
-/***********************************************************
-+EBIND 每 End Device Bind
-      AT+EBIND:<EP> 
-      <EP> - Local Endpoint which will initiate end device binding.
-
-Response
-          BIND:<NodeID>,<Status> 
-          OK
-*************************************************************/
-
-void AT_Cmd_EBIND(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[2];
-  uint8 i;
-  for(i=0;i<2;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr);
-  
-  uint8 ep = AT_ChartoInt8(&cmdUnitArr[0]);
-   //build self address
-  zAddrType_t addr={
-    {0x0000},                                     //addr 
-    (afAddrMode_t) Addr16Bit,                     //addr mode
-  };
-  
-  endPointDesc_t * epDesc = afFindEndPointDesc( ep );
-  if(epDesc){
-    uint8 state;
-    state = ZDP_EndDeviceBindReq( &addr,
-                              NLME_GetShortAddr(),//struange but check the sorce code, this the only way. or it will return afStatus_INVALID_PARAMETER error
-                              ep,
-                              epDesc->simpleDesc->AppProfId,
-                              epDesc->simpleDesc->AppNumInClusters,
-                              epDesc->simpleDesc->pAppInClusterList,
-                              epDesc->simpleDesc->AppNumOutClusters, 
-                              epDesc->simpleDesc->pAppOutClusterList,
-                              0 );
-    if(state==SUCCESS){
-      AT_OK();
-    }else{
-      AT_ERROR(state);
-    }
-  }else{
-    AT_ERROR(AT_FATAL_ERROR);
-  }
-}
-/*****************************************************
-+CLEARBIND 每 Clear Local Binding Table
-      AT+CLEARBIND
-
-***********************************************************/
-
-void AT_Cmd_CLEARBIND(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[1];
-  uint8 i;
-  for(i=0;i<1;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr);
-  
-  InitBindingTable( );
-  BindWriteNV();
-  AT_OK();
 }
 
 /*****************************************************
@@ -2656,7 +2188,7 @@ void AT_Cmd_IDENTIFY(uint8 start_point, uint8* msg){
   dstAddr.addrMode = sendmode==0 ? (afAddrMode_t)Addr16Bit : (afAddrMode_t) AddrGroup;
   
   uint8 state;
-  state = zclGeneral_SendIdentify( AT_ZCL_ENDPOINT,&dstAddr,AT_ChartoInt16(&cmdUnitArr[3]),0, 0 );
+  state = zclGeneral_SendIdentify( endpoint,&dstAddr,AT_ChartoInt16(&cmdUnitArr[3]),0, 0 );
   if(state!=afStatus_SUCCESS) AT_ERROR(state);
   else AT_OK();
   

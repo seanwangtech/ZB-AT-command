@@ -217,13 +217,13 @@ const cId_t zclSampleLight_InClusterList[ZCLSAMPLELIGHT_MAX_INCLUSTERS] =
   ZCL_CLUSTER_ID_GEN_ON_OFF,
   ZCL_CLUSTER_ID_GEN_LEVEL_CONTROL
 };
-/*
+
 #define ZCLSAMPLELIGHT_MAX_OUTCLUSTERS       1
 const cId_t zclSampleLight_OutClusterList[ZCLSAMPLELIGHT_MAX_OUTCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC
 };
-*/
+
 SimpleDescriptionFormat_t zclSampleLight_SimpleDesc =
 {
   SAMPLELIGHT_ENDPOINT,                  //  int Endpoint;
@@ -233,8 +233,8 @@ SimpleDescriptionFormat_t zclSampleLight_SimpleDesc =
   SAMPLELIGHT_FLAGS,                     //  int   AppFlags:4;
   ZCLSAMPLELIGHT_MAX_INCLUSTERS,         //  byte  AppNumInClusters;
   (cId_t *)zclSampleLight_InClusterList, //  byte *pAppInClusterList;
-  0,        //  byte  AppNumInClusters;
-  (cId_t *)NULL //  byte *pAppInClusterList;
+  ZCLSAMPLELIGHT_MAX_OUTCLUSTERS,        //  byte  AppNumInClusters;
+  (cId_t *)zclSampleLight_OutClusterList //  byte *pAppInClusterList;
 };
 
 /*********************************************************************

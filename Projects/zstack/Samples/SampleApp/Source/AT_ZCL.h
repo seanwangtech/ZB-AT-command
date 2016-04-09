@@ -24,8 +24,5 @@ extern SimpleDescriptionFormat_t AT_ZCL_SimpleDesc;
   */
 extern void AT_ZCL_Init(void );
 
-extern void AT_ZCL_ProcessIncomingMsg( zclIncomingMsg_t *pInMsg);
-
-
 
 #endif

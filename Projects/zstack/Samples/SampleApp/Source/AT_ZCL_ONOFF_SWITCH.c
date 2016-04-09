@@ -145,22 +145,9 @@ uint16 AT_ZCL_ONOFF_SWITCH_event_loop( uint8 task_id, uint16 events )
  *
 ************************************************************/
 static void AT_ZCL_ONOFF_SWITCH_update(void){
-  uint8 sw = switch_status();
-  if(AT_ZCL_ONOFF_SWITCH_action != sw){
-    AT_ZCL_ONOFF_SWITCH_action=sw;
-    
-    afAddrType_t dstAddr;
-    dstAddr.addrMode = afAddrNotPresent;
-    if(AT_ZCL_ONOFF_SWITCH_action==ON_OFF_SWITCH_ACTIONS_0 ){
-      zclGeneral_SendOnOff_CmdOff(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
-    }else{
-      zclGeneral_SendOnOff_CmdOn(AT_ZCL_ONOFF_SWITCH_ENDPOINT,&dstAddr,1,1);
-    }
-    
-  }
-  
+  AT_ZCL_ONOFF_SWITCH_action = switch_status();
   if(AT_ZCL_ONOFF_SWITCH_action==ON_OFF_SWITCH_ACTIONS_0) 
-      HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
+    HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
   else HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
   
 }

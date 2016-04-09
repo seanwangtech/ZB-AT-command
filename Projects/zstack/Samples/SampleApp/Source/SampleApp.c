@@ -232,7 +232,7 @@ void SampleApp_Init( uint8 task_id )
   // By default, all devices start out in Group 1
   SampleApp_Group.ID = 0x0001;
   osal_memcpy( SampleApp_Group.name, "Group 1", 7  );
-  aps_AddGroup( SAMPLEAPP_ENDPOINT, &SampleApp_Group );
+  AT_ERROR(aps_AddGroup( SAMPLEAPP_ENDPOINT, &SampleApp_Group ));
 
 #if defined ( LCD_SUPPORTED )
   HalLcdWriteString( "SampleApp", HAL_LCD_LINE_1 );
@@ -359,6 +359,7 @@ void SampleApp_HandleKeys( uint8 shift, uint8 keys )
     SampleApp_SendFlashMessage( SAMPLEAPP_FLASH_DURATION );
     HalLedBlink( HAL_LED_1, 4, 50, (SAMPLEAPP_FLASH_DURATION / 4) );
   }
+
   if ( keys & HAL_KEY_SW_2 )
   {
     /* The Flashr Command is sent to Group 1.

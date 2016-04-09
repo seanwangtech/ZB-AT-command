@@ -4520,7 +4520,6 @@
           <state>ZCL_ON_OFF</state>
           <state>ZCL_READ</state>
           <state>ZCL_WRITE</state>
-          <state>REFLECTOR</state>
           <state>xHAL_DMA=FALSE</state>
           <state>xHAL_UART_DMA=FALSE</state>
           <state>xZTOOL_P1</state>
@@ -5591,7 +5590,6 @@
           <state>ZCL_ON_OFF</state>
           <state>ZCL_READ</state>
           <state>ZCL_WRITE</state>
-          <state>REFLECTOR</state>
           <state>xHAL_DMA=FALSE</state>
           <state>xHAL_UART_DMA=FALSE</state>
           <state>xZTOOL_P1</state>
@@ -6659,7 +6657,6 @@
           <state>HAL_UART=TRUE</state>
           <state>HOLD_AUTO_START</state>
           <state>NV_RESTORE</state>
-          <state>REFLECTOR</state>
           <state>xHAL_UART_ISR_TX_MAX=200</state>
           <state>xPOWER_SAVING</state>
           <state>ZCL_READ</state>
@@ -8546,7 +8543,37 @@
       </file>
     </group>
     <group>
+      <name>others</name>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ONOFF_output.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ONOFF_output.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\SampleApp.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\SampleApp.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\zcl_samplelight.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\zcl_samplelight.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\zcl_samplelight_data.c</name>
+      </file>
+    </group>
+    <group>
       <name>AT_ZCL specification</name>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_ZCL.h</name>
+      </file>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF.c</name>
       </file>
@@ -8575,36 +8602,6 @@
         <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature_data.c</name>
       </file>
     </group>
-    <group>
-      <name>others</name>
-      <file>
-        <name>$PROJ_DIR$\..\Source\At_include.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ONOFF_output.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ONOFF_output.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\SampleApp.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\SampleApp.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\zcl_samplelight.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\zcl_samplelight.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\zcl_samplelight_data.c</name>
-      </file>
-    </group>
     <file>
       <name>$PROJ_DIR$\..\Source\AT_AF.c</name>
     </file>
@@ -8624,16 +8621,13 @@
       <name>$PROJ_DIR$\..\Source\AT_uart.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\Source\AT_ZCL.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\Source\AT_ZCL.h</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\Source\AT_ZDO.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\AT_ZDO.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
     </file>
   </group>
   <group>
@@ -9098,7 +9092,7 @@
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_ms.c</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\stack\zcl\zcl_ms.h</name>
+      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_ms.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_pi.c</name>
@@ -9201,7 +9195,7 @@
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.c</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\..\..\..\COMPONENTS\stack\zdo\ZDObject.h</name>
+      <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDObject.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zdo\ZDProfile.c</name>

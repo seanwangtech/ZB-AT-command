@@ -13,8 +13,11 @@
 #include "ZDApp.h"
 #include "ZDObject.h"
 
+#include "AT_ZDO.h"
+#include "AT_App.h"
+#include "AT_printf.h"
 
-#include "At_include.h"
+#include "AT_uart.h"
 #include "hal_led.h"
 
 /*******************************local functions************************/
@@ -25,28 +28,8 @@ void AT_ZDO_ProcessPowerDescRsp( zdoIncomingMsg_t *inMsg );
 void AT_ZDO_ProcessLqiRsp(zdoIncomingMsg_t *inMsg );
 void AT_ZDO_ProcessRtgRsp(zdoIncomingMsg_t *inMsg );
 void AT_ZDO_ProcessNwkDiscRsp(zdoIncomingMsg_t *inMsg );
-void AT_ZDO_ProcessMgmtBindRsp(zdoIncomingMsg_t *inMsg );
-void AT_ZDO_ProcessBindRsp(zdoIncomingMsg_t *inMsg );
-void AT_ZDO_ProcessUnbindRsp(zdoIncomingMsg_t *inMsg );
-void AT_ZDO_ProcessEDbindRsp(zdoIncomingMsg_t *inMsg );
-void AT_ZDO_ProcessMgmtLeaveRsp(zdoIncomingMsg_t *inMsg );
-
-void* Coordinator_Net_CloseNetworkConfirmed(void *param);
-void* Coordinator_Net_CloseNetworkConfirmed(void *param){
-  return NULL;
-}
 
 
-enum 
-{
-  ZDO_SRC_RTG_IND_CBID_,    //ninglvfeihong modified:20160409 when prepare send ito git hub ,I add a "_" at the end of this variable, because it conflict with the defination at line 308 in ZDApp.h
-  ZDO_CONCENTRATOR_IND_CBID=1,
-  ZDO_NWK_DISCOVERY_CNF_CBID,
-  ZDO_BEACON_NOTIFY_IND_CBID,
-  ZDO_JOIN_CNF_CBID,
-  ZDO_LEAVE_CNF_CBID,
-  MAX_ZDO_CB_FUNC               // Must be at the bottom of the list
-};
 
 
 void AT_ZDO_Register(uint8 *pTask_id){
@@ -56,14 +39,7 @@ void AT_ZDO_Register(uint8 *pTask_id){
   //ZDO_RegisterForZDOMsg( task_id,  Node_Desc_rsp ); 
   ZDO_RegisterForZDOMsg( task_id,  Mgmt_Lqi_rsp ); 
   ZDO_RegisterForZDOMsg( task_id,  Mgmt_Rtg_rsp ); 
-  ZDO_RegisterForZDOMsg( task_id,  Mgmt_NWK_Disc_rsp );
-  ZDO_RegisterForZDOMsg( task_id,  Mgmt_Bind_rsp ); 
-  ZDO_RegisterForZDOMsg( task_id,  Bind_rsp );
-  ZDO_RegisterForZDOMsg( task_id,  Unbind_rsp );
-  ZDO_RegisterForZDOMsg( task_id,  End_Device_Bind_rsp );
-  ZDO_RegisterForZDOMsg( task_id,  Mgmt_Leave_rsp );
-  ZDO_RegisterForZdoCB(ZDO_LEAVE_CNF_CBID, Coordinator_Net_CloseNetworkConfirmed);
-  
+  ZDO_RegisterForZDOMsg( task_id,  Mgmt_NWK_Disc_rsp ); 
 }
 
 
@@ -116,21 +92,6 @@ void AT_ZDO_ProcessMsgCBs( zdoIncomingMsg_t *inMsg ){
       break;
     case Mgmt_NWK_Disc_rsp:
       AT_ZDO_ProcessNwkDiscRsp(inMsg );
-      break;
-    case Mgmt_Bind_rsp:
-      AT_ZDO_ProcessMgmtBindRsp(inMsg );
-      break;
-    case Bind_rsp:
-      AT_ZDO_ProcessBindRsp(inMsg );
-      break;
-    case Unbind_rsp:
-      AT_ZDO_ProcessUnbindRsp(inMsg );
-      break;
-    case End_Device_Bind_rsp:
-      AT_ZDO_ProcessEDbindRsp(inMsg );
-      break;
-    case Mgmt_Leave_rsp:
-      AT_ZDO_ProcessMgmtLeaveRsp(inMsg );
       break;
     default:
       break;
@@ -338,127 +299,4 @@ void AT_ZDO_ProcessNwkDiscRsp(zdoIncomingMsg_t *inMsg ){
   AT_RESP_END();
   
   osal_mem_free( pRsp );
-}
-
-/**********************************************************
-+BTABLE 每 Display Binding Table (ZDO)
-      BTable:0000,00 
-      Length:03 
-      No. | SrcAddr | SrcEP | ClusterID | DstAddr | DstEP 
-      00. | 000D6F000059474E | 01 | DEAD |1234567887654321 | 12 
-      01. | 000D6F000059474E | 01 | DEAD |E012345678876543 | E0 
-      02. | 000D6F000059474E | 01 | DEAD | ABCD 
-      ACK:01
-****************************************************************/
-
-void AT_ZDO_ProcessMgmtBindRsp(zdoIncomingMsg_t *inMsg ){
-  ZDO_MgmtBindRsp_t * pRsp = ZDO_ParseMgmtBindRsp(inMsg );
-
-  uint8 i;
-  char dstAddr[17];
-  char dstEP[5];
-  zAddrType_t* addr;
-  AT_RESP_START();
-  printf("Length:%02X",pRsp->bindingListCount);
-  AT_NEXT_LINE();
-  if(pRsp->bindingListCount)
-    printf("No. |     SrcAddr      | SrcEP | ClusterID |     DstAddr      | DstEP");
-  for(i=0;i<pRsp->bindingListCount;i++){
-    addr = &pRsp->list[i].dstAddr;
-    AT_NEXT_LINE();
-    if(addr->addrMode== (afAddrMode_t)Addr64Bit){
-      AT_EUI64toChar(addr->addr.extAddr,dstAddr);
-      sprintf(dstEP,"| %02X",pRsp->list[i].dstEP);
-      dstAddr[16]='\0';
-    }else{
-      sprintf(dstAddr,"%04X",addr->addr.shortAddr);
-      dstEP[0]='\0';
-    }
-    uint16 *srcAddr= (uint16*) pRsp->list[i].srcAddr;    
-    printf("%02X. | %04X%04X%04X%04X |  %02X   |   %04X    | %s %s ",
-           i+pRsp->startIndex,srcAddr[3],srcAddr[2],srcAddr[1],srcAddr[0],
-           pRsp->list[i].srcEP, pRsp->list[i].clusterID, dstAddr,dstEP);
-    
-  }
-  AT_RESP_END();
-}
-
-/**********************************************************
-+BIND 每 Create Binding on Remote Device (ZDO) 
-Prompt 
-          Bind:<NodeID>,<status>
-
-          In case of an error an status other than 00 will be displayed 
-          <NodeID> is the Remote node＊s Node ID.
-
-****************************************************************/
-void AT_ZDO_ProcessBindRsp(zdoIncomingMsg_t *inMsg ){
-  uint8 status = ZDO_ParseBindRsp(inMsg);
-  AT_RESP_START();
-  if(inMsg->srcAddr.addrMode== (afAddrMode_t)Addr16Bit){
-    printf("Bind:%04X,%02X",inMsg->srcAddr.addr.shortAddr, status);
-  }else{
-    printf("Bind:UNKNOWN,%02X", status);
-  }
-  AT_RESP_END();
-    
-}
-/**********************************************************
-+UNBIND 每 Create Binding on Remote Device (ZDO) 
-Prompt 
-          Unbind:<NodeID>,<status>
-
-          In case of an error an status other than 00 will be displayed 
-          <NodeID> is the Remote node＊s Node ID.
-
-****************************************************************/
-void AT_ZDO_ProcessUnbindRsp(zdoIncomingMsg_t *inMsg ){
-  uint8 status = ZDO_ParseBindRsp(inMsg);
-  AT_RESP_START();
-  if(inMsg->srcAddr.addrMode== (afAddrMode_t)Addr16Bit){
-    printf("Unbind:%04X,%02X",inMsg->srcAddr.addr.shortAddr, status);
-  }else{
-    printf("Unbind:UNKNOWN,%02X", status);
-  }
-  AT_RESP_END();
-    
-}
-
-/**********************************************************
-+EBIND 每 End Device Bind 
-
-Response
-          EBIND:<NodeID>,<Status> 
-          OK
-
-****************************************************************/
-void AT_ZDO_ProcessEDbindRsp(zdoIncomingMsg_t *inMsg ){
-  uint8 status = ZDO_ParseBindRsp(inMsg);
-  AT_RESP_START();
-  if(inMsg->srcAddr.addrMode== (afAddrMode_t)Addr16Bit){
-    printf("Ebind:%04X,%02X",inMsg->srcAddr.addr.shortAddr, status);
-  }else{
-    printf("Ebind:UNKNOWN,%02X", status);
-  }
-  AT_RESP_END();
-    
-}
-
-
-/**********************************************************
-+DASSR 每 Disassociate Remote Node from PAN
-
-    Prompt 
-          LeftPAN
-
-****************************************************************/
-void AT_ZDO_ProcessMgmtLeaveRsp(zdoIncomingMsg_t *inMsg ){
-  uint8 status = ZDO_ParseMgmtLeaveRsp(inMsg);
-  AT_RESP_START();
-  if(status==ZSUCCESS){
-    printf("LeftPAN");
-  }else{
-    printf("failed:%02X",status);
-  }
-  AT_RESP_END();
 }
