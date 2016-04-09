@@ -66,8 +66,6 @@
 #include "AT_App.h"
 #include "zcl.h"
 #include "AT_ZCL_temperature.h"
-#include "AT_ZCL_ONOFF.h"
-#include "AT_ZCL_ONOFF_SWITCH.h"
 
 /*********************************************************************
  * GLOBAL VARIABLES
@@ -92,9 +90,7 @@ const pTaskEventHandlerFn tasksArr[] = {
   SampleApp_ProcessEvent,
   AT_App_ProcessEvent,
   zcl_event_loop,
-  AT_ZCL_TEMP_event_loop,
-  AT_ZCL_ONOFF_event_loop,
-  AT_ZCL_ONOFF_SWITCH_event_loop
+  AT_ZCL_TEMP_event_loop
 };
 
 const uint8 tasksCnt = sizeof( tasksArr ) / sizeof( tasksArr[0] );
@@ -137,9 +133,7 @@ void osalInitTasks( void )
   SampleApp_Init( taskID++ );
   AT_App_Init(taskID++ );
   zcl_Init( taskID++ );
-  AT_ZCL_TEMP_Init( taskID++ );
-  AT_ZCL_ONOFF_Init( taskID++ );
-  AT_ZCL_ONOFF_SWITCH_Init( taskID++ );
+  AT_ZCL_TEMP_Init( taskID );
 }
 
 /*********************************************************************

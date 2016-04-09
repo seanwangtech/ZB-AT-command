@@ -8,7 +8,6 @@
 
 #include "zcl.h"
 #include "zcl_general.h"
-#include "zcl_ms.h"
 #include "zcl_ha.h"
 
 #include "AT_ZCL_temperature.h"
@@ -26,14 +25,10 @@ const uint8 AT_ZCL_TEMP_ManufacturerName[] = { 5, 'E','S','S','E','X' };
 const uint8 AT_ZCL_TEMP_ModelId[] = { 7, 'D','S','1','8','B','2','0' };
 const uint8 AT_ZCL_TEMP_DateCode[] = { 8, '2','0','1','5','0','4','0','7'};
 const uint8 AT_ZCL_TEMP_PowerSource = POWER_SOURCE_BATTERY;
-uint8 AT_ZCL_TEMP_LocationDescription[]={ 11, 'I',' ','l','o','v','e',' ','U',' ',':',')' };
-const int16 AT_ZCL_TEMP_min_value = -5500;  //stand for -55 C
-const int16 AT_ZCL_TEMP_max_value = 12500;  //stand for 125 C
 uint8 AT_ZCL_TEMP_DeviceEnable = DEVICE_ENABLED;
 
 // Device Temperature Configuration Cluster
-//0x8000 indicates that the temperature measurement is invalid.
-int16 AT_ZCL_TEMP_current=0x8000;
+uint16 AT_ZCL_TEMP_current=0;
 
 // Identify Cluster
 uint16 AT_ZCL_TEMP_IdentifyTime = 0;
@@ -87,15 +82,6 @@ CONST zclAttrRec_t AT_ZCL_TEMP_Attrs[AT_ZCL_TEMP_MAX_ATTRIBUTES] =
   {
     ZCL_CLUSTER_ID_GEN_BASIC,
     { // Attribute record
-      ATTRID_BASIC_LOCATION_DESC,
-      ZCL_DATATYPE_CHAR_STR,
-      (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
-      (void *)AT_ZCL_TEMP_LocationDescription
-    }
-  },
-  {
-    ZCL_CLUSTER_ID_GEN_BASIC,
-    { // Attribute record
       ATTRID_BASIC_DEVICE_ENABLED,
       ZCL_DATATYPE_BOOLEAN,
       (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
@@ -134,38 +120,7 @@ CONST zclAttrRec_t AT_ZCL_TEMP_Attrs[AT_ZCL_TEMP_MAX_ATTRIBUTES] =
       ACCESS_CONTROL_READ,
       (void *)&AT_ZCL_TEMP_OnOff
     }
-  }, 
-  
-  // *** Temperature Measurement Cluster Attributes ***
-  {
-    ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
-    { // Attribute record
-      ATTRID_MS_TEMPERATURE_MEASURED_VALUE,
-      ZCL_DATATYPE_INT16,
-      ACCESS_CONTROL_READ,
-      (void *)&AT_ZCL_TEMP_current
-    }
-  },
-  
-  {
-    ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
-    { // Attribute record
-      ATTRID_MS_TEMPERATURE_MIN_MEASURED_VALUE,
-      ZCL_DATATYPE_INT16,
-      ACCESS_CONTROL_READ,
-      (void *)&AT_ZCL_TEMP_min_value
-    }
-  },
-  
-  {
-    ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
-    { // Attribute record
-      ATTRID_MS_TEMPERATURE_MAX_MEASURED_VALUE,
-      ZCL_DATATYPE_INT16,
-      ACCESS_CONTROL_READ,
-      (void *)&AT_ZCL_TEMP_max_value
-    }
-  },
+  }
 };
 
 
@@ -181,13 +136,10 @@ const cId_t AT_ZCL_TEMP_InClusterList[AT_ZCL_TEMP_MAX_INCLUSTERS] =
   ZCL_CLUSTER_ID_GEN_IDENTIFY
 };
 
-#define AT_ZCL_TEMP_MAX_OUTCLUSTERS       5
+#define AT_ZCL_TEMP_MAX_OUTCLUSTERS       2
 const cId_t AT_ZCL_TEMP_OutClusterList[AT_ZCL_TEMP_MAX_OUTCLUSTERS] =
 {
   ZCL_CLUSTER_ID_GEN_BASIC,
-  ZCL_CLUSTER_ID_GEN_DEVICE_TEMP_CONFIG,
-  ZCL_CLUSTER_ID_GEN_IDENTIFY,
-  ZCL_CLUSTER_ID_GEN_ON_OFF,
   ZCL_CLUSTER_ID_GEN_DEVICE_TEMP_CONFIG
 };
 

@@ -9,7 +9,6 @@
 
 #include "zcl.h"
 #include "zcl_general.h"
-#include "zcl_ms.h"
 #include "zcl_ha.h"
 #include "AT_uart.h"
 #include "AT_ZCL_temperature.h"
@@ -32,14 +31,17 @@ byte AT_ZCL_TEMP_TaskID;
 static void AT_ZCL_TEMP_IdentifyCB( zclIdentify_t *pCmd );
 static void AT_ZCL_TEMP_BasicResetCB( void );
 static void AT_ZCL_TEMP_ProcessIdentifyTimeChange( void );
+static void AT_ZCL_TEMP_ProcessIncomingMsg( zclIncomingMsg_t *pInMsg);
 static void AT_ZCL_TEMP_OnOffCB( uint8 cmd );
+static uint8 AT_ZCL_TEMP_ProcessInReadRspCmd( zclIncomingMsg_t *pInMsg );
 static void AT_ZCL_TEMP_update(void);
-static void AT_ZCL_TEMP_MS_PlaceHolder( void );
+
+static uint8 AT_ZCL_TEMP_ProcessInDefaultRspCmd( zclIncomingMsg_t *pInMsg );
 
 /*********************************************************************
  * ZCL General Profile Callback table
  */
-static zclGeneral_AppCallbacks_t AT_ZCL_TEMP_GEN_CmdCallbacks =
+static zclGeneral_AppCallbacks_t AT_ZCL_TEMP_CmdCallbacks =
 { 
   AT_ZCL_TEMP_BasicResetCB,                 // Basic Cluster Reset command
   AT_ZCL_TEMP_IdentifyCB,                   // Identify command   
@@ -56,14 +58,6 @@ static zclGeneral_AppCallbacks_t AT_ZCL_TEMP_GEN_CmdCallbacks =
   NULL,                                     // RSSI Location commands
   NULL,                                     // RSSI Location Response commands
 };
-/*********************************************************************
- * ZCL Measurement and Sensing Profile Callback table
- */
-static zclMS_AppCallbacks_t AT_ZCL_TEMP_MS_CmdCallbacks=
-{
-  AT_ZCL_TEMP_MS_PlaceHolder,                                     //// Place Holder
-};
-
 
 void AT_ZCL_TEMP_Init( byte task_id )
 {
@@ -73,15 +67,17 @@ void AT_ZCL_TEMP_Init( byte task_id )
   zclHA_Init( &AT_ZCL_TEMP_SimpleDesc );
 
   // Register the ZCL General Cluster Library callback functions
-  zclGeneral_RegisterCmdCallbacks( AT_ZCL_TEMP_ENDPOINT, &AT_ZCL_TEMP_GEN_CmdCallbacks );
-  
-  // Register the ZCL Measurement and Sensing Cluster Library callback functions
-  zclMS_RegisterCmdCallbacks( AT_ZCL_TEMP_ENDPOINT, &AT_ZCL_TEMP_MS_CmdCallbacks );
+  zclGeneral_RegisterCmdCallbacks( AT_ZCL_TEMP_ENDPOINT, &AT_ZCL_TEMP_CmdCallbacks );
 
   // Register the application's attribute list
   zcl_registerAttrList( AT_ZCL_TEMP_ENDPOINT, AT_ZCL_TEMP_MAX_ATTRIBUTES, AT_ZCL_TEMP_Attrs );
 
+  // Register the Application to receive the unprocessed Foundation command/response messages
+  zcl_registerForMsg( AT_ZCL_TEMP_TaskID );
 
+  
+  osal_start_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_TEMP_MEASURE_EVT, 1000 );
+  
   
 }
 
@@ -107,7 +103,12 @@ uint16 AT_ZCL_TEMP_event_loop( uint8 task_id, uint16 events )
     while ( (MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive( AT_ZCL_TEMP_TaskID )) )
     {
       switch ( MSGpkt->hdr.event )
-      { 
+      {
+        case ZCL_INCOMING_MSG:
+          // Incoming ZCL Foundation command/response messages
+          AT_ZCL_TEMP_ProcessIncomingMsg( (zclIncomingMsg_t *)MSGpkt );
+          break;
+          
          default:
           break;
       }
@@ -142,6 +143,37 @@ uint16 AT_ZCL_TEMP_event_loop( uint8 task_id, uint16 events )
 
 
 
+/*********************************************************************
+ * @fn      AT_ZCL_TEMP_ProcessIncomingMsg
+ *
+ * @brief   Process ZCL Foundation incoming message
+ *
+ * @param   pInMsg - pointer to the received message
+ *
+ * @return  none
+ */
+static void AT_ZCL_TEMP_ProcessIncomingMsg( zclIncomingMsg_t *pInMsg)
+{
+  switch ( pInMsg->zclHdr.commandID )
+  {
+
+#ifdef ZCL_READ
+    case ZCL_CMD_READ_RSP:
+      AT_ZCL_TEMP_ProcessInReadRspCmd( pInMsg );
+      break;
+#endif
+    case ZCL_CMD_DEFAULT_RSP:
+      AT_ZCL_TEMP_ProcessInDefaultRspCmd( pInMsg );
+      break;
+      
+    default:
+      break;
+  }
+  
+  if ( pInMsg->attrCmd )
+    osal_mem_free( pInMsg->attrCmd );
+}
+
 
 
 
@@ -160,10 +192,6 @@ uint16 AT_ZCL_TEMP_event_loop( uint8 task_id, uint16 events )
 static void AT_ZCL_TEMP_BasicResetCB( void )
 {
   // Reset all attributes to default values
-  AT_ZCL_TEMP_OnOffCB(COMMAND_OFF);
-  
-  zclIdentify_t identifyCmd={NULL,0};
-  AT_ZCL_TEMP_IdentifyCB( &identifyCmd );
 }
 
 
@@ -184,8 +212,6 @@ static void AT_ZCL_TEMP_IdentifyCB( zclIdentify_t *pCmd )
   AT_ZCL_TEMP_ProcessIdentifyTimeChange();
 }
 
-
-
 /*********************************************************************
  * @fn      AT_ZCL_TEMP_ProcessIdentifyTimeChange
  *
@@ -200,14 +226,14 @@ static void AT_ZCL_TEMP_ProcessIdentifyTimeChange( void )
   if ( AT_ZCL_TEMP_IdentifyTime > 0 )
   {
     osal_start_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_IDENTIFY_TIMEOUT_EVT, 1000 );
-    HalLedBlink ( HAL_LED_3, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
+    HalLedBlink ( HAL_LED_2, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
   }
   else
   {
     if ( AT_ZCL_TEMP_OnOff )
-      HalLedSet ( HAL_LED_3, HAL_LED_MODE_ON );
+      HalLedSet ( HAL_LED_2, HAL_LED_MODE_ON );
     else
-      HalLedSet ( HAL_LED_3, HAL_LED_MODE_OFF );
+      HalLedSet ( HAL_LED_2, HAL_LED_MODE_OFF );
     osal_stop_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_IDENTIFY_TIMEOUT_EVT );
   }
 }
@@ -224,11 +250,31 @@ static void AT_ZCL_TEMP_ProcessIdentifyTimeChange( void )
  *
 ************************************************************/
 static void AT_ZCL_TEMP_update(void){
-  uint16 temp = ReadDs18B20();
-  AT_ZCL_TEMP_current =(int16)((*(int16*) & temp)*6.25);
+  
+  AT_ZCL_TEMP_current=ReadDs18B20();
   
 }
 
+
+
+/*********************************************************************
+ * @fn      AT_ZCL_TEMP_ProcessInDefaultRspCmd
+ *
+ * @brief   Process the "Profile" Default Response Command
+ *
+ * @param   pInMsg - incoming message to process
+ *
+ * @return  none
+ */
+static uint8 AT_ZCL_TEMP_ProcessInDefaultRspCmd( zclIncomingMsg_t *pInMsg )
+{
+  // zclDefaultRspCmd_t *defaultRspCmd = (zclDefaultRspCmd_t *)pInMsg->attrCmd;
+   
+  // Device is notified of the Default Response command.
+  (void)pInMsg;
+  
+  return TRUE; 
+}
 
 /*********************************************************************
  * @fn      AT_ZCL_TEMP_OnOffCB
@@ -259,37 +305,93 @@ static void AT_ZCL_TEMP_OnOffCB( uint8 cmd )
       AT_ZCL_TEMP_OnOff = TEMP_OFF;
   }
 
-  // In this sample app, we use LED3 to simulate the Light
-  if (AT_ZCL_TEMP_OnOff == TEMP_ON ){
-    HalLedSet( HAL_LED_3, HAL_LED_MODE_ON );
-    osal_start_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_TEMP_MEASURE_EVT, 10 );
-  }else{
-    HalLedSet( HAL_LED_3, HAL_LED_MODE_OFF );
-    osal_stop_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_TEMP_MEASURE_EVT );
-    AT_ZCL_TEMP_current=0x8000;   //0x8000 indicates that the temperature measurement is invalid.
-  }
+  // In this sample app, we use LED4 to simulate the Light
+  if ( AT_ZCL_TEMP_OnOff == TEMP_ON )
+    HalLedSet( HAL_LED_2, HAL_LED_MODE_ON );
+  else
+    HalLedSet( HAL_LED_2, HAL_LED_MODE_OFF );
 }
 
-/******************************************************
- * @fn      AT_ZCL_TEMP_MS_PlaceHolder
+
+#ifdef ZCL_READ
+/*********************************************************************
+ * @fn      AT_ZCL_TEMP_ProcessInReadRspCmd
  *
- * @brief   Process  Measurement and Sensing profile call Callback function
-********************************************************/
-
-static void AT_ZCL_TEMP_MS_PlaceHolder( void){
-}
-
-
-/******************************************************
- * @fn      AT_ZCL_TEMP_EP_ENABLE
+ * @brief   Process the "Profile" Read Response Command
  *
- * @brief   Process  Measurement and Sensing profile call Callback function
-********************************************************/
-void AT_ZCL_TEMP_EP_ENABLE( bool isEnable);
-void AT_ZCL_TEMP_EP_ENABLE( bool isEnable){
-  if(isEnable) {
-    AT_ZCL_TEMP_OnOffCB(COMMAND_ON);
+ * @param   pInMsg - incoming message to process
+ *
+ * @return  none
+ */
+static uint8 AT_ZCL_TEMP_ProcessInReadRspCmd( zclIncomingMsg_t *pInMsg )
+{
+  zclReadRspCmd_t *readRspCmd;
+  uint8 i;
+
+  readRspCmd = (zclReadRspCmd_t *)pInMsg->attrCmd;
+  
+  char str[17];
+  AT_RESP_START();
+  for (i = 0; i < readRspCmd->numAttr; i++)
+  {
+        AT_RESP("RESPATR:",9);
+        //node id
+        if(pInMsg->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
+          AT_Int16toChar(pInMsg->srcAddr.addr.shortAddr,str);
+          AT_RESP(str,4);
+        }else{
+          AT_EUI64toChar(pInMsg->srcAddr.addr.extAddr,str);
+          AT_RESP(str,16);
+        }
+        AT_RESP(",",1);
+        
+        //End ponit
+        AT_Int8toChar(pInMsg->srcAddr.endPoint,str);
+        AT_RESP(str,2);
+        AT_RESP(",",1);
+        
+        //Cluster ID
+        AT_Int16toChar(pInMsg->clusterId,str);
+        AT_RESP(str,4);
+        AT_RESP(",",1);
+        
+        //Attribute ID
+        AT_Int16toChar(readRspCmd->attrList[i].attrID,str);
+        AT_RESP(str,4);
+        AT_RESP(",",1);
+        
+        //status
+        AT_Int8toChar(readRspCmd->attrList[i].status,str);
+        AT_RESP(str,2);
+        AT_RESP(",",1);
+
+        //data type
+        AT_Int8toChar(readRspCmd->attrList[i].dataType,str);
+        AT_RESP(str,2);
+        AT_RESP(",",1);
+        
+        //ATTR VALUE
+        if(readRspCmd->attrList[i].dataType == ZCL_DATATYPE_CHAR_STR){
+          AT_RESP(readRspCmd->attrList[i].data +1,readRspCmd->attrList[i].data[0]);        
+        }else if(readRspCmd->attrList[i].dataType == ZCL_DATATYPE_DATA16||
+                 readRspCmd->attrList[i].dataType == ZCL_DATATYPE_UINT16||
+                 readRspCmd->attrList[i].dataType == ZCL_DATATYPE_INT16){
+          AT_Int16toChar(*((uint16*)readRspCmd->attrList[i].data),str);
+          AT_RESP(str,4);
+        }else{
+          
+          AT_Int8toChar((uint8)readRspCmd->attrList[i].data[0],str);
+          AT_RESP(str,2);
+        }
+        
+        if(i<readRspCmd->numAttr-1) AT_NEXT_LINE();
   }
-  else AT_ZCL_TEMP_BasicResetCB( );
+  AT_RESP_END(); 
+  AT_OK();
+
+  return TRUE; 
 }
+#endif // ZCL_READ
+
+
 

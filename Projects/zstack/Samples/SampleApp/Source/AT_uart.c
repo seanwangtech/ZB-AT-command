@@ -14,18 +14,16 @@
 #include "AF.h"
 #include "AT_uart.h"
 #include "AT_ONOFF_output.h"
-#include "AT_AF.h"
 #include "ZDNwkMgr.h"
 #include "ZDProfile.h"
 #include "hal_led.h"
 #include "AT_App.h"
 #include "zcl.h"
 #include "zcl_general.h"
-#include "AT_ZCL.h"
-const char* Revision = "Private Revision:2.1 \n\rwith ZCL layer";
-const uint8 Revision_len = sizeof("Private Revision:2.1 \n\rwith ZCL layer");
+
+const char* Revision = "Private Revision:1.0";
+const uint8 Revision_len = sizeof("Private Revision:1.0");
 byte AT_Uart_TaskID;
-const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
 extern uint8 continueJoining;
 extern uint8 zdoDiscCounter;
 uint8 AT_state =0;
@@ -40,33 +38,26 @@ uint8 AT_RxBuffer[MT_UART_RX_BUFF_MAX];
 const AT_Cmd_t AT_Cmd_Arr[]={
 #if AT_ENABLE_PASSWORDS_MODE
   {"DISABLE", AT_Cmd_DISABLE, "Disable the AT command"},
-  {"ENABLE",  AT_Cmd_ENABLE,  "Enable the AT command AT+ENABLE:<password>"},
 #endif
-  {"EPENABLE",AT_Cmd_EPENABLE,"Enable/Disable Local Endpoint EPENABLE:<Enable/Disable>,<EP>"},
-  {"REPENABLE",AT_Cmd_REPENABLE,"Enable/Disable Remote Endpoint EPENABLE:<nodeID><Enable/Disable>,<EP>"},
-  {"EPPRINT" ,AT_Cmd_EPPRINT, "Print Local Endpoints Status"},
-  {"REPPRINT",AT_Cmd_REPPRINT,"Print Remote Endpoints Status REPPRIN:<noteID>"},
-  {"EN" ,     AT_Cmd_EN,      "Establish Network EN:<channel>,<POWER>,<PANID>"},
+  {"EN" ,     AT_Cmd_EN,      "Establish Network cmmmand"},
   {"DASSL",   AT_Cmd_DASSL,   "Disassociate Local Device From PAN cmmmand"},
-  {"PJOIN",   AT_Cmd_PJOIN,   "Permit joining cmmmand PJOIN:<sec>"},
-  {"JPAN",    AT_Cmd_JPAN,    "Join Specific JPAN:<channel>,<PANID>,<EPANID>"},
+  {"PJOIN",   AT_Cmd_PJOIN,   "Permit joining cmmmand"},
+  {"JPAN",    AT_Cmd_JPAN,    "Join Specific PAN:ch,PAN,EPAN"},
   {"JN",      AT_Cmd_JN,      "Join Network"},
-  {"READATR", AT_Cmd_READATR, "READATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,...,< AttrID >"},
-  {"WRITEATR",AT_Cmd_WRITEATR,"WRITEATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,<DataType>,<Data>"},
-  {"RONOFF",  AT_Cmd_RONOFF,  "RONOFF:<Address>,<EP>,<SendMode>[,<ON/OFF>]"},
-  {"LONOFF",  AT_Cmd_LONOFF,  "Switch Local Device On/Off LONOFF:[ON/OFF]"},
-  {"ESCAN",   AT_Cmd_ESCAN,   "Scan The Energy Of All Channels"},
-  {"PANSCAN", AT_Cmd_PANSCAN, "Scan For Active PANs"},
-  {"N",       AT_Cmd_N,       "Display Network Information"},
-  {"READNV",  AT_Cmd_READNV,  "Read NV READNV:<ID>,<offset>,<lenth>"},
-  {"WRITENV", AT_Cmd_WRITENV, "WRITE NV WRITENV:<ID>,<offset>,<hex>"},
-  {"INITNV",  AT_Cmd_INITNV,  "Initialize NV INITNV:<ID>,<lenth>"},
-  {"IDREQ",   AT_Cmd_IDREQ,   "Request network address (nodeID) IDREQ:[<Address>][,XX]"},
-  {"EUIREQ",  AT_Cmd_EUIREQ,  "Request Node's EUI64 EUIREQ:[< Address>,<NodeID>][,XX]"},
-  {"IDENTIFY",AT_Cmd_IDENTIFY,"Identify Claster IDENTIFY:<Address>,<EP>,<SendMode>,<Time>"},
-  {"HELP",    AT_Cmd_HELP,    "all the AT commands:"}, 
-  {"RONOFF1", AT_Cmd_RONOFF1, "RONOFF1:<Address>,<EP>,<SendMode>[,<ON/OFF>]"},
-  {"TEST",    AT_Cmd_TEST,    "JUST for test and development"}
+  {"READATR", AT_Cmd_READATR, "READATR:Addr,EP,SendMode,CID,AttrI...,AttrID"},
+  {"WRITEATR",AT_Cmd_WRITEATR,"Sets An Attribute to Specified Cluster Client cmmmand"},
+  {"RONOFF",  AT_Cmd_RONOFF,  "Switching Target Devices Between ＆On＊ and ＆Off＊ States cmmmand"},
+  {"LONOFF",  AT_Cmd_LONOFF,  "Switch Local Device On/Off"},
+  {"ESCAN",   AT_Cmd_ESCAN,   "Scan The Energy Of All Channels\n\rPlease waitting..."},
+  {"PANSCAN", AT_Cmd_PANSCAN, "Scan For Active PANs\n\rPlease waitting..."},
+  {"N", AT_Cmd_N, "Display Network Information"},
+  {"READNV", AT_Cmd_READNV, "Read NV ID,offset,len"},
+  {"WRITENV", AT_Cmd_WRITENV, "WRITE NV ID,offset,number"},
+  {"INITNV",  AT_Cmd_INITNV, "Initialize NV ID,lenth"},
+  {"IDREQ",  AT_Cmd_IDREQ, "Request Node＊s NodeID:Address,XX"},
+  {"EUIREQ",  AT_Cmd_EUIREQ, "Request Node＊s EUI64:Address,nodeID,XX"},
+  {"IDENTIFY",  AT_Cmd_IDENTIFY, "Identify Claster :Address,EP,SendMode,Time"},  
+  {"TEST", AT_Cmd_TEST, "JUST for test and development"}
 };
   
 const AT_smap_unit_t AT_smap[] = {
@@ -99,7 +90,7 @@ uint8 AT_get_next_cmdUnit(AT_CmdUnit* cmdUnit,uint8 start_point, uint8* msg);
 uint8 getAT_CMDlength(uint8 *msg);
 uint8 AT_strLen(char * str);
 uint8 AT_get_smap_index(uint8 S_ID);
-uint8 AT_display_pre_cmd(void);
+
 
 
 uint8 AT_UartInit( uint8 taskID )
@@ -120,7 +111,6 @@ uint8 AT_UartInit( uint8 taskID )
   uartConfig.callBackFunc         = AT_UartProcess;
   
   AT_Uart_TaskID = taskID;
-  AT_RxBuffer[0]='\r';          //label the buffer's initial status
   return HalUARTOpen ( AT_UART_PORT, &uartConfig);
 }
 
@@ -149,24 +139,14 @@ void AT_UartProcess( uint8 port, uint8 event ){
   AT_CmdUnit cmdUnit;
 #endif
   while(Hal_UART_RxBufLen( port )){
-    HalUARTRead(port,&ch,1);   
+    HalUARTRead(port,&ch,1);
+    
     switch(AT_state){
     case AT_HEAD_STATE1:
       if(ch =='A' || ch=='a') AT_state = AT_HEAD_STATE2;
-#if AT_re_input_key != '\0'
-      else if(ch==AT_re_input_key){
-#if AT_ENABLE_PASSWORDS_MODE
-        if(AT_enable)
-#endif
-        {
-          AT_tempLen=AT_display_pre_cmd();
-          AT_state = AT_DATA_STATE;
-        }
-      }
-#endif
+      
       AT_UART_ECHO();    //very important for cc2530, cause this can avoid uart to die in very harsh envionment.
       break;
-      
       
     case AT_HEAD_STATE2:
       if(ch =='T' || ch=='t') AT_state = AT_DATA_STATE;
@@ -175,13 +155,8 @@ void AT_UartProcess( uint8 port, uint8 event ){
       AT_UART_ECHO();     //very important for cc2530, cause this can avoid uart to die in very harsh envionment.
       break;
       
-      
     case AT_DATA_STATE:
-      if(ch=='\b'||ch=='\x7f'){         //for backspace function, allow user to delete characters
-        if(AT_tempLen>0) AT_tempLen--;
-          else AT_state = AT_HEAD_STATE2;
-      }
-      else if(ch =='\r'){       //means end signal <CR>
+      if(ch =='\r'){       //means end signal <CR>
         AT_RxBuffer[AT_tempLen++]='\r';
 #if AT_ENABLE_PASSWORDS_MODE
         if (AT_enable){
@@ -195,7 +170,6 @@ void AT_UartProcess( uint8 port, uint8 event ){
 #if AT_ENABLE_PASSWORDS_MODE
         }else{
           start_point=AT_get_next_cmdUnit(&cmdUnit,start_point, AT_RxBuffer);
-          AT_capitalizeCmd(&cmdUnit);
           if(cmdUnit.symbol=='+' && AT_CmpCmd(&cmdUnit,"ENABLE")==0){
             start_point=AT_get_next_cmdUnit(&cmdUnit,start_point, AT_RxBuffer);
             if(cmdUnit.symbol==':' && AT_CmpCmd(&cmdUnit,(uint8 *)AT_passwords)==0){
@@ -212,7 +186,7 @@ void AT_UartProcess( uint8 port, uint8 event ){
         }
 #endif
       }
-      else {
+      else{
          /* if the buffer is not full, read the data */
         if(AT_tempLen <MT_UART_RX_BUFF_MAX-1) AT_RxBuffer[AT_tempLen++] = ch;
         else{
@@ -290,57 +264,10 @@ void AT_UARTWriteErrMsg(uint8 error_code){
   }
   errMsg[sizeof("\r\nERROR:")-1] = error_code/16 < 10 ? error_code/16+'0' : error_code/16-10+'A';
   errMsg[sizeof("\r\nERROR:x")-1] = error_code%16 < 10 ? error_code%16+'0' : error_code%16-10+'A';
-  AT_RESP(errMsg,sizeof("\r\nERROR:xx\r\n"));
-}
-
-/*******************************************************************
-CALL HalUARTPoll() TO GET A FULL TEXT DISPLAY.
-AVOID TEST LOST.
-*********************************************************************/
-uint16 AT_HalUARTWrite(uint8 port, uint8 *buf, uint16 len){
-  uint16 cnt=0;
-  if(len>0 && len<AT_UART_TX_BUFF_MAX){   //it takes me a long time to find this bug. if the len is not checked, the system will fail. if len==0, the system will loop here all the time.
-    while((cnt=HalUARTWrite(port, buf, len))==0){
-      HalUARTPoll();//wait until the text is sent successfully
-    }
-  }
-  return cnt;
+  HalUARTWrite(  AT_UART_PORT,errMsg,sizeof("\r\nERROR:xx\r\n"));
 }
 
 
-/*******************************************************************
-save the endpoint status to NV
-*********************************************************************/
-uint8 AT_NV_ZCL_saveEPStatus(uint8 offset, uint8* value){
-  uint8 state;
-  state=osal_nv_item_init( AT_NV_ZCL_EP_STATUS_ID, sizeof(AT_CMD_EP_ARRAY), NULL );
-  if(state==SUCCESS || state==NV_ITEM_UNINIT  );
-  else return state;
-  
-  return osal_nv_write( AT_NV_ZCL_EP_STATUS_ID, offset,1, value );
-}
-
-/*******************************************************************
-read the endpoint status from NV
-*********************************************************************/
-uint8 AT_NV_ZCL_readEPStatus(uint8 offset, uint8* value){
-  uint8 state;
-  state=osal_nv_item_init( AT_NV_ZCL_EP_STATUS_ID, sizeof(AT_CMD_EP_ARRAY), NULL );
-  if(state==SUCCESS || state==NV_ITEM_UNINIT  );
-  else return state;
-  
-  return osal_nv_read( AT_NV_ZCL_EP_STATUS_ID, offset,1, value );
-}
-/*******************************************************************
-get index of the end point in AT_CMD_EP_ARRAY[]
-*********************************************************************/
-uint8 AT_NV_ZCL_get_index_(uint8 value){
-  uint8 index;
-  for(index=0;index<sizeof(AT_CMD_EP_ARRAY);index++){
-    if(AT_CMD_EP_ARRAY[index]==value)return index;
-  }
-  return 0xFF;
-}
 /*****************************
 
 AT command handler!!!
@@ -396,30 +323,6 @@ uint16 AT_ChartoInt16(AT_CmdUnit *cmdUnit){
   if(cmdUnit->unitLen>3) result |=((uint16) _AT_ChartoInt(cmdUnit->unit[cmdUnit->unitLen-4]))<<(3*4);
   return result;
 }
-void AT_capitalizeCmd(AT_CmdUnit *cmdUnit){
-  //capitalize the characters
-  uint8 i;
-  for(i=0;i<cmdUnit->unitLen;i++){  
-    if(cmdUnit->unit[i]<='z' && cmdUnit->unit[i]>='a') cmdUnit->unit[i] += ('A'-'a');
- }
-}
-/**************************************************************
-sorting the array
-****************************************************************/
-void AT_sort_arr(uint8 *a, uint8 array_size){
-  uint8 i, j, index;
-  for (i = 1; i < array_size; ++i)
-     {
-          index = a[i];
-          for (j = i; j > 0 && a[j-1] > index; j--)
-               a[j] = a[j-1];
-
-          a[j] = index;
-     }
-
-}
-
-
 void AT_ChartoIntx(AT_CmdUnit *cmdUnit,uint8 *pHex, uint8 x){
   uint8 len=x/8;
   uint8 i;
@@ -441,15 +344,7 @@ uint8 AT_get_smap_index(uint8 S_ID){
     }
     return 0x00;
 }
-uint8 AT_display_pre_cmd(void){
-  uint8 i;
-  for(i=0;;i++){
-    if(AT_RxBuffer[i]== '\r') break;
-  }
-  AT_DEBUG("AT",2);
-  AT_DEBUG(AT_RxBuffer,i);
-  return i;
-}
+
 uint8 AT_get_next_cmdUnit(AT_CmdUnit* cmdUnit,uint8 start_point, uint8* msg){
   
   cmdUnit->unitLen=0;
@@ -462,10 +357,6 @@ uint8 AT_get_next_cmdUnit(AT_CmdUnit* cmdUnit,uint8 start_point, uint8* msg){
        (msg[start_point]<='9' && msg[start_point]>='0')){
        cmdUnit->symbol ='\0';                                  //indicate no operator
        break;
-    }
-    else if(msg[start_point] == '\r'){        //indicate the end of one command
-      cmdUnit->symbol =msg[start_point];
-      return start_point;
     }
     else {
       cmdUnit->symbol =msg[start_point];
@@ -501,7 +392,7 @@ uint8 CmpStr(uint8* str1,uint8* str2){
 */
 int8 AT_CmpCmd(AT_CmdUnit* cmdUnit,uint8* str2){
   int i;
-  for(i=0;i<cmdUnit->unitLen;i++){  
+  for(i=0;i<cmdUnit->unitLen;i++){
     if(cmdUnit->unit[i]!=str2[i]) return cmdUnit->unit[i]-str2[i];
   }
   return 0-str2[cmdUnit->unitLen];
@@ -522,7 +413,6 @@ void AT_HandleCMD(uint8 *msg){
   AT_CmdUnit cmdUnit;
   uint16 i;
   start_point = AT_get_next_cmdUnit(&cmdUnit,start_point, msg);
-  AT_capitalizeCmd(&cmdUnit);
   if(cmdUnit.symbol =='\r'){                        //means there is no any followed operator or cmmand
        AT_OK();
   }
@@ -634,41 +524,6 @@ void AT_Cmd_RONOFF(uint8 start_point, uint8* msg){
   for(i=0;i<5;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
   
   AT_PARSE_CMD_PATTERN_ERROR(":,,,\r",cmdUnitArr); 
-
-  uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
-  uint8 sendmode=AT_ChartoInt8(&cmdUnitArr[2]);
-  uint8 on_off =AT_ChartoInt8(&cmdUnitArr[3]);
-
-  afAddrType_t dstAddr;
-  dstAddr.endPoint = endpoint;
-  dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);
-  //dstAddr.panId =2016;//0;
-  dstAddr.addrMode = sendmode==0 ? (afAddrMode_t)Addr16Bit : (afAddrMode_t) AddrGroup;
-  
-  uint8 status;
-  if(cmdUnitArr[3].unitLen==0) 
-    status=zclGeneral_SendOnOff_CmdToggle(AT_ZCL_ENDPOINT,&dstAddr,0,1); //stand for without onoff parameter, toggle
-  else if(on_off==0) 
-    status=zclGeneral_SendOnOff_CmdOff(AT_ZCL_ENDPOINT,&dstAddr,0,1);    //off
-  else status=zclGeneral_SendOnOff_CmdOn(AT_ZCL_ENDPOINT,&dstAddr,0,1);  //on
-  if(status==ZSUCCESS) AT_OK();
-  else AT_ERROR(status);
-  
-  //ZStatus_t zclGeneral_SendOnOff_CmdOff( uint16 srcEP, afAddrType_t *dstAddr, uint8 disableDefaultRsp, uint8 seqNum );
-}
-
-
-/*****************************************************
-  AT+RONOFF1:<Address>,<EP>,<SendMode>[,<ON/OFF>] 
-  AT+RONOFF1:,,,[<ON/OFF>]
-*********************************************************/
-
-void AT_Cmd_RONOFF1(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[5];
-  uint8 i;
-  for(i=0;i<5;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  
-  AT_PARSE_CMD_PATTERN_ERROR(":,,,\r",cmdUnitArr); 
   
   uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
   uint8 sendmode=AT_ChartoInt8(&cmdUnitArr[2]);
@@ -688,7 +543,11 @@ void AT_Cmd_RONOFF1(uint8 start_point, uint8* msg){
       break;
     default:
       break;
+    
   }
+  
+ 
+  
 }
 
 
@@ -762,7 +621,7 @@ void AT_Cmd_ATZ(uint8 start_point, uint8* msg){
 }
 
 /*****************************************************
-  &F 每 Restore Local Device's Factory Defaults
+  &F 每 Restore Local Device＊s Factory Defaults
   Response 
            Response
            OK
@@ -782,183 +641,6 @@ void AT_Cmd_AT_F(uint8 start_point, uint8* msg){
   else AT_ERROR(status);
 }
 
-
-/*****************************************************
-+EPENABLE 每 Enable/Disable Local Endpoint
-
-      AT+EPENABLE:<Enable/Disable>,<EP> 
-            <Enable/Disable> - 0 for Disable; 1 for Enable 
-            <EP> - 8 bit hexadecimal number Endpoint
-
-Response 
-      EPENABLED:<EP> or 
-      EPDISABLED:<EP> or 
-      UNKNOWNEP 
-      OK
-*********************************************************/
-
-void AT_Cmd_EPENABLE(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  
-  AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
-  
-  uint8 enable =AT_ChartoInt8(&cmdUnitArr[0]);
-  uint8 ep =AT_ChartoInt8(&cmdUnitArr[1]);
-  char str[2];
-  if(enable!=0) enable=1;
-  
-  if(enable){
-    if( AT_af_exist_ep(ep)){
-      if(AT_af_register_ep(ep)==afStatus_SUCCESS){ 
-        //enable the end point in ZCL layer
-        AT_ZCL_EP_ENABLE( enable,ep);
-        AT_NV_ZCL_saveEPStatus(AT_NV_ZCL_get_index_(ep),&enable);
-      }
-        AT_RESP_START();
-        AT_RESP("ENABLED:",sizeof("ENABLED:")-1);
-        AT_Int8toChar(ep,str);
-        AT_RESP(str,2);
-        AT_RESP_END();
-    }else {
-      
-      AT_RESP_START();
-      AT_RESP("UNKNOWNEP",sizeof("UNKNOWNEP")-1);
-      AT_RESP_END();
-      return;
-    }
-  }
-  else{
-    if(AT_af_exist_ep(ep)){
-      if(AT_af_remove_ep(ep)==afStatus_SUCCESS){
-        //disable the end point in ZCL layer
-        AT_ZCL_EP_ENABLE( enable,ep);
-        //save to NV
-        AT_NV_ZCL_saveEPStatus(AT_NV_ZCL_get_index_(ep),&enable);
-      }
-      AT_RESP_START();
-      AT_RESP("DISABLED:",sizeof("DISABLED:")-1);
-      AT_Int8toChar(ep,str);
-      AT_RESP(str,2);
-      AT_RESP_END();
-    }else {
-      AT_RESP_START();
-      AT_RESP("UNKNOWNEP",sizeof("UNKNOWNEP")-1);
-      AT_RESP_END();
-      return;
-    }
-  }
-  AT_OK();
-}
-
-
-
-/*****************************************************
-+REPENABLE 每 Enable/Disable Remote Endpoint
-
-      AT+REPENABLE:<nodeID>,<Enable/Disable>,<EP> 
-            <Enable/Disable> - 0 for Disable; 1 for Enable 
-            <EP> - 8 bit hexadecimal number Endpoint
-
-Response 
-      EPENABLED:<EP> or 
-      EPDISABLED:<EP> or 
-      UNKNOWNEP 
-      OK
-*********************************************************/
-void AT_Cmd_REPENABLE(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[4];
-  uint8 i;
-  for(i=0;i<4;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":,,\r",cmdUnitArr); 
-  
-  uint8 enable =AT_ChartoInt8(&cmdUnitArr[1]);
-  uint8 ep =AT_ChartoInt8(&cmdUnitArr[2]);
-  if(enable!=0) enable=1;
-  
-  uint8 state;
-  AT_AF_Cmd_REPENABLE_req_t buf; 
-  buf.hdr.cmd = AT_AF_Cmd_req;
-  buf.enable=enable; 
-  buf.ep=ep; 
-  state =  AT_AF_Cmd_send_simple(AT_ChartoInt16(&cmdUnitArr[0]),
-                      AT_AF_Cmd_REPENABLE_CLUSTERID,
-                      sizeof(AT_AF_Cmd_REPENABLE_req_t),&buf);
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-  
-}
-
-
-/*****************************************************
-  EPPRINT 每 Print Local Endpoints Status
-  Response
-        EP 0x01:ENABLED (or DISABLED) 
-        EP 0x02:ENABLED (or DISABLED) 
-        EP 0x03:ENABLED (or DISABLED) 
-        EP 0x04:ENABLED (or DISABLED) 
-        EP 0x05:ENABLED (or DISABLED) 
-        OK
-*********************************************************/
-void AT_Cmd_EPPRINT(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[1];
-  start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
-  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr);
-  
-  uint8 epNum = afNumEndPoints()-1;
-  byte* epBuf = (byte*)  osal_mem_alloc(epNum);
-  if(epBuf==NULL) AT_ERROR(AT_MEM_ERROR);
-  afEndPoints( epBuf, true);
-  AT_sort_arr(epBuf,epNum);
-  
-  int i,j;
-  char str[3];
-  AT_RESP_START();
-  for(i=0,j=0;j<sizeof(AT_CMD_EP_ARRAY);j++){
-    AT_NEXT_LINE();
-    AT_RESP("EP ",3);
-    AT_Int8toChar(AT_CMD_EP_ARRAY[j],str);
-    AT_RESP(str,2);
-    if(epBuf[i]==AT_CMD_EP_ARRAY[j]){
-      AT_RESP(":ENABLED",sizeof(":ENABLED")-1);
-      i++;
-    }
-    else AT_RESP(":DISABLED",sizeof(":DISABLED")-1);
-  }
-    
-  AT_RESP_END();
-  AT_OK();
-  osal_mem_free(epBuf);  
-  //void afEndPoints( byte *epBuf, byte skipZDO );
-}
-
-/*****************************************************
-REPPRINT:<noteID> 每 Print Remote Endpoints Status
-  Response
-        <nodeID>,<EndPoint>:<Status>
-        XXXX,01:ENABLED (or DISABLED) 
-        XXXX,02:ENABLED (or DISABLED) 
-        XXXX,03:ENABLED (or DISABLED) 
-        XXXX,04:ENABLED (or DISABLED) 
-        XXXX,05:ENABLED (or DISABLED) 
-        OK
-*********************************************************/
-void AT_Cmd_REPPRINT(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[2];
-  uint8 i;
-  for(i=0;i<2;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr);
-  
-  AT_AF_hdr buff;
-  uint8 state; 
-  buff.cmd = AT_AF_Cmd_req;
-  state =  AT_AF_Cmd_send_simple(AT_ChartoInt16(&cmdUnitArr[0]),
-                      AT_AF_Cmd_REPPRINT_CLUSTERID,sizeof(AT_AF_hdr),&buff);
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
-  
-}
 
 /*****************************************************
   S 每 S-Register Access
@@ -1173,8 +855,7 @@ void AT_Cmd_ESCAN(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[1];
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
   AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr);  
-  
-  AT_DEBUG("\n\rPlease waitting...",sizeof("\n\rPlease waitting...")-1);
+ 
   NLME_ScanFields_t fields;
   fields.channels = 0x07FFF800;
   fields.duration = BEACON_ORDER_1_SECOND;
@@ -1205,9 +886,8 @@ AT+PANSCAN
 void AT_Cmd_PANSCAN(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[1];
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
-  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
+  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr);  
   
-  AT_DEBUG("\n\rPlease waitting...",sizeof("\n\rPlease waitting...")-1);
   NLME_ScanFields_t fields;
   fields.channels = 0x07FFF800;
   fields.duration = BEACON_ORDER_480_MSEC;
@@ -1367,7 +1047,7 @@ void AT_Cmd_INITNV(uint8 start_point, uint8* msg){
   
 }
 void AT_Cmd_READNV(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[4];
+   AT_CmdUnit cmdUnitArr[4];
   uint8 i;
   for(i=0;i<4;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
   
@@ -1410,7 +1090,6 @@ void AT_Cmd_WRITENV(uint8 start_point, uint8* msg){
 +IDREQ 每 Request Node＊s NodeID (ZDO) 
   Execute Command 
             AT+IDREQ:<Address>[,XX]
-            AT+IDREQ:
   Response OK or ERROR:<errorcode>
   Prompt AddrResp:
     <errorcode>[,<NodeID>,<EUI64>] [nn. <NodeID>]
@@ -1430,13 +1109,7 @@ void AT_Cmd_IDREQ(uint8 start_point, uint8* msg){
  
     uint8 ext[8];
     AT_ChartoIntx(&cmdUnitArr[0],ext, 64);
-    if(cmdUnitArr[1].unitLen==0) {
-      AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr);
-      uint8 state;
-      state = ZDP_IEEEAddrReq( NLME_GetShortAddr(), ZDP_ADDR_REQTYPE_SINGLE,
-                            0, 0 );
-      if(state!=afStatus_SUCCESS) AT_ERROR(state); 
-    }else if(cmdUnitArr[1].symbol==',' ){
+    if(cmdUnitArr[1].symbol==',' ){
       
       AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr);
       uint8 state;
@@ -1451,37 +1124,13 @@ void AT_Cmd_IDREQ(uint8 start_point, uint8* msg){
       if(state!=afStatus_SUCCESS) AT_ERROR(state);
    
     }
-    AT_OK();
   
 }
-/******************************************************************************
-Execute Command 
-      AT+EUIREQ:< Address>,<NodeID>[,XX]
-      AT+EUIREQ:
-            Where <Address> is the EUI64, Node ID or address table entry 
-            of the node which is to be interrogated about the node with 
-            the Node ID specified in <NodeID>. XX is an optional index number. 
-            In case an index number is provided, an extended response is 
-            requested asking the remote device to list its associated devices (i.e. children).
-
-Prompt 
-      AddrResp:<errorcode>[,<NodeID>,<EUI64>] 
-         <EUI64> is the Remote node＊s EUI64 and 
-        <NodeID> is its Node ID.When an extended response has been requested
-                the requested NodeIDs from the associated devices list are listed.
-
-*****************************************************************************/
 void AT_Cmd_EUIREQ(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[4];
   uint8 i;
   for(i=0;i<4;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  if(cmdUnitArr[1].symbol=='\r'){
-    AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr);
-    uint8 state;
-    state = ZDP_IEEEAddrReq( NLME_GetShortAddr(), ZDP_ADDR_REQTYPE_SINGLE,
-                            0, 0 );
-    if(state!=afStatus_SUCCESS) AT_ERROR(state); 
-  }else if(cmdUnitArr[2].symbol==',' ){
+  if(cmdUnitArr[2].symbol==',' ){
     AT_PARSE_CMD_PATTERN_ERROR(":,,\r",cmdUnitArr);
     uint8 state;
     state = ZDP_IEEEAddrReq( AT_ChartoInt16(&cmdUnitArr[1]), ZDP_ADDR_REQTYPE_EXTENDED,
@@ -1496,7 +1145,6 @@ void AT_Cmd_EUIREQ(uint8 start_point, uint8* msg){
     if(state!=afStatus_SUCCESS) AT_ERROR(state); 
     
   }
-  AT_OK();
 }
 
 
@@ -1552,12 +1200,6 @@ void AT_Cmd_DASSL(uint8 start_point, uint8* msg){
   
   
 }
-/****************************************************************
-AT+PJOIN:<sec> or AT+PJOIN 
-              <sec> - 16 bit hexadecimal number which represents the length 
-                      of time in seconds during which the ZigBee coordinator 
-                      or router will allow associations.
-*****************************************************************/
 void AT_Cmd_PJOIN(uint8 start_point, uint8* msg){
    AT_CmdUnit cmdUnitArr[2];
   uint8 i;
@@ -1718,140 +1360,37 @@ void AT_Cmd_READATR(uint8 start_point, uint8* msg){
   dstAddr.addrMode = sendmode==0 ? (afAddrMode_t)Addr16Bit : (afAddrMode_t) AddrGroup;
   
   //build ZCL readCmd
-  zclReadCmd_t* readCmd = (zclReadCmd_t*) osal_mem_alloc(sizeof(int)+2*(parameterN-4));  //sizeof(int) but not 1. to avoid memory alignment error
+  zclReadCmd_t* readCmd = (zclReadCmd_t*) osal_mem_alloc(1+2*(parameterN-4));
   readCmd->numAttr=parameterN-4;
   for(i=0;i<parameterN-4;i++)
       readCmd->attrID[i] = AT_ChartoInt16(&cmdUnitArr[4+i]);
   
   //send zcl read
   uint8 state;
-  state = zcl_SendRead( AT_ZCL_ENDPOINT, &dstAddr,
+  state = zcl_SendRead( endpoint, &dstAddr,
                                AT_ChartoInt16(&cmdUnitArr[3]), readCmd,
                                ZCL_FRAME_CLIENT_SERVER_DIR, 0, 1);
   osal_mem_free(readCmd);
   if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
   
 }
-/****************************************************************************
-AT+WRITEATR:<Address>,<EP>,<SendMode>,<ClusterID>,<AttrID>,<DataType>,<Data>
-          <Address> - 16 bit hexadecimal number.
-                       The node ID of a remote device if the command is 
-                       sent directly to a node or a group ID if the command 
-                       is sent to a group.
 
-          <EP> - 8 bit hexadecimal number, endpoint of a remote device. 
-                    Valid end point is 0x01 to 0xF0. 
 
-          <SendMode> - A Boolean type to choose transmission mode, 
-                    0 每 means sending command directly; 
-                    1 每 means sending command to a group 
 
-          <ClusterID> 16 bit hexadecimal number which represents attribute ID
-
-          <AttrID> - 16 bit hexadecimal number which represents the attribute ID
-                      according to the ZigBee Home Automation specification.
-          <DataType> - 8 bit hexadecimal number that represents the type of the 
-                      data accepted by this Attribute (please check HA specification)
-
-          <AttrValue> - If attribute value has an integer type this field shall contain 
-                        hexadecimal representation in big-endian format. If attribute 
-                        value has a string type this field contains sequence of characters.
-
-Response
-    WRITEATTR:<NodeID>,<EP>,<Cluster>,<AttrID>,<Status> 
-          <NodeID> - 16 bit hexadecimal number. It is the source Node ID of response.
-
-          <EP> - 8 bit hexadecimal number, the source endpoint of the response. 
-
-          <ClusterID> - cluster ID, 16 bit hexadecimal number, see section 2.2 
-
-          <AttrID>: attribute ID 16 bit hexadecimal number 
-
-          <Status> - 8 bit hexadecimal number which indicates the result of 
-                    the requested operation.If < Status > is not 00, it will be an errorcode
-
-******************************************************************************/
 void AT_Cmd_WRITEATR(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[8];
-  uint8 i;
-  for(i=0;i<8;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  AT_PARSE_CMD_PATTERN_ERROR(":,,,,,,\r",cmdUnitArr);
-  
-  uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
-  uint8 sendmode=AT_ChartoInt8(&cmdUnitArr[2]);
-  uint8 dataType=AT_ChartoInt8(&cmdUnitArr[5]);
-  //build destination address
-  afAddrType_t dstAddr;
-  dstAddr.endPoint = endpoint;
-  dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);
-  dstAddr.addrMode = sendmode==0 ? (afAddrMode_t)Addr16Bit : (afAddrMode_t) AddrGroup;
-  
-  //build ZCL writeCmd
-  uint8 buf_writeCmd[sizeof(zclWriteRec_t)+sizeof(int)];
-  zclWriteCmd_t* writeCmd = (zclWriteCmd_t*) buf_writeCmd;
-  writeCmd->numAttr=1;
-  writeCmd->attrList[0].attrID = AT_ChartoInt16(&cmdUnitArr[4]);
-  writeCmd->attrList[0].dataType = dataType;
-  
-  if(dataType==ZCL_DATATYPE_CHAR_STR){
-    cmdUnitArr[6].unit--;
-    *(cmdUnitArr[6].unit)=cmdUnitArr[6].unitLen;
-    writeCmd->attrList[0].attrData=cmdUnitArr[6].unit;
-  }else if(dataType == ZCL_DATATYPE_DATA16||
-           dataType == ZCL_DATATYPE_UINT16||
-           dataType == ZCL_DATATYPE_INT16){
-     *(uint16*)cmdUnitArr[6].unit = AT_ChartoInt16(&cmdUnitArr[6]);
-     writeCmd->attrList[0].attrData=cmdUnitArr[6].unit; 
-  }else{
-     *(uint8*)cmdUnitArr[6].unit = AT_ChartoInt8(&cmdUnitArr[6]);
-     writeCmd->attrList[0].attrData=cmdUnitArr[6].unit;
-  }
-  
-  //send zcl write
-  uint8 state;
-  state = zcl_SendWrite( AT_ZCL_ENDPOINT, &dstAddr,
-                               AT_ChartoInt16(&cmdUnitArr[3]), writeCmd,
-                               ZCL_FRAME_CLIENT_SERVER_DIR, 0, 1);
-  
-  if(state!=afStatus_SUCCESS) AT_ERROR(state);
-  else AT_OK();
 }
 
-/*******************************************************
-Disable the AT commands
-      AT+DISABLE
 
-*********************************************************/
 
 #if AT_ENABLE_PASSWORDS_MODE
 void AT_Cmd_DISABLE(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[1];
-  uint8 i;
-  for(i=0;i<1;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
-  
-  AT_enable=0; 
-  AT_OK();
-}
-#endif
-
-
-/*******************************************************
-enable the AT commands
-      AT+ENABLE:<password>
-*********************************************************/
-#if AT_ENABLE_PASSWORDS_MODE
-void AT_Cmd_ENABLE(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[2];
   uint8 i;
   for(i=0;i<2;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
   AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr); 
   
-  AT_DEBUG("\n\r", 2);
-  AT_DEBUG("AT command has already been enabled",sizeof("AT command has already been enabled")-1);
   if(AT_CmpCmd(cmdUnitArr,(uint8 *)AT_passwords)==0){
-    //AT_enable=1; 
+    AT_enable=0; 
     AT_OK();
   }else{
     AT_ERROR(AT_WRONG_PASSWORD);
@@ -1893,49 +1432,6 @@ void AT_Cmd_IDENTIFY(uint8 start_point, uint8* msg){
   state = zclGeneral_SendIdentify( endpoint,&dstAddr,AT_ChartoInt16(&cmdUnitArr[3]),0, 0 );
   if(state!=afStatus_SUCCESS) AT_ERROR(state);
   else AT_OK();
-  
-}
-/**************************************************************************
-AT+HELP
-           display the available commands
-*******************************************************************************/
-void AT_Cmd_HELP(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[1];
-  start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
-  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
-  
-  uint8 i;
-  AT_RESP_START();
-  AT_RESP("ATI",3);
-  for(i=0;i<AT_CMD_HELP_DESC_OFFSET;i++) AT_RESP(".",1);
-  AT_RESP("Display Product Identification Information",sizeof("Display Product Identification Information")-1);
-  AT_NEXT_LINE();
-  
-  AT_RESP("ATZ",3);
-  for(i=0;i<AT_CMD_HELP_DESC_OFFSET;i++) AT_RESP(".",1);
-  AT_RESP("Software Reset",sizeof("Software Reset")-1);
-  AT_NEXT_LINE();
-  
-  AT_RESP("AT&F",4);
-  for(i=0;i<AT_CMD_HELP_DESC_OFFSET-1;i++) AT_RESP(".",1);
-  AT_RESP("Restore Local Device's Factory Defaults",sizeof("Restore Local Device's Factory Defaults")-1);
-  AT_NEXT_LINE();
-  
-  AT_RESP("ATS",3);
-  for(i=0;i<AT_CMD_HELP_DESC_OFFSET;i++) AT_RESP(".",1);
-  AT_RESP("S-Register Access ATSXX? / ATSXX=<data>",sizeof("S-Register Access ATSXX? / ATSXX=<data>")-1);
-  
-  for(i=0;i<sizeof(AT_Cmd_Arr)/sizeof(AT_Cmd_Arr[0]) - AT_CMD_HELP_DESC_OMIT;i++){
-    uint8 j;
-    AT_NEXT_LINE();
-    AT_RESP("AT+",3);
-    AT_RESP(AT_Cmd_Arr[i].AT_Cmd_str,AT_strLen(AT_Cmd_Arr[i].AT_Cmd_str));
-    for(j=0;j<AT_CMD_HELP_DESC_OFFSET-AT_strLen(AT_Cmd_Arr[i].AT_Cmd_str);j++) AT_RESP(".",1);
-    AT_RESP(AT_Cmd_Arr[i].description_str,AT_strLen(AT_Cmd_Arr[i].description_str));
-  }
-  AT_RESP_END();
-  AT_OK();
-  
   
 }
 

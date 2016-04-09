@@ -6,7 +6,7 @@
 
 
 #define AT_ZCL_TEMP_ENDPOINT            4
-#define AT_ZCL_TEMP_MAX_ATTRIBUTES      12
+#define AT_ZCL_TEMP_MAX_ATTRIBUTES      8
 
 #define TEMP_OFF                       0x00
 #define TEMP_ON                        0x01
@@ -19,7 +19,7 @@
 
 extern SimpleDescriptionFormat_t AT_ZCL_TEMP_SimpleDesc;
 extern CONST zclAttrRec_t AT_ZCL_TEMP_Attrs[];
-extern int16 AT_ZCL_TEMP_current;
+extern uint16 AT_ZCL_TEMP_current;
 extern uint16 AT_ZCL_TEMP_IdentifyTime;
 extern uint8  AT_ZCL_TEMP_OnOff;
 
@@ -37,6 +37,6 @@ extern void AT_ZCL_TEMP_Init( byte task_id );
  *  Event Process for the task
  */
 extern UINT16 AT_ZCL_TEMP_event_loop( byte task_id, UINT16 events );
-extern void AT_ZCL_TEMP_EP_ENABLE( bool isEnable);
+
 
 #endif

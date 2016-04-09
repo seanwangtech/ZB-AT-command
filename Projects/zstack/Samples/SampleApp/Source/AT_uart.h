@@ -19,22 +19,17 @@
 //#define AT_UART_BR HAL_UART_BR_57600
 #define AT_UART_BR HAL_UART_BR_115200
 
-#define AT_UART_RX_BUFF_MAX     128
+#define AT_UART_RX_BUFF_MAX     100
 #define AT_UART_TX_BUFF_MAX     128
 
 #define AT_FCS_VERIFY              FALSE          //for being convenient for Serial Portdebugging 
 #define AT_CMD_PATTERN_CHECK       TRUE
 #define AT_DEBUG_INFORMATION_SHOW  TRUE
 #define AT_MSG_SEND_MODE           FALSE          //if sent at Msg send mode, the message will sent to registered task to deal. otherwise, the at command will run automatic without registration. (NB: if no need for change cmd msg or the node with a small memory, it is a best choice to set it to false.)
-#define AT_ENABLE_PASSWORDS_MODE   FALSE         //special function for Yitian Zhang
-#define AT_ENABLE_PASSWORDS        "Essex"
-#define AT_UART_ECHO()             AT_RESP( "", 1)
-#define AT_re_input_key            '\r'       //if defiene this as '\0', the reinput function will be removied. otherwise, press corresponding key will reinput the last command
+#define AT_ENABLE_PASSWORDS_MODE   FALSE        //special function for Yitian Zhang
+#define AT_ENABLE_PASSWORDS        "ZYT"
+#define AT_UART_ECHO()             HalUARTWrite(  AT_UART_PORT, "", 1)
 
-#define AT_CMD_HELP_DESC_OMIT        2     //omit displaying last several command which is keep for interal use.
-#define AT_CMD_HELP_DESC_OFFSET     14      //define the offset characters of the help command when display.
-
-#define AT_CMD_EPs                  {0x01,0x02,0x03,0x04,0x05}
 
 
 /********************************************************
@@ -55,17 +50,16 @@
 #define AT_WRONG_DEV_ERROR     0x03
 #define AT_WRONG_PASSWORD      0X04
 #define AT_PASSWORD_ERROR      0x05
-#define AT_MEM_ERROR           0x06
 
 #define AT_ERROR(x)   AT_UARTWriteErrMsg(x)
-#define AT_OK()   AT_RESP( "\r\nOK\r\n", sizeof("\r\nOK\r\n"))
-#define AT_RESP(str,len)  AT_HalUARTWrite(  AT_UART_PORT,(uint8*) str, len)
-#define AT_RESP_START()   AT_RESP("\r\n", 2)
-#define AT_RESP_END()     AT_RESP("\r\n", 2)
-#define AT_NEXT_LINE()    AT_RESP("\n\r", 2)
+#define AT_OK()   HalUARTWrite(  AT_UART_PORT,"\r\nOK\r\n", sizeof("\r\nOK\r\n"))
+#define AT_RESP_START()   HalUARTWrite(  AT_UART_PORT,"\r\n", 2)
+#define AT_RESP(str,len)  HalUARTWrite(  AT_UART_PORT,(uint8*) str, len)
+#define AT_RESP_END()     HalUARTWrite(  AT_UART_PORT,"\r\n", 2)
+#define AT_NEXT_LINE()    HalUARTWrite(  AT_UART_PORT,"\n\r", 2)
 
 #if     AT_DEBUG_INFORMATION_SHOW
-#define AT_DEBUG(str,len) AT_RESP((uint8*) str, len)
+#define AT_DEBUG(str,len) HalUARTWrite(  AT_UART_PORT,(uint8*) str, len)
 #else   
 #define AT_DEBUG(str,len)
 #endif
@@ -91,8 +85,6 @@
 #define AT_FCS_STATE        0x04
 
 
-/********************NV ID defination ***************/
-#define AT_NV_ZCL_EP_STATUS_ID      0x0501
 
 /********************S-Register defination ***************/
 #define AT_S_NV_OFFSET              0X0401
@@ -174,10 +166,6 @@ void AT_UartProcess( uint8 port, uint8 event );
 byte AT_UartCalcFCS( uint8 *msg_ptr, uint8 len );
 void AT_HandleCMD(uint8 *msg);
 void AT_UARTWriteErrMsg(uint8 error_code);
-uint16 AT_HalUARTWrite(uint8 port, uint8 *buf, uint16 len);
-uint8 AT_NV_ZCL_saveEPStatus(uint8 offset, uint8* value);
-uint8 AT_NV_ZCL_readEPStatus(uint8 offset, uint8* value);
-uint8 AT_NV_ZCL_get_index_(uint8 value);
 
 /**********for parsing  command (TOOLS)*****************/
 uint8 _AT_ChartoInt(uint8 n);
@@ -187,21 +175,12 @@ void AT_ChartoIntx(AT_CmdUnit *cmdUnit,uint8 *pHex, uint8 x);
 void AT_EUI64toChar(uint8* EUI64,char* str);
 void AT_Int16toChar(uint16 integer16,char* str);
 void AT_Int8toChar(uint8 n,char* str);
-void AT_capitalizeCmd(AT_CmdUnit *cmdUnit);
-void AT_sort_arr(uint8 *a, uint8 array_size);
-
-
 
 
 #if AT_ENABLE_PASSWORDS_MODE
   void AT_Cmd_DISABLE(uint8 start_point, uint8* msg);
-  void AT_Cmd_ENABLE(uint8 start_point, uint8* msg);
 #endif
 void AT_Cmd_ATI(uint8 start_point, uint8* msg);
-void AT_Cmd_EPENABLE(uint8 start_point, uint8* msg);
-void AT_Cmd_REPENABLE(uint8 start_point, uint8* msg);
-void AT_Cmd_EPPRINT(uint8 start_point, uint8* msg);
-void AT_Cmd_REPPRINT(uint8 start_point, uint8* msg);
 void AT_Cmd_EN(uint8 start_point, uint8* msg);
 void AT_Cmd_DASSL(uint8 start_point, uint8* msg);
 void AT_Cmd_PJOIN(uint8 start_point, uint8* msg);
@@ -210,7 +189,6 @@ void AT_Cmd_JN(uint8 start_point, uint8* msg);
 void AT_Cmd_READATR(uint8 start_point, uint8* msg);
 void AT_Cmd_WRITEATR(uint8 start_point, uint8* msg);
 void AT_Cmd_RONOFF(uint8 start_point, uint8* msg);
-void AT_Cmd_RONOFF1(uint8 start_point, uint8* msg);
 void AT_Cmd_LONOFF(uint8 start_point, uint8* msg);
 void AT_Cmd_ATZ(uint8 start_point, uint8* msg);
 void AT_Cmd_AT_F(uint8 start_point, uint8* msg);
@@ -224,6 +202,5 @@ void AT_Cmd_INITNV(uint8 start_point, uint8* msg);
 void AT_Cmd_IDREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_EUIREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_IDENTIFY(uint8 start_point, uint8* msg);
-void AT_Cmd_HELP(uint8 start_point, uint8* msg);
 void AT_Cmd_TEST(uint8 start_point, uint8* msg);
 #endif

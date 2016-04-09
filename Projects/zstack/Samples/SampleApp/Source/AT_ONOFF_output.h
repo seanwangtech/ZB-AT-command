@@ -1,7 +1,7 @@
 #ifndef AT_ONOFF_OUTPUT_H
 #define AT_ONOFF_OUTPUT_H
 
-#define AT_ONOFF_OUTPUT_ENDPOINT           201
+#define AT_ONOFF_OUTPUT_ENDPOINT           1
 
 #define AT_ONOFF_OUTPUT_PROFID             0x0007
 #define AT_ONOFF_OUTPUT_DEVICEID           0x0002

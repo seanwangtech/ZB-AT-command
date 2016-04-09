@@ -58,7 +58,7 @@ extern "C"
 
 // These constants are only for example and should be changed to the
 // device's needs
-#define SAMPLEAPP_ENDPOINT           202
+#define SAMPLEAPP_ENDPOINT           20
 
 #define SAMPLEAPP_PROFID             0x0F08
 #define SAMPLEAPP_DEVICEID           0x0001
