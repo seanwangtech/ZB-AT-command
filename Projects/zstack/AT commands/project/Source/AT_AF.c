@@ -61,12 +61,6 @@ void AT_AF_Cmd_HA_CIDDISC_CB(afIncomingMSGPacket_t *pkt );
 void AT_AF_Cmd_HA_CIDDISC_req(afIncomingMSGPacket_t *pkt  );
 void AT_AF_Cmd_HA_CIDDISC_rsp(afIncomingMSGPacket_t *pkt );
 
-void AT_AF_Cmd_R_CIDDISC_CB(afIncomingMSGPacket_t *pkt );
-void AT_AF_Cmd_R_CIDDISC_req(afIncomingMSGPacket_t *pkt  );
-void AT_AF_Cmd_R_CIDDISC_rsp(afIncomingMSGPacket_t *pkt );
-
-void AT_AF_Cmd_POWER_SVING_EXP_CB(afIncomingMSGPacket_t *pkt );
-
 void AT_AF_TEST_KEY_CB(afIncomingMSGPacket_t *pkt );
 
 void AT_AF_Register(uint8 *task_id){
@@ -102,14 +96,8 @@ void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt )
     case  AT_AF_Cmd_HA_CIDDISC_CLUSTERID:
       AT_AF_Cmd_HA_CIDDISC_CB(pkt);
       break;
-    case  AT_AF_Cmd_R_CIDDISC_CLUSTERID:
-      AT_AF_Cmd_R_CIDDISC_CB(pkt);
-      break;
     case  AT_AF_TEST_KEY_CLUSTERID:
       AT_AF_TEST_KEY_CB(pkt);
-      break;
-    case  AT_AF_POWER_SVING_EXP_CLUSTERID:
-      AT_AF_Cmd_POWER_SVING_EXP_CB(pkt);
       break;
       
   }
@@ -525,117 +513,9 @@ void AT_AF_Cmd_HA_CIDDISC_rsp(afIncomingMSGPacket_t *pkt ){
     AT_RESP_END();
 }
 
-
-/*******************************************************************
-for AT+R command
-**************************************************************************/
-
-void AT_AF_Cmd_R_CIDDISC_CB(afIncomingMSGPacket_t *pkt ){
-  AT_AF_hdr *req = (AT_AF_hdr *)pkt->cmd.Data;
-  if(req->cmd==AT_AF_Cmd_req){
-    AT_AF_Cmd_R_CIDDISC_req(pkt);
-  }else{
-    AT_AF_Cmd_R_CIDDISC_rsp(pkt);
-  }
-}
-void AT_AF_Cmd_R_CIDDISC_req(afIncomingMSGPacket_t *pkt  ){
-  
-  AT_AF_Cmd_RCIDDISC_req_t *req = (AT_AF_Cmd_RCIDDISC_req_t *) pkt->cmd.Data;
-  AT_HandleCMD(req->list);
-}
-
-void AT_AF_Cmd_R_CIDDISC_rsp(afIncomingMSGPacket_t *pkt ){
-}
-
 /**********************************************************************
 flashing the led_2 to indication which device in the PAN
 ***********************************************************************/
 void AT_AF_TEST_KEY_CB(afIncomingMSGPacket_t *pkt ){
   HalLedBlink( HAL_LED_2, 4, 50, 250 );
-}
-
-
-/**************************************************************************
-Power saving experiment for the Papper of power efficiency in ZigBee
-******************************************************************************/
-static void AT_AF_Cmd_RSSI_req(afIncomingMSGPacket_t *pkt  );
-static void AT_AF_Cmd_RSSI_rsp(afIncomingMSGPacket_t *pkt );
-static void AT_AF_Cmd_PSE_req(afIncomingMSGPacket_t *pkt);
-
-static void AT_AF_Cmd_RSSI_req(afIncomingMSGPacket_t *pkt  ){
-  AT_AF_Cmd_POWER_SAVING_rssi_t buf;
-  buf.hdr.cmd =AT_AT_PSE_RSSI_rsp;
-  buf.rssi = pkt->rssi;
-  buf.lqi = pkt->LinkQuality;
-  buf.correlation =pkt->correlation;
-  AF_DataRequest( & (pkt->srcAddr), & AT_AF_epDesc,
-                         AT_AF_POWER_SVING_EXP_CLUSTERID,
-                         sizeof(buf),
-                         (uint8*)&buf,
-                         &AT_AF_TransID,
-                         AF_DISCV_ROUTE,
-                         AF_DEFAULT_RADIUS );
-}
-
-static void AT_AF_Cmd_RSSI_rsp(afIncomingMSGPacket_t *pkt ){
-  AT_AF_Cmd_POWER_SAVING_rssi_t* rsp = (AT_AF_Cmd_POWER_SAVING_rssi_t*)pkt->cmd.Data;
-  AT_RESP_START();
-  printf("RSSIRESP:LQI_send=%d,RSSI_send=%d,correlation_send=%d",
-         rsp->lqi,
-         rsp->rssi,
-         rsp->correlation);
-  AT_NEXT_LINE();
-  printf("RSSIRESP:LQI_receive=%d,RSSI_receive=%d,correlation_receive=%d",
-         pkt->LinkQuality,
-         pkt->rssi,
-         pkt->correlation);
-  AT_RESP_END();
-}
-static void AT_AF_Cmd_PSE_req(afIncomingMSGPacket_t *pkt){
-  AT_AF_Cmd_POWER_SAVING_EXP_t *req = (AT_AF_Cmd_POWER_SAVING_EXP_t *)pkt->cmd.Data;
-  static uint16 package_count=0;
-  switch(req->hdr.info){
-  case AT_AF_PSE_info_pre:
-    package_count=0;
-    AT_RESP_START();
-    printf("%d packages are coming with interval %dms...",
-           req->count,
-           req->interval);
-    AT_RESP_END();
-    
-    printf("Package Received:");
-    AT_NEXT_LINE();
-    break;
-  case AT_AF_PSE_info_start:
-    break;
-  case AT_AF_PSE_info_ing:
-    package_count++;
-    
-    HalLedSet ( HAL_LED_1, HAL_LED_MODE_TOGGLE );
-    printf("\r%d",package_count);
-    break;
-  case AT_AF_PSE_info_end:
-    printf("\r%d",package_count);
-    
-    HalLedSet ( HAL_LED_1, HAL_LED_MODE_OFF );
-    AT_NEXT_LINE();
-    printf("Receive finished!");
-    AT_NEXT_LINE();
-    break;
-  }
-}
-
-void AT_AF_Cmd_POWER_SVING_EXP_CB(afIncomingMSGPacket_t *pkt ){
-   AT_AF_hdr *req = (AT_AF_hdr *)pkt->cmd.Data;
-  switch (req->cmd){
-  case AT_AT_PSE_RSSI_req:
-    AT_AF_Cmd_RSSI_req(pkt);
-    break;
-  case AT_AT_PSE_RSSI_rsp:
-    AT_AF_Cmd_RSSI_rsp(pkt);
-    break;
-  case AT_AT_PSE_EXP_req:
-    AT_AF_Cmd_PSE_req(pkt);
-    break;
-  }
 }

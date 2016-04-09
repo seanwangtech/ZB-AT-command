@@ -12,14 +12,12 @@
 #define AT_AF_enable             1
 #define AT_AF_disable            0
 
-#define AT_AF_MAX_CLUSTERS                 7
+#define AT_AF_MAX_CLUSTERS                 5
 #define AT_AF_Cmd_REPPRINT_CLUSTERID       0
 #define AT_AF_Cmd_REPENABLE_CLUSTERID      1
 #define AT_AF_Cmd_HA_DISC_CLUSTERID        2
 #define AT_AF_Cmd_HA_CIDDISC_CLUSTERID     3
-#define AT_AF_Cmd_R_CIDDISC_CLUSTERID      4
-#define AT_AF_TEST_KEY_CLUSTERID           5
-#define AT_AF_POWER_SVING_EXP_CLUSTERID    6
+#define AT_AF_TEST_KEY_CLUSTERID           4
 #define AT_AF_GROUP_ID                     0x8000
 
 
@@ -30,9 +28,6 @@
   AT_AF_Cmd_REPPRINT_CLUSTERID,                 \
   AT_AF_Cmd_REPENABLE_CLUSTERID,                \
   AT_AF_Cmd_HA_DISC_CLUSTERID,                  \
-  AT_AF_Cmd_HA_CIDDISC_CLUSTERID,               \
-  AT_AF_Cmd_R_CIDDISC_CLUSTERID,                \
-  AT_AF_POWER_SVING_EXP_CLUSTERID               \
 }
 
 
@@ -40,14 +35,13 @@
   AT_AF_Cmd_send_simple_(nwkAddr,CID,len, (uint8*)pBuf)
 
 
-#define AT_AF_Cmd_req                      0x00
-#define AT_AF_Cmd_rsp                      0x80
+#define AT_AF_Cmd_req                      0
+#define AT_AF_Cmd_rsp                      1
 typedef struct{
   uint8 cmd;
   union {
     uint8 numItem;
     uint8 ep;
-    uint8 info;
   };
 } AT_AF_hdr;
 
@@ -105,36 +99,6 @@ typedef struct{
   uint8 clientNum;
   uint16 list[];      //int the front of the list is the server number  and followind is client
 } AT_AF_Cmd_HA_CIDDISC_rsp_t;
-
-
-//the structure for R_CIDDISC command
-typedef struct{
-  AT_AF_hdr hdr;
-  uint8 list[];
-} AT_AF_Cmd_RCIDDISC_req_t;
-
-//the necessary structure for POWER SVING experiment structure
-#define AT_AT_PSE_RSSI_req 0x01
-#define AT_AT_PSE_RSSI_rsp AT_AF_Cmd_rsp|AT_AT_PSE_RSSI_req
-#define AT_AT_PSE_EXP_req 0x02
-#define AT_AT_PSE_EXP_rsp AT_AF_Cmd_rsp|AT_AT_PSE_EXP_req
-
-#define AT_AF_PSE_info_pre   0x01
-#define AT_AF_PSE_info_start 0x02
-#define AT_AF_PSE_info_ing   0x03
-#define AT_AF_PSE_info_end   0x04
-typedef struct{
-  AT_AF_hdr hdr;
-  uint16 count;
-  uint16 interval;
-}AT_AF_Cmd_POWER_SAVING_EXP_t;
-
-typedef struct{
-  AT_AF_hdr hdr;
-  uint8 lqi;
-  int8 rssi;
-  uint8 correlation;
-}AT_AF_Cmd_POWER_SAVING_rssi_t;
 
 
 //global variable

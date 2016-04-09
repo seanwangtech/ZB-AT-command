@@ -26,7 +26,6 @@ uint8 AT_App_TaskID;   // Task ID for internal task/event processing
                           // AT_App_Init() is called.
 
 epList_t *removedEPList = NULL;  
-AT_App_Cmd_POWER_SAVING_EXP_t AT_App_Cmd_POWER_SAVING_EXP={0,0,0};
 /*********************************************************************
  * LOCAL FUNCTIONS
  *******************************************************************/
@@ -34,7 +33,6 @@ AT_App_Cmd_POWER_SAVING_EXP_t AT_App_Cmd_POWER_SAVING_EXP={0,0,0};
 uint8 AT_handleEntryEvt(void);
 void AT_handleZCL_EP(void);
 void AT_App_HandleKeys( uint8 shift, uint8 keys );
-static void AT_App_process_Power_Saving_Exp_Evt(void);
 
 //initialize this task after the ZCL initialization, I have encounter the mistake that I initialized
 //the task before the ZCL. this lead all the zcl layer work innormal.
@@ -143,10 +141,6 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
     AT_handleZCL_EP();
     AT_handleEntryEvt();
     return (events ^ AT_ENTRY_EVENT);
-  }
-  else if( events & AT_POWER_SAVING_EXP_EVENT){
-    AT_App_process_Power_Saving_Exp_Evt();
-    return (events ^ AT_POWER_SAVING_EXP_EVENT);
   }else if( events & AT_RESET_EVENT ){
     SystemReset(); 
   }
@@ -394,51 +388,4 @@ void AT_af_ep_list( uint8 len, uint8 *list ){
       cnt++;
   }
 }
-/*********************************************************************
-for power saving experiment command 
-Power Saving Experiment PSEXP:<address><count><interval>
-*************************************************************************/
-uint8 AT_App_Power_saving_exp(AT_App_Cmd_POWER_SAVING_EXP_t* pBuf){
-  //Error check
-  if(AT_App_Cmd_POWER_SAVING_EXP.count!=0) return AT_isActive_ERROR;
-  if(pBuf->count==0 || pBuf->interval==0) return AT_PARA_ERROR;  
-  
-  
-  AT_App_Cmd_POWER_SAVING_EXP.count= pBuf->count;
-  AT_App_Cmd_POWER_SAVING_EXP.nwkAddr= pBuf->nwkAddr;
-  AT_App_Cmd_POWER_SAVING_EXP.interval= pBuf->interval;
-  
-  //start timer to start send task
-  osal_start_timerEx( AT_App_TaskID, AT_POWER_SAVING_EXP_EVENT, 500 );  
-  return AT_NO_ERROR;
-}
 
-
-static void AT_App_process_Power_Saving_Exp_Evt(){
-  AT_AF_hdr buf;
-  buf.cmd =AT_AT_PSE_EXP_req;
-  if(AT_App_Cmd_POWER_SAVING_EXP.count==0) {
-    AT_App_Cmd_POWER_SAVING_EXP.interval=0;//not necessay but for robust;
-    //send end information
-    buf.info =AT_AF_PSE_info_end;
-    AT_AF_Cmd_send_simple(AT_App_Cmd_POWER_SAVING_EXP.nwkAddr,AT_AF_POWER_SVING_EXP_CLUSTERID,sizeof(buf), &buf);
-    
-    HalLedSet ( HAL_LED_1, HAL_LED_MODE_OFF );
-    AT_RESP_START();
-    printf("Power Saving Experiment finished");
-    AT_RESP_END();
-    return;
-  }
-  HalLedSet ( HAL_LED_1, HAL_LED_MODE_TOGGLE );
-  buf.info =AT_AF_PSE_info_ing;
-  AT_App_Cmd_POWER_SAVING_EXP.count--;
-  AT_AF_Cmd_send_simple(AT_App_Cmd_POWER_SAVING_EXP.nwkAddr,AT_AF_POWER_SVING_EXP_CLUSTERID,sizeof(buf), &buf);
-  osal_start_timerEx( AT_App_TaskID, AT_POWER_SAVING_EXP_EVENT, AT_App_Cmd_POWER_SAVING_EXP.interval );
-}
-/*********************************************************************
-for power saving experiment command 
-stop experiment
-*************************************************************************/
-void AT_App_Power_saving_exp_stop(void ){
-  AT_App_Cmd_POWER_SAVING_EXP.count=0;
-}

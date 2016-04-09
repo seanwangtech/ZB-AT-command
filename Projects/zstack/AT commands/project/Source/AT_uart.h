@@ -57,7 +57,6 @@ extern const uint8 AT_CMD_EPs_Num;
 #define AT_PASSWORD_ERROR      0x05
 #define AT_MEM_ERROR           0x06
 #define AT_nwkState_ERROR      0x07
-#define AT_isActive_ERROR      0x08
 
 #define AT_ERROR(x)   AT_UARTWriteErrMsg(x)
 #define AT_OK()   AT_RESP( "\r\nOK\r\n", sizeof("\r\nOK\r\n"))
@@ -252,12 +251,6 @@ void AT_Cmd_N(uint8 start_point, uint8* msg);
 void AT_Cmd_READNV(uint8 start_point, uint8* msg);
 void AT_Cmd_WRITENV(uint8 start_point, uint8* msg);
 void AT_Cmd_INITNV(uint8 start_point, uint8* msg);
-void AT_Cmd_STP(uint8 start_point, uint8* msg);
-void AT_Cmd_GTP(uint8 start_point, uint8* msg);
-void AT_Cmd_RSSIREQ(uint8 start_point, uint8* msg);
-void AT_Cmd_PSEXP(uint8 start_point, uint8* msg);
-void AT_Cmd_SPSEXP(uint8 start_point, uint8* msg);
-void AT_Cmd_R(uint8 start_point, uint8* msg);
 void AT_Cmd_IDREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_EUIREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_HELP(uint8 start_point, uint8* msg);

@@ -21,7 +21,7 @@
 
 #include "At_include.h"
 
-const char* Revision = "Private Revision:3.2 \n\rThe New Stack";
+const char* Revision = "Private Revision:3.1 \n\rThe New Stack";
 byte AT_Uart_TaskID;
 const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
 const uint8 AT_CMD_EPs_Num = sizeof(AT_CMD_EP_ARRAY);
@@ -85,12 +85,6 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"READNV",  AT_Cmd_READNV,  "Read NV READNV:<ID>,<offset>,<lenth>"},
   {"WRITENV", AT_Cmd_WRITENV, "WRITE NV WRITENV:<ID>,<offset>,<hex>"},
   {"INITNV",  AT_Cmd_INITNV,  "Initialize NV INITNV:<ID>,<lenth>"},
-  {"STP",     AT_Cmd_STP,     "Set Transmit Power STP:<power level> "},
-  {"GTP",     AT_Cmd_GTP,     "Get Transmit Power"},
-  {"RSSIREQ", AT_Cmd_RSSIREQ, "RSSI request RSSIREQ:<address>"},
-  {"PSEXP",   AT_Cmd_PSEXP,   "Power Saving Experiment PSEXP:<address>,<count>,<interval>"},
-  {"SPSEXP",  AT_Cmd_SPSEXP,  "Stop Power Saving Experiment"},
-  {"R",       AT_Cmd_R,       "execute command on remote device R:<nodeID>[,SendMode]|<AT command>"},
   {"HELP",    AT_Cmd_HELP,    "all the AT commands:"}, 
   {"RONOFF1", AT_Cmd_RONOFF1, "RONOFF1:<Address>,<EP>,[<SendMode>][,<ON/OFF>]"},
   {"ESCAN1",   AT_Cmd_ESCAN1,   "Scan The Energy Of All Channels"},
@@ -1412,7 +1406,7 @@ void AT_Cmd_N(uint8 start_point, uint8* msg){
 void AT_Cmd_INITNV(uint8 start_point, uint8* msg){
    AT_CmdUnit cmdUnitArr[3];
   uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
+  for(i=0;i<4;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
   
   AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
   uint8 state;
@@ -1425,205 +1419,6 @@ void AT_Cmd_INITNV(uint8 start_point, uint8* msg){
   else AT_ERROR(state);
   
 }
-/**************************************************************************
-Set Transmit Power STP:<power level>
-
-      <power level>: -22 to 19 db
-
-
-*******************************************************************************/
-void AT_Cmd_STP(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[2];
-  uint8 i;
-  for(i=0;i<2;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr); 
-  int8 level= (int8) AT_ChartoInt8(&cmdUnitArr[0]);
-  uint8 state;
-  if((state=ZMacSetTransmitPower((ZMacTransmitPower_t) level))==ZMacSuccess){
-    AT_OK();
-  }else{
-    AT_ERROR(state);
-  }
-}
-/**************************************************************************
-Set Transmit Power
-
-      <power level>: -22 to 19 db
-
-
-*******************************************************************************/
-void AT_Cmd_GTP(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[1];
-  uint8 i;
-  for(i=0;i<1;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  
-  int8 level;
-  uint8 state;
-  if((state=MAC_MlmeGetReq(MAC_PHY_TRANSMIT_POWER_SIGNED,&level))==ZMacSuccess){
-    AT_RESP_START();
-    printf("GTP:%02d",level);
-    AT_RESP_END();
-    AT_OK();
-  }else{
-    AT_ERROR(state);
-  }
-}
-/***********************************************************************************
-    RSSI request RSSIREQ:<address>
-          //16 bits node id
-************************************************************************************/
-void AT_Cmd_RSSIREQ(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[2];
-  uint8 i;
-  for(i=0;i<2;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":\r",cmdUnitArr); 
-  int16 addr=  AT_ChartoInt16(&cmdUnitArr[0]);
-  uint8 state;
-  AT_AF_hdr buf;
-  buf.cmd =AT_AT_PSE_RSSI_req;
-  if((state=AT_AF_Cmd_send_simple(addr,AT_AF_POWER_SVING_EXP_CLUSTERID,sizeof(buf), &buf))==ZSuccess){
-    AT_OK();
-  }else{
-    AT_ERROR(state);
-  }
-}
-
-/****************************************************************************
-Power Saving Experiment PSEXP:<address><count><interval>
-      address: network address
-      count:  uint16 type data
-      interval: uint16 type data, time unit: millisecond
-*************************************************************************************/
-void AT_Cmd_PSEXP(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[4];
-  uint8 i;
-  for(i=0;i<4;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
-  AT_PARSE_CMD_PATTERN_ERROR(":,,\r",cmdUnitArr); 
-  
-  int16 addr=  AT_ChartoInt16(&cmdUnitArr[0]);
-  int16 count= AT_ChartoInt16(&cmdUnitArr[1]);
-  int16 interval= AT_ChartoInt16(&cmdUnitArr[2]);
-  
-  uint8 state;
-  AT_AF_Cmd_POWER_SAVING_EXP_t buf;
-  buf.hdr.cmd =AT_AT_PSE_EXP_req;
-  buf.hdr.info =AT_AF_PSE_info_pre;
-  buf.count=count;
-  buf.interval=interval;
-  if((state=AT_AF_Cmd_send_simple(addr,AT_AF_POWER_SVING_EXP_CLUSTERID,sizeof(buf), &buf))==ZSuccess){
-    
-    AT_App_Cmd_POWER_SAVING_EXP_t pseBuf;
-    pseBuf.nwkAddr =addr;
-    pseBuf.count = count;
-    pseBuf.interval=interval;
-    
-    if((state=AT_App_Power_saving_exp(&pseBuf))==AT_NO_ERROR){
-      AT_OK();
-    }else{
-      AT_ERROR(state);
-    }
-  }else{
-    AT_ERROR(state);
-  }
-}
-
-
-/****************************************************************************
-Stop Power Saving Experiment
-*************************************************************************************/
-void AT_Cmd_SPSEXP(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[1];
-  uint8 i;
-  for(i=0;i<1;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
-  AT_App_Power_saving_exp_stop();
-  AT_OK();
-}
-
-/****************************************************************************
-execute command on remote device 
-  R:<address>|<AT command>
-*************************************************************************************/
-void AT_Cmd_R(uint8 start_point, uint8* msg){
-  AT_CmdUnit cmdUnitArr[3];
-  uint8 i;
-  for(i=0;i<3;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg); 
-  uint8 sendmode;
-  uint8 *pCmd;
- #if AT_CMD_PATTERN_CHECK
-  //built check pattern
-  if(cmdUnitArr[0].symbol!=':')  AT_ERROR(AT_OPERATOR_ERROR);
-  
-  if(cmdUnitArr[1].symbol==',' && cmdUnitArr[2].symbol=='|') {
-    sendmode=AT_ChartoInt8(&cmdUnitArr[1]);
-    pCmd = cmdUnitArr[2].unit;
-    AT_capitalizeCmd(&cmdUnitArr[2]);
-  }else if(cmdUnitArr[1].symbol=='|'){
-    sendmode=0;
-    pCmd = cmdUnitArr[1].unit;
-    AT_capitalizeCmd(&cmdUnitArr[1]);
-  }else {
-    AT_ERROR(AT_OPERATOR_ERROR);
-    return;
-  }
-  
-  //check command header
-  if(pCmd[0]=='A' && pCmd[1]=='T'){}
-  else{
-    AT_ERROR(AT_CMD_ERROR);
-    return;
-  }
-  pCmd+=2;
-#endif
-  
-  uint8 len =0;
-  for(i=0;i<AT_UART_RX_BUFF_MAX;i++){
-    if(pCmd[i]!='\r') len++;
-    else break;
-  }
-  if(i>=AT_UART_RX_BUFF_MAX) {AT_ERROR(AT_CMD_ERROR); return;}
-  
-  len++;//to include the end '\r'
-  
-  //build destination address
-  afAddrType_t dstAddr;
-  dstAddr.endPoint = AT_AF_ENDPOINT;
-  dstAddr.addrMode = sendmode==0 ? (afAddrMode_t)Addr16Bit : (afAddrMode_t) AddrGroup;  
-  if(cmdUnitArr[0].unitLen==0){
-    dstAddr.addr.shortAddr=NLME_GetShortAddr();     
-  }else{    
-    dstAddr.addr.shortAddr =AT_ChartoInt16(&cmdUnitArr[0]);             
-  }
-  
-  //contruct data buff
-  AT_AF_Cmd_RCIDDISC_req_t *pBuf =(AT_AF_Cmd_RCIDDISC_req_t *) osal_mem_alloc(sizeof(AT_AF_Cmd_RCIDDISC_req_t)+len);
-  if(pBuf==NULL) {
-    AT_ERROR(AT_MEM_ERROR);
-    return;
-  }
-  pBuf->hdr.cmd = AT_AF_Cmd_req;
-  pBuf->hdr.numItem=len;
-  osal_memcpy( pBuf->list, pCmd, len );
-  uint8 state;
-  if((state=AF_DataRequest( &dstAddr, & AT_AF_epDesc,
-                       AT_AF_Cmd_R_CIDDISC_CLUSTERID,
-                       sizeof(AT_AF_Cmd_RCIDDISC_req_t)+len,
-                       (uint8 *)pBuf,
-                       &AT_AF_TransID,
-                       AF_DISCV_ROUTE,
-                       AF_DEFAULT_RADIUS ))==ZSuccess){
-                         AT_OK();
-                       }
-      else{
-        AT_ERROR(state);
-      }
-  
-  osal_mem_free(pBuf);
-  
-}
-/***********************************************************************
-read non-volatile memory
-***************************************************************************/
 void AT_Cmd_READNV(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[4];
   uint8 i;
