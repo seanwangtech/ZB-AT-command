@@ -29,7 +29,7 @@ byte AT_ZCL_TEMP_TaskID;
 /*********************************************************************
  * Local VARIABLES
  */
-static uint16 UPDATE_timer = 50;  //update the temperature after 50 seconds of the device starting
+static uint16 UPDATE_timer = AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;  //update the temperature after xxx seconds of the device starting
 /*********************************************************************
  * LOCAL FUNCTION
  */
