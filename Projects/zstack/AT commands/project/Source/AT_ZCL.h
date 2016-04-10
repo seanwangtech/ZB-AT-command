@@ -4,6 +4,7 @@
 
 #include "zcl.h"
 #include "zcl_general.h"
+#include "AT_AF.h"
 
 
 #define AT_ZCL_ENDPOINT            203

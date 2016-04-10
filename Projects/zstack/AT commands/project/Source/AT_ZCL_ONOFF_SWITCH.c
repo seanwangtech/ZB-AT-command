@@ -27,6 +27,10 @@
  * GLOBAL VARIABLES
  */
 byte AT_ZCL_ONOFF_SWITCH_TaskID;
+/*********************************************************************
+ * Local VARIABLES
+ */
+static uint16 UPDATE_timer = AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE;  //update the sensor status after xxx seconds of the device starting
 
 /*********************************************************************
  * LOCAL FUNCTION
@@ -88,6 +92,11 @@ void AT_ZCL_ONOFF_SWITCH_Init( byte task_id )
   //uint8 osal_nv_read( uint16 id, uint16 ndx, uint16 len, void *buf )
   osal_nv_item_init( AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 1, NULL );
   osal_nv_read(AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 0, 1, &light_setting_reverse);
+  
+  //initialize update-to-COOR timer
+  if(AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE>0 )
+    osal_start_reload_timer( AT_ZCL_ONOFF_SWITCH_TaskID,AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_EVT, 1000 ); //reload timer 1 second
+ 
 }
 //ninglvfeihong modified for light sensor
 void AT_ZCL_ONOFF_SWITCH_setting(uint8 reverse){
@@ -96,8 +105,7 @@ void AT_ZCL_ONOFF_SWITCH_setting(uint8 reverse){
   else
     light_setting_reverse=reverse;
   osal_nv_item_init( AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 1, NULL );
-  osal_nv_write( AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 0,1, &light_setting_reverse );
-  
+  osal_nv_write( AT_S_NV_OFFSET+AT_S_BUTTON_FUN_ID, 0,1, &light_setting_reverse ); 
 }
 
 /*********************************************************************
@@ -149,6 +157,17 @@ uint16 AT_ZCL_ONOFF_SWITCH_event_loop( uint8 task_id, uint16 events )
     return ( events ^ AT_ZCL_ONOFF_SWITCH_UPDATE_EVT );
   }
   
+  
+  //deal with the update timer event
+  if ( events & AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_EVT )
+  {
+    UPDATE_timer--;
+    if(UPDATE_timer==0){
+      UPDATE_timer= AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE;
+      AT_AF_send_update(AT_ZCL_ONOFF_SWITCH_ENDPOINT, AT_ZCL_ONOFF_SWITCH_action,0); //time up, so send update
+    }
+    return ( events ^ AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_EVT );
+  }
   // Discard unknown events
   return 0;
 }
@@ -194,7 +213,12 @@ static void AT_ZCL_ONOFF_SWITCH_update(void){
       }
     }
   }
-
+  static uint16 action_previous =0;
+  if(action_previous != AT_ZCL_ONOFF_SWITCH_action){
+    action_previous=AT_ZCL_ONOFF_SWITCH_action;
+    UPDATE_timer=AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE;              //reset UPDATE_timer
+    AT_AF_send_update(AT_ZCL_ONOFF_SWITCH_ENDPOINT, AT_ZCL_ONOFF_SWITCH_action,0); //update
+  }
 }
 
 
