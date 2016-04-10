@@ -20,6 +20,7 @@
 #define AT_AF_Cmd_R_CIDDISC_CLUSTERID      4
 #define AT_AF_TEST_KEY_CLUSTERID           5
 #define AT_AF_POWER_SVING_EXP_CLUSTERID    6
+#define AT_AF_UPDATE_CLUSTERID             7
 #define AT_AF_GROUP_ID                     0x8000
 
 
@@ -32,7 +33,8 @@
   AT_AF_Cmd_HA_DISC_CLUSTERID,                  \
   AT_AF_Cmd_HA_CIDDISC_CLUSTERID,               \
   AT_AF_Cmd_R_CIDDISC_CLUSTERID,                \
-  AT_AF_POWER_SVING_EXP_CLUSTERID               \
+  AT_AF_POWER_SVING_EXP_CLUSTERID,              \
+  AT_AF_UPDATE_CLUSTERID                        \
 }
 
 
@@ -137,6 +139,14 @@ typedef struct{
   uint8 correlation;
 }AT_AF_Cmd_POWER_SAVING_rssi_t;
 
+typedef struct{
+  uint8 ep;
+  uint8 MAC[8];
+  uint8 status;
+  uint16 value;
+}AT_AF_UPDATE_t;
+
+
 
 //global variable
 extern endPointDesc_t AT_AF_epDesc;
@@ -148,6 +158,8 @@ void AT_AF_Register(uint8 *task_id);
 void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt );
 
 afStatus_t AT_AF_Cmd_send_simple_(uint16 nwkAddr,uint16 CID,uint8 len, uint8 *buff);
+
+afStatus_t AT_AF_send_update(uint8 ep, uint16 value,uint8 status); //status == 0, indicate succeed
 
 
 
