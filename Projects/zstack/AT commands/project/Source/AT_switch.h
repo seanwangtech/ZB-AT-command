@@ -3,7 +3,9 @@
 
 
 #define SWITCH_ONOFF_IO_PIN            P0_6
-#define SWITCH_SET_PIN_INPUT()         P0DIR &= (~0x40)   //set the PIN to INput
+#define SWITCH_PIN_BV                  (1<<6)
+#define SWITCH_SET_PIN_INPUT()         P0DIR &= (~SWITCH_PIN_BV)   //set the PIN to INput
+#define SWITCH_PIN_INP                 P0INP                        //for setting to tri-state
 #define SWITCH_ON                      1
 #define SWITCH_OFF                     0
 
