@@ -26,7 +26,10 @@
  * GLOBAL VARIABLES
  */
 byte AT_ZCL_TEMP_TaskID;
-
+/*********************************************************************
+ * Local VARIABLES
+ */
+static uint16 UPDATE_timer = 50;  //update the temperature after 50 seconds of the device starting
 /*********************************************************************
  * LOCAL FUNCTION
  */
@@ -146,10 +149,9 @@ uint16 AT_ZCL_TEMP_event_loop( uint8 task_id, uint16 events )
   //deal with the update timer event
   if ( events & AT_ZCL_TEMP_UPDATE_TIMEOUT_EVT )
   {
-    static uint16 timer = AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;
-    timer--;
-    if(timer==0){
-      timer= AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;
+    UPDATE_timer--;
+    if(UPDATE_timer==0){
+      UPDATE_timer= AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;
       AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT, AT_ZCL_TEMP_current,0); //time up, so send update
     }
     return ( events ^ AT_ZCL_TEMP_UPDATE_TIMEOUT_EVT );
@@ -239,9 +241,16 @@ static void AT_ZCL_TEMP_ProcessIdentifyTimeChange( void )
  *
 ************************************************************/
 static void AT_ZCL_TEMP_update(void){
+  static uint16 TEMP_previous =0;
   uint16 temp = ReadDs18B20();
   AT_ZCL_TEMP_current =(int16)((*(int16*) & temp)*6.25);
-  
+  //update the temperature information to COOR when temperature variation is more than 0.2 C
+  if((TEMP_previous>AT_ZCL_TEMP_current ? TEMP_previous-AT_ZCL_TEMP_current:AT_ZCL_TEMP_current-TEMP_previous)>20){
+    //if temperature variation greater than 0.2 C, then update the temperature and reset the UPDATE_timer
+    TEMP_previous=AT_ZCL_TEMP_current;
+    UPDATE_timer=AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;              //reset UPDATE_timer
+    AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT, AT_ZCL_TEMP_current,0); //update
+  }
 }
 
 
