@@ -4,6 +4,7 @@
 
 void switch_init(void){
   SWITCH_SET_PIN_INPUT();
+  SWITCH_PIN_INP |= SWITCH_PIN_BV;              //ninglvfeihong tri-state resistance pin
 }
 uint8 switch_status(void){
   if(SWITCH_ONOFF_IO_PIN == SWITCH_ON){
