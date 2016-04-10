@@ -11,8 +11,11 @@
 #define TEMP_OFF                       0x00
 #define TEMP_ON                        0x01
 
+#define AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE    300      //the unit is seconds. 10 for 10 second£¬300 for 10 mins
+
 #define AT_ZCL_TEMP_IDENTIFY_TIMEOUT_EVT    0x0001
 #define AT_ZCL_TEMP_TEMP_MEASURE_EVT        0x0002
+#define AT_ZCL_TEMP_UPDATE_TIMEOUT_EVT      0x0004
 /*********************************************************************
  * Global variable
  */

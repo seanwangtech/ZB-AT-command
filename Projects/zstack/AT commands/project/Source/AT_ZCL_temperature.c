@@ -88,8 +88,9 @@ void AT_ZCL_TEMP_Init( byte task_id )
   
   // Register the application's attribute list
   zcl_registerAttrList( AT_ZCL_TEMP_ENDPOINT, AT_ZCL_TEMP_MAX_ATTRIBUTES, AT_ZCL_TEMP_Attrs );
-
-
+  
+  if(AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE>0 )
+    osal_start_reload_timer( AT_ZCL_TEMP_TaskID,AT_ZCL_TEMP_UPDATE_TIMEOUT_EVT, 1000 ); //reload timer 1 second
   
 }
 
@@ -141,6 +142,17 @@ uint16 AT_ZCL_TEMP_event_loop( uint8 task_id, uint16 events )
     AT_ZCL_TEMP_update();
     osal_start_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_TEMP_MEASURE_EVT, 1000 );
     return ( events ^ AT_ZCL_TEMP_TEMP_MEASURE_EVT );
+  }
+  //deal with the update timer event
+  if ( events & AT_ZCL_TEMP_UPDATE_TIMEOUT_EVT )
+  {
+    static uint16 timer = AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;
+    timer--;
+    if(timer==0){
+      timer= AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;
+      AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT, AT_ZCL_TEMP_current,0); //time up, so send update
+    }
+    return ( events ^ AT_ZCL_TEMP_UPDATE_TIMEOUT_EVT );
   }
 
   // Discard unknown events
