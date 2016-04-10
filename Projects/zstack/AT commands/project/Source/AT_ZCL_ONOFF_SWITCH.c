@@ -30,7 +30,7 @@ byte AT_ZCL_ONOFF_SWITCH_TaskID;
 /*********************************************************************
  * Local VARIABLES
  */
-static uint16 UPDATE_timer = AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE;  //update the temperature after xxx seconds of the device starting
+static uint16 UPDATE_timer = AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE;  //update the sensor status after xxx seconds of the device starting
 
 /*********************************************************************
  * LOCAL FUNCTION
