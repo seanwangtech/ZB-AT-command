@@ -94,6 +94,7 @@ typedef struct{
 
 typedef struct{
   AT_AF_hdr hdr;
+  uint8 MAC[8];
   AT_AF_Cmd_HA_DISC_item_t item[];
 }AT_AF_Cmd_HA_DISC_rsp_t;
 
