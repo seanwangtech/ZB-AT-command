@@ -69,6 +69,8 @@ void AT_AF_Cmd_POWER_SVING_EXP_CB(afIncomingMSGPacket_t *pkt );
 
 void AT_AF_TEST_KEY_CB(afIncomingMSGPacket_t *pkt );
 
+void AT_AF_UPDATE_CB(afIncomingMSGPacket_t *pkt );
+
 void AT_AF_Register(uint8 *task_id){
  // Fill out the endpoint description.
   AT_AF_epDesc.endPoint = AT_AF_ENDPOINT;
@@ -111,7 +113,9 @@ void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt )
     case  AT_AF_POWER_SVING_EXP_CLUSTERID:
       AT_AF_Cmd_POWER_SVING_EXP_CB(pkt);
       break;
-      
+    case  AT_AF_UPDATE_CLUSTERID:
+      AT_AF_UPDATE_CB(pkt);
+      break;
   }
 }
 
@@ -646,4 +650,37 @@ void AT_AF_Cmd_POWER_SVING_EXP_CB(afIncomingMSGPacket_t *pkt ){
     AT_AF_Cmd_PSE_req(pkt);
     break;
   }
+}
+
+/***************************************************************
+* API for sending update message!!
+*/
+afStatus_t AT_AF_send_update(uint8 ep, uint16 value,uint8 status){
+  AT_AF_UPDATE_t dat;
+  osal_memcpy( dat.MAC, NLME_GetExtAddr(), 8);//fill in MAC addr NLME_GetExtAddr()
+  dat.value = value;
+  dat.status=status;
+  dat.ep = ep;
+  return AT_AF_Cmd_send_simple(0,AT_AF_UPDATE_CLUSTERID,sizeof(dat), &dat);
+}
+
+void AT_AF_UPDATE_CB(afIncomingMSGPacket_t *pkt ){
+  AT_AF_UPDATE_t *dat = (AT_AF_UPDATE_t*)pkt->cmd.Data;
+  AT_RESP_START();
+  if(dat->status==0){
+    //change MAC address to char 
+    char str[17];
+    AT_EUI64toChar(dat->MAC,str);
+    str[sizeof(str)-1]='\0';
+    
+    //UPDATE:<MAC>,<NWK>,<EP>,<VALUE>
+    if(pkt->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
+      printf("UPDATE:%s,%04X,%02X,%04X",str,pkt->srcAddr.addr.shortAddr,dat->ep,dat->value);
+    }else {
+      printf("UPDATE:UNKNOWN NWK");
+    }
+  }else{
+      printf("UPDATE: status error");
+  }
+  AT_RESP_END();
 }
