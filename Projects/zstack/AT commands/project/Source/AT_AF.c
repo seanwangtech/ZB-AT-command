@@ -386,6 +386,7 @@ void AT_AF_Cmd_HA_DISC_req(afIncomingMSGPacket_t *pkt  ){
   if(zcl_epCount!=0){
     rsp->hdr.numItem=zcl_epCount;
     rsp->hdr.cmd=AT_AF_Cmd_rsp;
+    osal_memcpy( rsp->MAC, NLME_GetExtAddr(), 8);//fill in MAC addr NLME_GetExtAddr()
     AF_DataRequest( & (pkt->srcAddr), & AT_AF_epDesc,
                          AT_AF_Cmd_HA_DISC_CLUSTERID,
                          sizeof(AT_AF_Cmd_HA_DISC_rsp_t)+zcl_epCount*sizeof(AT_AF_Cmd_HA_DISC_item_t),
@@ -408,9 +409,15 @@ void AT_AF_Cmd_HA_DISC_rsp(afIncomingMSGPacket_t *pkt ){
   AT_AF_Cmd_HA_DISC_rsp_t *rsp = (AT_AF_Cmd_HA_DISC_rsp_t *)pkt->cmd.Data;
   AT_RESP_START();
   uint8 i;
+  
+  //change MAC address to char 
+  char str[17];
+  AT_EUI64toChar(rsp->MAC,str);
+  str[sizeof(str)-1]='\0';
+  
   for(i=0;i<rsp->hdr.numItem;i++){
     if(pkt->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
-      printf("DEV:%04X,",pkt->srcAddr.addr.shortAddr);
+      printf("DEV:%s,%04X,",str,pkt->srcAddr.addr.shortAddr);
     }else {
       printf("UNKNOWN");
     }
@@ -419,6 +426,7 @@ void AT_AF_Cmd_HA_DISC_rsp(afIncomingMSGPacket_t *pkt ){
       printf("ENABLED");
     }
     else printf("DISABLED");
+    
     AT_NEXT_LINE();
   }
   AT_RESP_START();
