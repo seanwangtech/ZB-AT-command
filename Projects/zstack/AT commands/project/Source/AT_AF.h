@@ -140,10 +140,13 @@ typedef struct{
 }AT_AF_Cmd_POWER_SAVING_rssi_t;
 
 typedef struct{
-  uint8 ep;
-  uint8 MAC[8];
   uint8 status;
-  uint16 value;
+  uint8 MAC[8];
+  uint8 ep;
+  uint16 clusterId;          //cluster ID
+  uint16 attrID;            // attribute ID
+  uint8 dataType;          // attribute data type
+  uint8 data[];
 }AT_AF_UPDATE_t;
 
 
@@ -159,7 +162,7 @@ void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt );
 
 afStatus_t AT_AF_Cmd_send_simple_(uint16 nwkAddr,uint16 CID,uint8 len, uint8 *buff);
 
-afStatus_t AT_AF_send_update(uint8 ep, uint16 value,uint8 status); //status == 0, indicate succeed
+afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
 
 
 

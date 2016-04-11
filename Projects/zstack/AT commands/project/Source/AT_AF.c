@@ -655,13 +655,32 @@ void AT_AF_Cmd_POWER_SVING_EXP_CB(afIncomingMSGPacket_t *pkt ){
 /***************************************************************
 * API for sending update message!!
 */
-afStatus_t AT_AF_send_update(uint8 ep, uint16 value,uint8 status){
-  AT_AF_UPDATE_t dat;
-  osal_memcpy( dat.MAC, NLME_GetExtAddr(), 8);//fill in MAC addr NLME_GetExtAddr()
-  dat.value = value;
-  dat.status=status;
-  dat.ep = ep;
-  return AT_AF_Cmd_send_simple(0,AT_AF_UPDATE_CLUSTERID,sizeof(dat), &dat);
+afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status){
+  AT_AF_UPDATE_t *buf; 
+  byte* epBuf;
+  uint8 size;
+  if(dataType == ZCL_DATATYPE_CHAR_STR){
+    epBuf = (byte*)  osal_mem_alloc(size=(sizeof(AT_AF_UPDATE_t)+data[0]+1));  //alloc memory for string type
+  }else if      (dataType == ZCL_DATATYPE_DATA16||
+                 dataType == ZCL_DATATYPE_UINT16||
+                 dataType == ZCL_DATATYPE_INT16){
+    epBuf = (byte*)  osal_mem_alloc(size=(sizeof(AT_AF_UPDATE_t)+2));  //alloc memory for int16 or unint16 or data16
+  }else{
+    epBuf = (byte*)  osal_mem_alloc(size=(sizeof(AT_AF_UPDATE_t)+1));  //WARNINIG::::alloc memory for other, here is a little bug, but its OK for current usage
+  }
+  if(!epBuf) return ZMemError;          //inidate the memory alloc failure
+  buf=  (AT_AF_UPDATE_t *) epBuf;     
+  osal_memcpy( buf->MAC, NLME_GetExtAddr(), 8);//fill in MAC addr NLME_GetExtAddr()
+  buf->ep = ep;
+  buf->status=status;
+  buf->clusterId=clusterId;
+  buf->attrID=attrID;
+  buf->dataType=dataType;
+  osal_memcpy( buf->data, data, size - sizeof(AT_AF_UPDATE_t));//fill in data
+  uint8 afstatus = AT_AF_Cmd_send_simple(0,AT_AF_UPDATE_CLUSTERID,size, buf);   //send the message the COOR
+  
+  osal_mem_free(epBuf);         //free memory
+  return afstatus;
 }
 
 void AT_AF_UPDATE_CB(afIncomingMSGPacket_t *pkt ){
@@ -673,12 +692,33 @@ void AT_AF_UPDATE_CB(afIncomingMSGPacket_t *pkt ){
     AT_EUI64toChar(dat->MAC,str);
     str[sizeof(str)-1]='\0';
     
-    //UPDATE:<MAC>,<NWK>,<EP>,<VALUE>
+    //UPDATE:<MAC>,<NWK>,<EP>,<ClusterID>,<AttrID>,<DataType>,<data>
+    
+    //pirnt UPDATE:<MAC>,<NWK>,
     if(pkt->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
-      printf("UPDATE:%s,%04X,%02X,%04X",str,pkt->srcAddr.addr.shortAddr,dat->ep,dat->value);
+      printf("UPDATE:%s,%04X,",str,pkt->srcAddr.addr.shortAddr);
     }else {
-      printf("UPDATE:UNKNOWN NWK");
+      printf("UPDATE:%s,UNKNOWN NWK,",str);
     }
+    //pirnt <EP>,<ClusterID>,<AttrID>,<DataType>,
+    printf("%02X,%04X,%04X,%02X,",dat->ep,
+                                  dat->clusterId,
+                                  dat-> attrID,
+                                  dat->dataType);
+    
+    //print <data>
+    if(dat->dataType == ZCL_DATATYPE_CHAR_STR){
+          AT_RESP(dat->data +1,dat->data[0]);        
+        }else if(dat->dataType == ZCL_DATATYPE_DATA16||
+                 dat->dataType == ZCL_DATATYPE_UINT16||
+                 dat->dataType == ZCL_DATATYPE_INT16){
+          AT_Int16toChar(*((uint16*)dat->data),str);
+          AT_RESP(str,4);
+        }else{
+          
+          AT_Int8toChar((uint8)dat->data[0],str);
+          AT_RESP(str,2);
+        }
   }else{
       printf("UPDATE: status error");
   }
