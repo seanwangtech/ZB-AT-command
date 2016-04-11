@@ -15,7 +15,7 @@
 #include "AT_uart.h"
 #include "AT_ZCL_ONOFF.h"
 #include "AT_relay.h" 
-
+#include "AT_TOUCH_reset.h"
 #include "onboard.h"
 
 /* HAL */
@@ -81,10 +81,14 @@ void AT_ZCL_ONOFF_Init( byte task_id )
   //initialize the ONOFF device such as: a relay
   relay_init();
   
+  /* THE WDG is obsoleted
   //set WDG pin to OUTPUT P1_5 and initilized volatage is high
   WDG_PIN =1;
   P1DIR |= BV(5);
   osal_start_reload_timer( AT_ZCL_ONOFF_TaskID, AT_ZCL_ONOFF_WDG_TIMEOUT_EVT, 150 );
+  */
+  //enable touch key chip after 155 ms 
+  osal_start_timerEx( AT_ZCL_ONOFF_TaskID, AT_ZCL_ONOFF_TOUCH_RESET_TIMEOUT_EVT , 155 );
 }
 
 
@@ -129,7 +133,24 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
 
     return ( events ^ AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT );
   }
+  
+  if ( events & AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT )
+  {
+    if (AT_ZCL_ONOFF_IdentifyTime > 0 )
+      AT_ZCL_ONOFF_IdentifyTime--;
+    AT_ZCL_ONOFF_ProcessIdentifyTimeChange();
 
+    return ( events ^ AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT );
+  }
+  
+  //touch key enable event
+  if ( events & AT_ZCL_ONOFF_TOUCH_RESET_TIMEOUT_EVT )
+  {
+    AT_TOUCH_ENABLE();
+    return ( events ^ AT_ZCL_ONOFF_TOUCH_RESET_TIMEOUT_EVT );
+  }
+
+/*
   if ( events & AT_ZCL_ONOFF_WDG_TIMEOUT_EVT )
   {
     //feed WDG
@@ -153,7 +174,7 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
     
     return ( events ^ AT_ZCL_ONOFF_WDG_TIMEOUT_EVT );
   }
-  
+  */
   // Discard unknown events
   return 0;
 }

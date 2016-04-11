@@ -13,6 +13,7 @@
 
 #define AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT    0x0001
 #define AT_ZCL_ONOFF_WDG_TIMEOUT_EVT         0x0002   //for watch dog of switch
+#define AT_ZCL_ONOFF_TOUCH_RESET_TIMEOUT_EVT         0x0004   //for touch key reset
 /*********************************************************************
  * Global variable
  */
