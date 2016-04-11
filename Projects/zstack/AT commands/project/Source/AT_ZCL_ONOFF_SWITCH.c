@@ -163,7 +163,18 @@ uint16 AT_ZCL_ONOFF_SWITCH_event_loop( uint8 task_id, uint16 events )
     UPDATE_timer--;
     if(UPDATE_timer==0){
       UPDATE_timer= AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE;
-      AT_AF_send_update(AT_ZCL_ONOFF_SWITCH_ENDPOINT, AT_ZCL_ONOFF_SWITCH_action,0); //time up, so send update
+      //update switch action
+      /*ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG,
+      { // Attribute record
+          ATTRID_ON_OFF_SWITCH_ACTIONS,
+          ZCL_DATATYPE_ENUM8,
+          ACCESS_CONTROL_READ,
+          (void *)&AT_ZCL_ONOFF_SWITCH_action
+      }*/
+      //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+      AT_AF_send_update(AT_ZCL_ONOFF_SWITCH_ENDPOINT,ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG,
+                         ATTRID_ON_OFF_SWITCH_ACTIONS,ZCL_DATATYPE_ENUM8,
+                         (uint8*) &AT_ZCL_ONOFF_SWITCH_action,0);//time up, so send update
     }
     return ( events ^ AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_EVT );
   }
@@ -218,7 +229,18 @@ static void AT_ZCL_ONOFF_SWITCH_update(void){
   if(action_previous != AT_ZCL_ONOFF_SWITCH_action){
     action_previous=AT_ZCL_ONOFF_SWITCH_action;
     UPDATE_timer=AT_ZCL_ONOFF_SWITCH_UPDATE_TIMEOUT_VALUE;              //reset UPDATE_timer
-    AT_AF_send_update(AT_ZCL_ONOFF_SWITCH_ENDPOINT, AT_ZCL_ONOFF_SWITCH_action,0); //update
+    
+    //update switch action
+    /*ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG,
+    { // Attribute record
+      ATTRID_ON_OFF_SWITCH_ACTIONS,
+      ZCL_DATATYPE_ENUM8,
+      ACCESS_CONTROL_READ,
+      (void *)&AT_ZCL_ONOFF_SWITCH_action
+    }*/
+   //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+   AT_AF_send_update(AT_ZCL_ONOFF_SWITCH_ENDPOINT,ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG,
+                     ATTRID_ON_OFF_SWITCH_ACTIONS,ZCL_DATATYPE_ENUM8,(uint8*) &AT_ZCL_ONOFF_SWITCH_action,0); //update
   }
 
 }
@@ -305,6 +327,22 @@ void AT_ZCL_ONOFF_SWITCH_OnOffCB( uint8 cmd )
     osal_stop_timerEx( AT_ZCL_ONOFF_SWITCH_TaskID, AT_ZCL_ONOFF_SWITCH_UPDATE_EVT );
     AT_ZCL_ONOFF_SWITCH_action=0xFF;   //0xFF indicates that the value is invalid.
   }
+  
+      //update On/Off Cluster Attributes
+     /*// *** On/Off Cluster Attributes ***
+      {
+        ZCL_CLUSTER_ID_GEN_ON_OFF,
+        { // Attribute record
+          ATTRID_ON_OFF,
+          ZCL_DATATYPE_UINT8,
+          ACCESS_CONTROL_READ,
+          (void *)&AT_ZCL_ONOFF_SWITCH_OnOff
+        }
+      }, */
+       //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+       AT_AF_send_update(AT_ZCL_ONOFF_SWITCH_ENDPOINT,ZCL_CLUSTER_ID_GEN_ON_OFF,
+                           ATTRID_ON_OFF,
+                           ZCL_DATATYPE_UINT8,(uint8*)&AT_ZCL_ONOFF_SWITCH_OnOff,0);
 }
 
 
