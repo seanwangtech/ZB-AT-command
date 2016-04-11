@@ -21,7 +21,7 @@
 
 #include "At_include.h"
 
-const char* Revision = "Private Revision:3.2 \n\rFor Switch one port";
+const char* Revision = "Private Revision:3.3 \n\rFor 3-port Switch";
 byte AT_Uart_TaskID;
 const uint8 AT_CMD_EP_ARRAY[]=AT_CMD_EPs;
 const uint8 AT_CMD_EPs_Num = sizeof(AT_CMD_EP_ARRAY);
