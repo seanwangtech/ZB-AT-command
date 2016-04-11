@@ -64,7 +64,7 @@ void AT_App_Init(uint8 task_id ){
 #endif
   
 #if defined ( HOLD_AUTO_START )
-  ZDOInitDevice(0);
+  osal_start_timerEx( AT_App_TaskID, AT_ENTRY_DELAY_EVENT, 6000 );
 #endif
   
   // Register for all key events - This app will handle all key events
@@ -166,7 +166,10 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
   }else if( events & AT_RESET_EVENT ){
     SystemReset(); 
   }
-
+  else if( events & AT_ENTRY_DELAY_EVENT){
+    ZDOInitDevice(0);
+    return (events ^ AT_ENTRY_DELAY_EVENT);
+  }
   // Discard unknown events
   return 0;
 }

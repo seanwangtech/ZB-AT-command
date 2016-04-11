@@ -110,7 +110,7 @@ int main( void )
   P1DIR |= BV(5);
   */
   InitSleepTimer();        //初始化休眠定时器
-   Set_ST_Period(1);   //设置睡眠时间,睡眠100ms后唤醒系统
+   Set_ST_Period(3);   //设置睡眠时间,睡眠300ms后唤醒系统
    SysPowerMode(2);    //进入睡眠模式PM2
   //recover defalut
   P0INP=0x00;
