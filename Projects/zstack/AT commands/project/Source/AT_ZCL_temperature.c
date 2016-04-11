@@ -152,7 +152,21 @@ uint16 AT_ZCL_TEMP_event_loop( uint8 task_id, uint16 events )
     UPDATE_timer--;
     if(UPDATE_timer==0){
       UPDATE_timer= AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;
-      AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT, AT_ZCL_TEMP_current,0); //time up, so send update
+       /*// *** Temperature Measurement Cluster Attributes ***
+      {
+        ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
+        { // Attribute record
+          ATTRID_MS_TEMPERATURE_MEASURED_VALUE,
+          ZCL_DATATYPE_INT16,
+          ACCESS_CONTROL_READ,
+          (void *)&AT_ZCL_TEMP_current
+        }
+      },*/
+      
+    //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+     AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT,ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
+                       ATTRID_MS_TEMPERATURE_MEASURED_VALUE,
+                       ZCL_DATATYPE_INT16,(uint8*)&AT_ZCL_TEMP_current,0); //time up, so send update
     }
     return ( events ^ AT_ZCL_TEMP_UPDATE_TIMEOUT_EVT );
   }
@@ -249,7 +263,21 @@ static void AT_ZCL_TEMP_update(void){
     //if temperature variation greater than 0.2 C, then update the temperature and reset the UPDATE_timer
     TEMP_previous=AT_ZCL_TEMP_current;
     UPDATE_timer=AT_ZCL_TEMP_UPDATE_TIMEOUT_VALUE;              //reset UPDATE_timer
-    AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT, AT_ZCL_TEMP_current,0); //update
+     /*// *** Temperature Measurement Cluster Attributes ***
+      {
+        ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
+        { // Attribute record
+          ATTRID_MS_TEMPERATURE_MEASURED_VALUE,
+          ZCL_DATATYPE_INT16,
+          ACCESS_CONTROL_READ,
+          (void *)&AT_ZCL_TEMP_current
+        }
+      },*/
+      
+    //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+     AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT,ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
+                       ATTRID_MS_TEMPERATURE_MEASURED_VALUE,
+                       ZCL_DATATYPE_INT16,(uint8*)&AT_ZCL_TEMP_current,0);//update
   }
 }
 
@@ -293,6 +321,21 @@ void AT_ZCL_TEMP_OnOffCB( uint8 cmd )
     osal_stop_timerEx( AT_ZCL_TEMP_TaskID, AT_ZCL_TEMP_TEMP_MEASURE_EVT );
     AT_ZCL_TEMP_current=0x8000;   //0x8000 indicates that the temperature measurement is invalid.
   }
+  //update On/Off Cluster Attributes
+ /* // *** On/Off Cluster Attributes ***
+  {
+    ZCL_CLUSTER_ID_GEN_ON_OFF,
+    { // Attribute record
+      ATTRID_ON_OFF,
+      ZCL_DATATYPE_UINT8,
+      ACCESS_CONTROL_READ,
+      (void *)&AT_ZCL_TEMP_OnOff
+    }
+  },*/
+   //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+   AT_AF_send_update(AT_ZCL_TEMP_ENDPOINT,ZCL_CLUSTER_ID_GEN_ON_OFF,
+                       ATTRID_ON_OFF,
+                       ZCL_DATATYPE_UINT8,(uint8*)&AT_ZCL_TEMP_OnOff,0);//update
 }
 
 /******************************************************
