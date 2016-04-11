@@ -3284,6 +3284,9 @@
       <file>
         <name>$PROJ_DIR$\..\Source\AT_switch2.h</name>
       </file>
+      <file>
+        <name>$PROJ_DIR$\..\Source\AT_TOUCH_reset.h</name>
+      </file>
     </group>
     <group>
       <name>AT_ZCL app</name>

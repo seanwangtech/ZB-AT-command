@@ -98,6 +98,9 @@ void Set_ST_Period(uint ms_100)
  */
 int main( void )
 {
+#include "AT_TOUCH_reset.h"
+  AT_TOUCH_RESET_INIT();
+  AT_TOUCH_DISABLE();
   P0INP=0xff;
   P1INP=0xff;
   /*
