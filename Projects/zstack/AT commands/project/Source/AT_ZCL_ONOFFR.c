@@ -28,6 +28,10 @@
 byte AT_ZCL_ONOFFR_TaskID;
 
 /*********************************************************************
+ * Local VARIABLES
+ */
+static uint16 UPDATE_timer = AT_ZCL_ONOFF_UPDATE_TIMEOUT_VALUE;  //update the sensor status after xxx seconds of the device starting
+/*********************************************************************
  * LOCAL FUNCTION
  */
 static void AT_ZCL_ONOFFR_IdentifyCB( zclIdentify_t *pCmd );
@@ -79,6 +83,9 @@ void AT_ZCL_ONOFFR_Init( byte task_id )
   
   //initialize the ONOFF device such as: a relayR
   relayR_init();
+  //initialize update-to-COOR timer
+  if(AT_ZCL_ONOFF_UPDATE_TIMEOUT_VALUE>0 )
+    osal_start_reload_timer( AT_ZCL_ONOFFR_TaskID,AT_ZCL_ONOFF_UPDATE_TIMEOUT_EVT, 1000 ); //reload timer 1 second
 }
 
 
@@ -123,7 +130,30 @@ uint16 AT_ZCL_ONOFFR_event_loop( uint8 task_id, uint16 events )
 
     return ( events ^ AT_ZCL_ONOFFR_IDENTIFY_TIMEOUT_EVT );
   }
-  
+  //deal with the update timer event
+  if ( events & AT_ZCL_ONOFF_UPDATE_TIMEOUT_EVT )
+  {
+    UPDATE_timer--;
+    if(UPDATE_timer==0){
+      UPDATE_timer= AT_ZCL_ONOFF_UPDATE_TIMEOUT_VALUE;
+      //send update of switch status
+      /** On/Off Cluster Attributes ***
+      {
+        ZCL_CLUSTER_ID_GEN_ON_OFF,
+        { // Attribute record
+          ATTRID_ON_OFF,
+          ZCL_DATATYPE_UINT8,
+          ACCESS_CONTROL_READ,
+          (void *)&AT_ZCL_ONOFF_OnOff
+        }
+      }, */
+      //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+      AT_AF_send_update(AT_ZCL_ONOFFR_ENDPOINT,ZCL_CLUSTER_ID_GEN_ON_OFF,
+                         ATTRID_ON_OFF,ZCL_DATATYPE_ENUM8,
+                         (uint8*) &AT_ZCL_ONOFFR_OnOff,0);//time up, so send update
+    }
+    return ( events ^ AT_ZCL_ONOFF_UPDATE_TIMEOUT_EVT );
+  }  
   // Discard unknown events
   return 0;
 }
@@ -241,6 +271,23 @@ void AT_ZCL_ONOFFR_OnOffCB( uint8 cmd )
   
       //sound the speaker
       HalLedBlink( HAL_LED_3, 1,30,50  ); 
+  
+      //send update of switch status
+      /** On/Off Cluster Attributes ***
+      {
+        ZCL_CLUSTER_ID_GEN_ON_OFF,
+        { // Attribute record
+          ATTRID_ON_OFF,
+          ZCL_DATATYPE_UINT8,
+          ACCESS_CONTROL_READ,
+          (void *)&AT_ZCL_ONOFF_OnOff
+        }
+      }, */
+      //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+      AT_AF_send_update(AT_ZCL_ONOFFR_ENDPOINT,ZCL_CLUSTER_ID_GEN_ON_OFF,
+                         ATTRID_ON_OFF,ZCL_DATATYPE_ENUM8,
+                         (uint8*) &AT_ZCL_ONOFFR_OnOff,0); //send update
+  
 }
 
 

@@ -10,9 +10,11 @@
 
 #define AT_ZCL_GEN_OFF                       0x00
 #define AT_ZCL_GEN_ON                        0x01
+#define AT_ZCL_ONOFF_UPDATE_TIMEOUT_VALUE      300      //the unit is seconds. 10 for 10 second£¬300 for 5 mins
 
 #define AT_ZCL_ONOFFL_IDENTIFY_TIMEOUT_EVT    0x0001
 #define AT_ZCL_ONOFFL_WDG_TIMEOUT_EVT         0x0002   //for watch dog of switch
+#define AT_ZCL_ONOFF_UPDATE_TIMEOUT_EVT      0x0008    //this is for send update to COOR
 /*********************************************************************
  * Global variable
  */
