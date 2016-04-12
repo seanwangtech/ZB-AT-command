@@ -251,8 +251,9 @@ void OnBoard_KeyCallback ( uint8 keys, uint8 state )
   if(hal_key_pre_faliing_time!=0){//valid check
     
     //printf("%d\r\n",hal_key_pre_interval_time);
-    if(hal_key_pre_interval_time<60) return;//check the period which users presses
-    else if(hal_key_pre_interval_time <5000) shift =0;
+    //if(hal_key_pre_interval_time<60) return;//check the period which users presses
+    //else 
+    if(hal_key_pre_interval_time <5000) shift =0;
     else {
       HalLedBlink( HAL_LED_3, 1, 10, 150 );//cancel Blink
       if(hal_key_pre_interval_time <10000) shift =1;

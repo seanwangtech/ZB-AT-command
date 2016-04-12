@@ -263,7 +263,7 @@ HAL_ISR_FUNCTION( usbKeyISR, P1INT_VECTOR )
   }
   //execute when a rising edge iterrupt comes
   if( PICTL&0x02) {
-    if(hal_key_pre_interval_time>1)//ensure the time slot which is less than 10 ms to be filtered
+    //if(hal_key_pre_interval_time>1)//ensure the time slot which is less than 10 ms to be filtered
       osal_set_event(Hal_TaskID, HAL_KEY_EVENT);
   }
   if(PUSH1_SBIT || PUSH2_SBIT || PUSH3_SBIT) PICTL |= 0x02; //set to falling edge//anti-shake of the button
