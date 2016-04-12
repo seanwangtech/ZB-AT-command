@@ -170,6 +170,10 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
     ZDOInitDevice(0);
     return (events ^ AT_ENTRY_DELAY_EVENT);
   }
+  else if( events & AT_ATF_DELAY_EVENT){
+    AT_Cmd_AT_F(0, "\r");//recover factory setting, so it will search PAN which has the strongest singal and join that PAN
+    return (events ^ AT_ATF_DELAY_EVENT);
+  }
   // Discard unknown events
   return 0;
 }
@@ -323,7 +327,8 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
   case 2: //pressing time during 10 to 15 
     if ( keys & HAL_KEY_SW_1 )
     {
-      AT_Cmd_AT_F(0, "\r");//recover factory setting, so it will search PAN which has the strongest singal and join that PAN
+      
+      osal_start_timerEx( AT_App_TaskID, AT_ATF_DELAY_EVENT, 2000 );
     }
     break;
   default:
