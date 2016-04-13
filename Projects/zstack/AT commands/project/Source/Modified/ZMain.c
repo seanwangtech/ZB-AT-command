@@ -103,6 +103,9 @@ int main( void )
   AT_TOUCH_DISABLE();
   P0INP=0xff;
   P1INP=0xff;
+  //P2INP |=(1<<7); //P2 pull down
+  //P2INP |=(1<<6); //P1 pull down
+  //P2INP |=(1<<5); //P0 pull down
   /*
   #define Touch_PIN P1_5
   //set touch chip reset pin to OUTPUT P1_5 and initilized volatage is high
