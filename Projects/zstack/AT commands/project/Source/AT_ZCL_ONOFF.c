@@ -155,9 +155,23 @@ uint16 AT_ZCL_ONOFF_event_loop( uint8 task_id, uint16 events )
   //touch key enable event
   if ( events & AT_ZCL_ONOFF_TOUCH_RESET_TIMEOUT_EVT )
   {
-    AT_TOUCH_ENABLE();
+    static uint8 init_sig=0;
+    init_sig++;
+    switch (init_sig){
+    case 1://first entry
+      AT_TOUCH_ENABLE();
+      //set timer to enable the interupt for keys, this have to be done when the touch key chip is started up!
+      osal_start_timerEx( AT_ZCL_ONOFF_TaskID, AT_ZCL_ONOFF_TOUCH_RESET_TIMEOUT_EVT , 155 );
+      break;
+    case 2:
+      //second entry, enable the key listen
+      AT_HalKeyInit();
+      break;
+    default:
+      break;
+    }
     return ( events ^ AT_ZCL_ONOFF_TOUCH_RESET_TIMEOUT_EVT );
-  }
+  }      
   //deal with the update timer event
   if ( events & AT_ZCL_ONOFF_UPDATE_TIMEOUT_EVT )
   {

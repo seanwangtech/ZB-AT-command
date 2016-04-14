@@ -77,6 +77,11 @@ extern bool Hal_KeyIntEnable;
 extern void HalKeyInit( void );
 
 /*
+ *  AT Initialize the Key Service
+ */
+extern void AT_HalKeyInit( void );
+
+/*
  * Configure the Key Service
  */
 extern void HalKeyConfig( bool interruptEnable, const halKeyCBack_t cback);

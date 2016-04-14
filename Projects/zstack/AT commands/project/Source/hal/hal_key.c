@@ -100,6 +100,10 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback)
 {
   if ((Hal_KeyIntEnable = interruptEnable))
   {
+    /*
+    * to meet the requirement of delay init of the key, move this to another funtion and call by AT_app.c to avoid unstable current cause flash of of the bulb
+    */
+    /*
     HAL_KEY_CLR_INT();             // Clear spurious ints.
     PICTL &= (~0x02);                 // P1ICONL: Rising edge ints on P1.
     P1IEN |= PUSH1_BV|PUSH2_BV|PUSH3_BV;                // Enable specific P1 bits for ints by bit mask.
@@ -108,6 +112,7 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback)
     P1INP |= PUSH1_BV;              //ninglvfeihong tri-state resistance pin
     P1INP |= PUSH2_BV;              //ninglvfeihong tri-state resistance pin
     P1INP |= PUSH3_BV;              //ninglvfeihong tri-state resistance pin don't forget to uncomment this!
+    */
     
   }
   else
@@ -116,6 +121,16 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback)
   }
 
   pHalKeyProcessFunction = cback;
+}
+void AT_HalKeyInit(){
+    HAL_KEY_CLR_INT();             // Clear spurious ints.
+    PICTL &= (~0x02);                 // P1ICONL: Rising edge ints on P1.
+    P1IEN |= PUSH1_BV|PUSH2_BV|PUSH3_BV;                // Enable specific P1 bits for ints by bit mask.
+    IEN2 |=(0x01<<4);               // Enable general P1 interrupts.
+    
+    P1INP |= PUSH1_BV;              //ninglvfeihong tri-state resistance pin
+    P1INP |= PUSH2_BV;              //ninglvfeihong tri-state resistance pin
+    P1INP |= PUSH3_BV;              //ninglvfeihong tri-state resistance pin don't forget to uncomment this!
 }
 
 /**************************************************************************************************
