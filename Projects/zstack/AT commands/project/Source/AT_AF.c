@@ -656,6 +656,8 @@ void AT_AF_Cmd_POWER_SVING_EXP_CB(afIncomingMSGPacket_t *pkt ){
 * API for sending update message!!
 */
 afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status){
+  
+  if(!AT_Is_Network_connect) return ZFailure;//check net work status, if not connect, do not send update£¡
   AT_AF_UPDATE_t *buf; 
   byte* epBuf;
   uint8 size;

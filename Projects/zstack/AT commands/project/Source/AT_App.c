@@ -26,6 +26,7 @@ uint8 AT_App_TaskID;   // Task ID for internal task/event processing
                           // This variable will be received when
                           // AT_App_Init() is called.
 
+uint8 AT_Is_Network_connect = 0;
 epList_t *removedEPList = NULL;  
 AT_App_Cmd_POWER_SAVING_EXP_t AT_App_Cmd_POWER_SAVING_EXP={0,0,0};
 /*********************************************************************
@@ -123,11 +124,15 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
               ((osal_event_hdr_t *) MSGpkt)->status == DEV_ZB_COORD )
           {
             HalLedSet (HAL_LED_2, HAL_LED_MODE_ON);
+            AT_Is_Network_connect=1;
           }
           else  if (((osal_event_hdr_t *) MSGpkt)->status == DEV_HOLD ||
                   ((osal_event_hdr_t *) MSGpkt)->status == DEV_INIT)
           {
             HalLedSet ( HAL_LED_2, HAL_LED_MODE_FLASH );
+            AT_Is_Network_connect=0;
+          }else{
+            AT_Is_Network_connect=0;
           }
 #if AT_MSG_SEND_MODE
         case AT_CMD_MSG:
