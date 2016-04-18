@@ -7,11 +7,13 @@
 
 #define AT_ZCL_ONOFF_ENDPOINT            1
 #define AT_ZCL_ONOFF_MAX_ATTRIBUTES      10
+#define AT_ZCL_ONOFF_UPDATE_TIMEOUT_VALUE      300      //the unit is seconds. 10 for 10 second£¬300 for 5 mins
 
 #define AT_ZCL_GEN_OFF                       0x00
 #define AT_ZCL_GEN_ON                        0x01
 
 #define AT_ZCL_ONOFF_IDENTIFY_TIMEOUT_EVT    0x0001
+#define AT_ZCL_ONOFF_UPDATE_TIMEOUT_EVT      0x0008    //this is for send update to COOR
 /*********************************************************************
  * Global variable
  */
