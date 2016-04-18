@@ -5,7 +5,7 @@
 #include "zcl.h"
 
 
-#define AT_ZCL_ONOFFR_ENDPOINT            0x21
+#define AT_ZCL_ONOFFR_ENDPOINT            23
 #define AT_ZCL_ONOFFR_MAX_ATTRIBUTES      10
 
 #define AT_ZCL_GEN_OFF                       0x00

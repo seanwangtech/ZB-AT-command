@@ -208,9 +208,9 @@ void AT_handleZCL_EP(void){
   }
   
   //ninglvfeihong
-  AT_Cmd_EPENABLE(0, ":1,1\r");//force to enable switch endpoint,because this is middle switch endpoint
-  AT_Cmd_EPENABLE(0, ":1,11\r");//force to enable switch endpoint,because this is left switch endpoint
-  AT_Cmd_EPENABLE(0, ":1,21\r");//force to enable switch endpoint,because this is righ switch endpoint
+  AT_Cmd_EPENABLE(0, ":1,15\r");//0x15 is 21,force to enable switch endpoint,because this is middle switch endpoint
+  AT_Cmd_EPENABLE(0, ":1,16\r");//0x16 is 22 force to enable switch endpoint,because this is left switch endpoint
+  AT_Cmd_EPENABLE(0, ":1,17\r");//0x17 is 23 force to enable switch endpoint,because this is righ switch endpoint
 }
 
 uint8 AT_handleEntryEvt(void){
@@ -250,7 +250,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
       
       
       afAddrType_t dstAddr;
-      dstAddr.endPoint = 1;
+      dstAddr.endPoint = 22; //middle port
       //dstAddr.panId =2016;//0;
       dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
       dstAddr.addr.shortAddr=NLME_GetShortAddr();     
@@ -270,7 +270,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
       
       
       afAddrType_t dstAddr;
-      dstAddr.endPoint = 0x11;
+      dstAddr.endPoint = 21;
       //dstAddr.panId =2016;//0;
       dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
       dstAddr.addr.shortAddr=NLME_GetShortAddr();     
@@ -290,7 +290,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
       
       
       afAddrType_t dstAddr;
-      dstAddr.endPoint = 0x21;
+      dstAddr.endPoint = 23;
       //dstAddr.panId =2016;//0;
       dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
       dstAddr.addr.shortAddr=NLME_GetShortAddr();     
