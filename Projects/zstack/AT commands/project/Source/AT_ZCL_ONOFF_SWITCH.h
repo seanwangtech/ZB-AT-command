@@ -5,7 +5,7 @@
 #include "zcl.h"
 
 //ninglvfeihong modified for body sensor
-#define AT_ZCL_ONOFF_SWITCH_ENDPOINT            7
+#define AT_ZCL_ONOFF_SWITCH_ENDPOINT            131
 #define AT_ZCL_ONOFF_SWITCH_MAX_ATTRIBUTES      12
 
 #define AT_ZCL_GEN_OFF                       0x00
