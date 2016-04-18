@@ -5,7 +5,7 @@
 #include "zcl.h"
 
 
-#define AT_ZCL_TEMP_ENDPOINT            4
+#define AT_ZCL_TEMP_ENDPOINT            111
 #define AT_ZCL_TEMP_MAX_ATTRIBUTES      12
 
 #define TEMP_OFF                       0x00
