@@ -193,7 +193,7 @@ void AT_handleZCL_EP(void){
     }
   }
   //ninglvfeihong
-  AT_Cmd_EPENABLE(0, ":1,5\r");//force to enable Light end point
+  AT_Cmd_EPENABLE(0, ":1,79\r");//0x79 is 121force to enable Light end point
 }
 
 uint8 AT_handleEntryEvt(void){
@@ -232,7 +232,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
     {
       
       afAddrType_t dstAddr;
-      dstAddr.endPoint = 5;
+      dstAddr.endPoint = 121;
       //dstAddr.panId =2016;//0;
       dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
       dstAddr.addr.shortAddr=NLME_GetShortAddr();     
