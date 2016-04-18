@@ -191,7 +191,7 @@ void AT_handleZCL_EP(void){
   }
   
   //ninglvfeihong
-  AT_Cmd_EPENABLE(0, ":1,1\r");//force to enable switch endpoint,because this is socket endpoint
+  AT_Cmd_EPENABLE(0, ":1,65\r");//force to enable 0x65( 101) endpoint,because this is socket endpoint
 }
 
 uint8 AT_handleEntryEvt(void){
@@ -230,7 +230,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
     {
       
       afAddrType_t dstAddr;
-      dstAddr.endPoint = 1;
+      dstAddr.endPoint = 101;
       //dstAddr.panId =2016;//0;
       dstAddr.addrMode =(afAddrMode_t)Addr16Bit;
       dstAddr.addr.shortAddr=NLME_GetShortAddr();     
