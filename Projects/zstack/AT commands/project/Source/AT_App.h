@@ -5,6 +5,11 @@
 #define AT_ENTRY_EVENT            0x4000
 #define AT_RESET_EVENT            0x2000
 #define AT_POWER_SAVING_EXP_EVENT 0x1000
+#define AT_ED_DEAD_Period         60000   //if a device not polling in 60 seconds after the route start up, the device will take as a dead end device !!
+#define AT_Clean_dead_ED_EVENT    0x0800 //clean dead end device event. (I was thought associated table <AssociatedDevList> as neighbor table <neighborTable> mistakenly)
+                                         //if an end device didn't associate in a mini after the dongle start, then remove it from the associated table.
+                                        //to some extent, to fix the bug of the z-stack of 2.51a where the end device associate with another router but 
+                                        //the dongle powered off. the bug cause the routing fail, this can be fixed by remove it from associated table
 typedef struct{
   uint16 nwkAddr;
   uint16 count;
