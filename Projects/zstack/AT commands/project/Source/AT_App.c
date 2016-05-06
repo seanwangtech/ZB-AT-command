@@ -10,7 +10,7 @@
 #include "AF.h"
 #include "aps_groups.h"
 #include "ZDApp.h"
-
+#include "AddrMgr.h"
 #include "OnBoard.h"
 #include "ZDObject.h"
 
@@ -35,6 +35,7 @@ uint8 AT_handleEntryEvt(void);
 void AT_handleZCL_EP(void);
 void AT_App_HandleKeys( uint8 shift, uint8 keys );
 static void AT_App_process_Power_Saving_Exp_Evt(void);
+static void AT_App_Clean_dead_ED(void);
 
 //initialize this task after the ZCL initialization, I have encounter the mistake that I initialized
 //the task before the ZCL. this lead all the zcl layer work innormal.
@@ -72,7 +73,7 @@ void AT_App_Init(uint8 task_id ){
   
   NLME_PermitJoiningRequest(0);      //disable permit joining
   
-  osal_set_event(task_id, AT_ENTRY_EVENT);
+  osal_set_event(task_id, AT_ENTRY_EVENT); 
   
 }
 
@@ -118,8 +119,10 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
               ((osal_event_hdr_t *) MSGpkt)->status == DEV_ZB_COORD )
           {
             HalLedSet (HAL_LED_2, HAL_LED_MODE_ON);
-            
             osal_start_timerEx(task_id,AT_DEV_REPORT_EVENT, 100 );
+            //clean the dead ED when network OK;
+            osal_set_event( AT_App_TaskID,AT_Clean_dead_ED_EVENT); 
+            //osal_start_timerEx( AT_App_TaskID,AT_Clean_dead_ED_EVENT,5000);
           }
           else  if (((osal_event_hdr_t *) MSGpkt)->status == DEV_HOLD ||
                   ((osal_event_hdr_t *) MSGpkt)->status == DEV_INIT)
@@ -166,6 +169,10 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
   else if( events & AT_DEV_REPORT_EVENT ){
     AT_AF_send_DEV_REPORT();
     return (events ^ AT_DEV_REPORT_EVENT );
+  }
+  else if( events & AT_Clean_dead_ED_EVENT ){
+    AT_App_Clean_dead_ED();
+    return (events ^ AT_Clean_dead_ED_EVENT);
   }
 
   // Discard unknown events
@@ -494,4 +501,58 @@ stop experiment
 *************************************************************************/
 void AT_App_Power_saving_exp_stop(void ){
   AT_App_Cmd_POWER_SAVING_EXP.count=0;
+}
+
+
+/*********************************************************************
+for clean the dead ED after a few time of start up.
+to some extent, 
+*************************************************************************/
+static void AT_App_Clean_dead_ED(void){
+  static uint8 times =0;
+  if(times==0){
+    //first broad cast a discover message and the TTL is 1 to test linkLQI
+    //propare for clean dead end device
+    //help check whether the device polling the parent device in a period time
+    afAddrType_t AT_AF_broad_addr={
+      {0xffff},                       //addr
+      (afAddrMode_t)AddrBroadcast,              //addr mode
+      AT_AF_ENDPOINT,                         //end point
+      NULL                                    //PAN ID
+    };
+    AT_AF_Cmd_HA_DISC_req_t buff;
+    buff.hdr.cmd = AT_AF_Cmd_req;
+    buff.CID=0;
+    buff.option=0;
+    AF_DataRequest( &AT_AF_broad_addr, &AT_AF_epDesc,
+                         AT_AF_Cmd_HA_DISC_CLUSTERID,
+                         sizeof(AT_AF_Cmd_HA_DISC_req_t),
+                         (uint8*) &buff,
+                         &AT_AF_TransID,
+                         AF_DISCV_ROUTE,
+                         2);//the radius should be one, but there may be a bug of z-stack of 2.51a that it sometimes will not work for end device, so set is as 2 (two) 
+    osal_start_timerEx( AT_App_TaskID,AT_Clean_dead_ED_EVENT,AT_ED_DEAD_Period);// clean the dead end device if the device has no polling request in 1 a miniute
+    times =1;
+  }else if(times==1){
+    // AssocReset();
+    //.devType==ZDP_MGMT_DT_ENDDEV)
+    associated_devices_t *aDevice = AssocFindDevice(0);
+    // Get the number of associated items
+    uint8 aItems = (uint8) AssocCount( PARENT, CHILD_FFD_RX_IDLE );
+    uint8 i=0;
+    for(;i<aItems;i++){
+      // get associated device
+      aDevice = AssocFindDevice(i);
+      if(AssocIsRFChild( aDevice->shortAddr ) && aDevice->linkInfo.rxLqi <2){
+          // set extented address
+          AddrMgrEntry_t  nwkEntry;
+          nwkEntry.user    = ADDRMGR_USER_DEFAULT;
+          nwkEntry.nwkAddr = aDevice->shortAddr;
+          if ( AddrMgrEntryLookupNwk( &nwkEntry ) == TRUE )
+          {
+            AssocRemove( nwkEntry.extAddr );
+          }
+      }
+    }
+  }
 }
