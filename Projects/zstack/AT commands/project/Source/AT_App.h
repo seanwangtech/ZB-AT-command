@@ -7,6 +7,7 @@
 #define AT_POWER_SAVING_EXP_EVENT 0x1000
 #define AT_ENTRY_DELAY_EVENT      0x0800
 #define AT_ATF_DELAY_EVENT        0x0400
+#define AT_DEV_REPORT_EVENT       0x0200
 typedef struct{
   uint16 nwkAddr;
   uint16 count;
