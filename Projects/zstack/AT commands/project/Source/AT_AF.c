@@ -71,6 +71,8 @@ void AT_AF_TEST_KEY_CB(afIncomingMSGPacket_t *pkt );
 
 void AT_AF_UPDATE_CB(afIncomingMSGPacket_t *pkt );
 
+void AT_AF_DEV_REPORT_CB(afIncomingMSGPacket_t *pkt);
+
 void AT_AF_Register(uint8 *task_id){
  // Fill out the endpoint description.
   AT_AF_epDesc.endPoint = AT_AF_ENDPOINT;
@@ -115,6 +117,9 @@ void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt )
       break;
     case  AT_AF_UPDATE_CLUSTERID:
       AT_AF_UPDATE_CB(pkt);
+      break;
+    case  AT_AF_DEV_REPORT_CLUSTERID:
+      AT_AF_DEV_REPORT_CB(pkt);
       break;
   }
 }
@@ -721,6 +726,43 @@ void AT_AF_UPDATE_CB(afIncomingMSGPacket_t *pkt ){
         }
   }else{
       printf("UPDATE: status error");
+  }
+  AT_RESP_END();
+}
+
+/***************************************************************
+* API for sending DEV report message!!
+*/
+afStatus_t AT_AF_send_DEV_REPORT(){
+  uint8 eps[] = AT_CMD_EPs;
+  uint8 buff[sizeof(AT_AF_DEV_REPORT_t)+sizeof(eps)];
+  AT_AF_DEV_REPORT_t* buf = (AT_AF_DEV_REPORT_t*)&buff;
+  osal_memcpy( buf->MAC, NLME_GetExtAddr(), 8);//fill in MAC addr NLME_GetExtAddr()
+  buf->itemNum=sizeof(eps);
+  osal_memcpy( buf->epList, eps, sizeof(eps));
+  return AT_AF_Cmd_send_simple(0,AT_AF_DEV_REPORT_CLUSTERID,sizeof(AT_AF_DEV_REPORT_t)+sizeof(eps), buf);
+}
+
+void AT_AF_DEV_REPORT_CB(afIncomingMSGPacket_t *pkt){
+  AT_AF_DEV_REPORT_t *dat = (AT_AF_DEV_REPORT_t*)pkt->cmd.Data;
+  AT_RESP_START();
+  //change MAC address to char 
+  char str[17];
+  AT_EUI64toChar(dat->MAC,str);
+  str[sizeof(str)-1]='\0';
+  
+  //DEVRPT:<MAC>,<NWK>,<EP1>,<EP2>...
+  
+  //print DEVRPT:<MAC>,NWK
+  if(pkt->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
+    printf("DEVRPT:%s,%04X",str,pkt->srcAddr.addr.shortAddr);
+  }else {
+    printf("DEVRPT:%s,UNKNOWN NWK,",str);
+  }
+  //pirnt ,<EP1>,<EP2>...
+  uint8 i=0;
+  for(;i<dat->itemNum;i++){
+    printf(",%02X",dat->epList[i]);
   }
   AT_RESP_END();
 }
