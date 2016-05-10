@@ -182,7 +182,6 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
     AT_App_Clean_dead_ED();
     return (events ^ AT_Clean_dead_ED_EVENT);
   }
-
   // Discard unknown events
   return 0;
 }
