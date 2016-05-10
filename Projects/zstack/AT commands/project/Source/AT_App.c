@@ -112,6 +112,20 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
           
         // Received whenever the device changes state in the network
         case ZDO_STATE_CHANGE:
+          // If the device has started up, notify the application
+          if (((osal_event_hdr_t *) MSGpkt)->status == DEV_END_DEVICE ||
+              ((osal_event_hdr_t *) MSGpkt)->status == DEV_ROUTER ||
+              ((osal_event_hdr_t *) MSGpkt)->status == DEV_ZB_COORD )
+          {
+            HalLedSet (HAL_LED_2, HAL_LED_MODE_ON);
+            
+            osal_start_timerEx(task_id,AT_DEV_REPORT_EVENT, 100 );
+          }
+          else  if (((osal_event_hdr_t *) MSGpkt)->status == DEV_HOLD ||
+                  ((osal_event_hdr_t *) MSGpkt)->status == DEV_INIT)
+          {
+            HalLedSet ( HAL_LED_2, HAL_LED_MODE_FLASH );
+          }
           break;
 #if AT_MSG_SEND_MODE
         case AT_CMD_MSG:
@@ -149,6 +163,10 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
     return (events ^ AT_POWER_SAVING_EXP_EVENT);
   }else if( events & AT_RESET_EVENT ){
     SystemReset(); 
+  }
+  else if( events & AT_DEV_REPORT_EVENT ){
+    AT_AF_send_DEV_REPORT();
+    return (events ^ AT_DEV_REPORT_EVENT );
   }
 
   // Discard unknown events
