@@ -12,7 +12,7 @@
 #define AT_AF_enable             1
 #define AT_AF_disable            0
 
-#define AT_AF_MAX_CLUSTERS                 7
+#define AT_AF_MAX_CLUSTERS                 8
 #define AT_AF_Cmd_REPPRINT_CLUSTERID       0
 #define AT_AF_Cmd_REPENABLE_CLUSTERID      1
 #define AT_AF_Cmd_HA_DISC_CLUSTERID        2
@@ -21,6 +21,7 @@
 #define AT_AF_TEST_KEY_CLUSTERID           5
 #define AT_AF_POWER_SVING_EXP_CLUSTERID    6
 #define AT_AF_UPDATE_CLUSTERID             7
+#define AT_AF_DEV_REPORT_CLUSTERID         8
 #define AT_AF_GROUP_ID                     0x8000
 
 
@@ -34,7 +35,8 @@
   AT_AF_Cmd_HA_CIDDISC_CLUSTERID,               \
   AT_AF_Cmd_R_CIDDISC_CLUSTERID,                \
   AT_AF_POWER_SVING_EXP_CLUSTERID,              \
-  AT_AF_UPDATE_CLUSTERID                        \
+  AT_AF_UPDATE_CLUSTERID,                       \
+  AT_AF_DEV_REPORT_CLUSTERID                    \
 }
 
 
@@ -149,6 +151,12 @@ typedef struct{
   uint8 data[];
 }AT_AF_UPDATE_t;
 
+//data structure for device report cluster
+typedef struct{
+  uint8 MAC[8];
+  uint8 itemNum;
+  uint8 epList[];
+} AT_AF_DEV_REPORT_t;
 
 
 //global variable
@@ -163,7 +171,7 @@ void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt );
 afStatus_t AT_AF_Cmd_send_simple_(uint16 nwkAddr,uint16 CID,uint8 len, uint8 *buff);
 
 afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
-
+afStatus_t AT_AF_send_DEV_REPORT(void);
 
 
 
