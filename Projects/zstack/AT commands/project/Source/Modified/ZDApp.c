@@ -1514,7 +1514,7 @@ void ZDApp_ProcessNetworkJoin( void )
     {
       if ( devStartMode == MODE_RESUME )
       {
-        if ( ++retryCnt <= MAX_RESUME_RETRY )
+        if ( ++retryCnt >= MAX_RESUME_RETRY )
         {
           if ( _NIB.nwkPanId == 0xFFFF || _NIB.nwkPanId == INVALID_PAN_ID )
             devStartMode = MODE_JOIN;
@@ -1525,10 +1525,10 @@ void ZDApp_ProcessNetworkJoin( void )
           }
         }
         // Do a normal join to the network after certain times of rejoin retries
-        else if( AIB_apsUseInsecureJoin == true )
-        {
-          devStartMode = MODE_JOIN;
-        }
+        //else if( AIB_apsUseInsecureJoin == true )
+        //{
+          //devStartMode = MODE_JOIN;
+        //}
       }
 
       // Clear the neighbor Table and network discovery tables.
@@ -1536,7 +1536,7 @@ void ZDApp_ProcessNetworkJoin( void )
       NLME_NwkDiscTerm();
       //ninglvfeihong add to fix rejoin failure error
       //Make sure _tmpRejoinState is set to true if rejoin failed. 
-      _tmpRejoinState = true;
+      if(devStartMode == MODE_REJOIN) _tmpRejoinState = true;
       // setup a retry for later...
       ZDApp_NetworkInit( (uint16)(NWK_START_DELAY
            + (osal_rand()& EXTENDED_JOINING_RANDOM_MASK)) );
