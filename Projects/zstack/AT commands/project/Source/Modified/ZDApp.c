@@ -1534,7 +1534,9 @@ void ZDApp_ProcessNetworkJoin( void )
       // Clear the neighbor Table and network discovery tables.
       nwkNeighborInitTable();
       NLME_NwkDiscTerm();
-
+      //ninglvfeihong add to fix rejoin failure error
+      //Make sure _tmpRejoinState is set to true if rejoin failed. 
+      _tmpRejoinState = true;
       // setup a retry for later...
       ZDApp_NetworkInit( (uint16)(NWK_START_DELAY
            + (osal_rand()& EXTENDED_JOINING_RANDOM_MASK)) );
