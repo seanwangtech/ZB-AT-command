@@ -18,7 +18,7 @@ typedef struct{
 *global variables
 */
 extern uint8 AT_Is_Network_connect;
-
+extern uint8 AT_App_cmd_CSLock;
 /********************************************************
 * functions
 */

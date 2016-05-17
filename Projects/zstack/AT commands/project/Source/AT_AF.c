@@ -794,12 +794,17 @@ void AT_AF_Cmd_CSLOCK_req(afIncomingMSGPacket_t *pkt  ){
   AT_AF_hdr *hdr = (AT_AF_hdr*)pkt->cmd.Data;
   if(hdr->info==0){
     //disable the child safety lock
+    AT_App_cmd_CSLock=0;
   }else if(hdr->info==1){
     //enable the child safety lock
+    AT_App_cmd_CSLock=1;
   }else if(hdr->info==2){
     //toggle the child safety lock
+    AT_App_cmd_CSLock=((AT_App_cmd_CSLock==0) ? 1:0);
+    hdr->info=AT_App_cmd_CSLock;
   }else{
     //do nothing, just return the current value
+    hdr->info=AT_App_cmd_CSLock;
   }
   hdr->cmd=AT_AF_Cmd_rsp;
   AF_DataRequest( & (pkt->srcAddr), & AT_AF_epDesc,
