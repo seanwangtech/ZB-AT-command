@@ -93,6 +93,7 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"SPSEXP",  AT_Cmd_SPSEXP,  "Stop Power Saving Experiment"},
   {"R",       AT_Cmd_R,       "execute command on remote device R:<nodeID>[,SendMode]|<AT command>"},
   {"IR",      AT_Cmd_IR,      "execute command IR:<Address>,<EP>,<cmd>,<code>"},
+  {"CSLOCK",  AT_Cmd_CSLOCK,  "Child Sefety Lock CSLOCK:<nodeID>,[<cmd>]"},
   {"HELP",    AT_Cmd_HELP,    "all the AT commands:"}, 
   {"RONOFF1", AT_Cmd_RONOFF1, "RONOFF1:<Address>,<EP>,[<SendMode>][,<ON/OFF>]"},
   {"ESCAN1",   AT_Cmd_ESCAN1,   "Scan The Energy Of All Channels"},
@@ -1650,6 +1651,26 @@ void AT_Cmd_R(uint8 start_point, uint8* msg){
   
   osal_mem_free(pBuf);
   
+}
+/****************************************************************************
+Child Sefety Lock 
+      CSLOCK:<nodeID>,<cmd>
+*************************************************************************************/
+void AT_Cmd_CSLOCK(uint8 start_point, uint8* msg){
+  AT_CmdUnit cmdUnitArr[3];
+  uint8 i;
+  for(i=0;i<4;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);  
+  
+  AT_PARSE_CMD_PATTERN_ERROR(":,\r",cmdUnitArr); 
+  
+  AT_AF_hdr buff;
+  uint8 state; 
+  buff.cmd = AT_AF_Cmd_req;
+  buff.info =AT_ChartoInt8(&cmdUnitArr[1]);
+  state =  AT_AF_Cmd_send_simple(AT_ChartoInt16(&cmdUnitArr[0]),
+                      AT_AF_CSLOCK_CLUSTERID,sizeof(AT_AF_hdr),&buff);
+  if(state!=afStatus_SUCCESS) AT_ERROR(state);
+  else AT_OK(); 
 }
 /***********************************************************************
 read non-volatile memory

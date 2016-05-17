@@ -258,6 +258,7 @@ void AT_Cmd_RSSIREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_PSEXP(uint8 start_point, uint8* msg);
 void AT_Cmd_SPSEXP(uint8 start_point, uint8* msg);
 void AT_Cmd_R(uint8 start_point, uint8* msg);
+void AT_Cmd_CSLOCK(uint8 start_point, uint8* msg);
 void AT_Cmd_IDREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_EUIREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_IR(uint8 start_point, uint8* msg);//add
