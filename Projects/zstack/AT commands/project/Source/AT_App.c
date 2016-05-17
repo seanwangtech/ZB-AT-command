@@ -24,6 +24,7 @@
 uint8 AT_App_TaskID;   // Task ID for internal task/event processing
                           // This variable will be received when
                           // AT_App_Init() is called.
+uint8 AT_App_cmd_CSLock=0;
 
 epList_t *removedEPList = NULL;  
 AT_App_Cmd_POWER_SAVING_EXP_t AT_App_Cmd_POWER_SAVING_EXP={0,0,0};
@@ -239,6 +240,7 @@ Handles all key events for this device.
 void AT_App_HandleKeys( uint8 shift, uint8 keys ){
   switch (shift){
   case 0: //pressing time less than 5 seconds
+    if(AT_App_cmd_CSLock) break;
     if ( keys & HAL_KEY_SW_1 )
     {
       
@@ -261,7 +263,7 @@ void AT_App_HandleKeys( uint8 shift, uint8 keys ){
     }
     break;
   case 1: //pressing time during 5 to 10 seconds
-    
+   if(AT_App_cmd_CSLock) break;
     if ( keys & HAL_KEY_SW_1 )
     {
       AT_Cmd_ANNCE(0,"\r");//announce in the network

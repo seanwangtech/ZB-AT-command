@@ -18,6 +18,13 @@ typedef struct{
   uint16 interval;
 } AT_App_Cmd_POWER_SAVING_EXP_t;
 
+/************************************************************
+*global variables
+*/
+extern uint8 AT_App_cmd_CSLock;
+/********************************************************
+* functions
+*/
 void AT_App_Init(uint8 task_id );
 uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events );
 
