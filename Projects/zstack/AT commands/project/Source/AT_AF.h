@@ -12,7 +12,7 @@
 #define AT_AF_enable             1
 #define AT_AF_disable            0
 
-#define AT_AF_MAX_CLUSTERS                 10
+#define AT_AF_MAX_CLUSTERS                 11
 #define AT_AF_Cmd_REPPRINT_CLUSTERID       0
 #define AT_AF_Cmd_REPENABLE_CLUSTERID      1
 #define AT_AF_Cmd_HA_DISC_CLUSTERID        2
@@ -23,6 +23,7 @@
 #define AT_AF_UPDATE_CLUSTERID             7
 #define AT_AF_DEV_REPORT_CLUSTERID         8
 #define AT_AF_CSLOCK_CLUSTERID             9
+#define AT_AF_DISC_ASSO_CLUSTERID          10
 #define AT_AF_GROUP_ID                     0x8000
 
 
@@ -38,7 +39,8 @@
   AT_AF_POWER_SVING_EXP_CLUSTERID,              \
   AT_AF_UPDATE_CLUSTERID,                       \
   AT_AF_DEV_REPORT_CLUSTERID,                   \
-  AT_AF_CSLOCK_CLUSTERID                        \
+  AT_AF_CSLOCK_CLUSTERID,                       \
+  AT_AF_DISC_ASSO_CLUSTERID                     \
 }
 
 
