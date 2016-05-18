@@ -11,7 +11,7 @@
 #include "AF.h"
 #include "aps_groups.h"
 #include "ZDApp.h"
-
+#include "AddrMgr.h"
 
 #include "At_include.h"
 
@@ -77,6 +77,10 @@ void AT_AF_Cmd_CSLOCK_CB(afIncomingMSGPacket_t *pkt );
 void AT_AF_Cmd_CSLOCK_req(afIncomingMSGPacket_t *pkt  );
 void AT_AF_Cmd_CSLOCK_rsp(afIncomingMSGPacket_t *pkt );
 
+void AT_AF_DISC_ASSO_CB(afIncomingMSGPacket_t *pkt );
+void AT_AF_DISC_ASSO_req(afIncomingMSGPacket_t *pkt  );
+void AT_AF_DISC_ASSO_rsp(afIncomingMSGPacket_t *pkt );
+
 void AT_AF_Register(uint8 *task_id){
  // Fill out the endpoint description.
   AT_AF_epDesc.endPoint = AT_AF_ENDPOINT;
@@ -127,6 +131,9 @@ void AT_AF_MessageMSGCB( afIncomingMSGPacket_t *pkt )
       break;
     case  AT_AF_CSLOCK_CLUSTERID:
       AT_AF_Cmd_CSLOCK_CB(pkt);
+      break;
+    case  AT_AF_DISC_ASSO_CLUSTERID:
+      AT_AF_DISC_ASSO_CB(pkt);
       break;
   }
 }
@@ -820,4 +827,46 @@ void AT_AF_Cmd_CSLOCK_rsp(afIncomingMSGPacket_t *pkt ){
     printf("CSLOCK:UNKNOWN NWK,%02X",hdr->info);
   }
   AT_RESP_END();
+}
+/******************************************************
+* For associatedList updating
+*/
+void AT_AF_DISC_ASSO_CB(afIncomingMSGPacket_t *pkt ){
+  AT_AF_hdr *hdr = (AT_AF_hdr*)pkt->cmd.Data;
+  switch (hdr->cmd){
+  case AT_AF_Cmd_req:
+    AT_AF_DISC_ASSO_req(pkt);
+    break;
+  case AT_AF_Cmd_rsp:
+    AT_AF_DISC_ASSO_rsp(pkt);
+    break;
+  } 
+}
+void AT_AF_DISC_ASSO_req(afIncomingMSGPacket_t *pkt  ){
+  AT_AF_hdr *hdr = (AT_AF_hdr*)pkt->cmd.Data;
+  hdr->cmd=AT_AF_Cmd_rsp;
+  AF_DataRequest( & (pkt->srcAddr), & AT_AF_epDesc,
+                         AT_AF_DISC_ASSO_CLUSTERID,
+                         sizeof(AT_AF_hdr),
+                         (uint8*)hdr,
+                         &AT_AF_TransID,
+                         AF_DISCV_ROUTE,
+                         AF_DEFAULT_RADIUS );
+}
+void AT_AF_DISC_ASSO_rsp(afIncomingMSGPacket_t *pkt ){
+  if(pkt->srcAddr.addrMode==(afAddrMode_t)Addr16Bit){
+    associated_devices_t *aDevice = AssocGetWithShort(pkt->srcAddr.addr.shortAddr);
+    if(aDevice){
+      if(AssocIsRFChild( aDevice->shortAddr ) && aDevice->linkInfo.rxLqi <2){
+          // set extented address
+          AddrMgrEntry_t  nwkEntry;
+          nwkEntry.user    = ADDRMGR_USER_DEFAULT;
+          nwkEntry.nwkAddr = aDevice->shortAddr;
+          if ( AddrMgrEntryLookupNwk( &nwkEntry ) == TRUE )
+          {
+            AssocRemove( nwkEntry.extAddr );
+          }
+      }
+    }
+  }
 }
