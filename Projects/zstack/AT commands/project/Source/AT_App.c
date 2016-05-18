@@ -499,8 +499,8 @@ for clean the dead ED after a few time of start up.
 to some extent, 
 *************************************************************************/
 static void AT_App_Clean_dead_ED(void){
-  static uint8 times =0;
-  if(times==0){
+  static uint16 times =0xffff;
+  if(times==0xffff){
     //first broad cast a discover message and the TTL is 1 to test linkLQI
     //propare for clean dead end device
     //help check whether the device polling the parent device in a period time
@@ -510,39 +510,46 @@ static void AT_App_Clean_dead_ED(void){
       AT_AF_ENDPOINT,                         //end point
       NULL                                    //PAN ID
     };
-    AT_AF_Cmd_HA_DISC_req_t buff;
-    buff.hdr.cmd = AT_AF_Cmd_req;
-    buff.CID=0;
-    buff.option=0;
+    AT_AF_hdr hdr;
+    hdr.cmd = AT_AF_Cmd_req;
     AF_DataRequest( &AT_AF_broad_addr, &AT_AF_epDesc,
-                         AT_AF_Cmd_HA_DISC_CLUSTERID,
-                         sizeof(AT_AF_Cmd_HA_DISC_req_t),
-                         (uint8*) &buff,
+                         AT_AF_DISC_ASSO_CLUSTERID,
+                         sizeof(AT_AF_hdr),
+                         (uint8*) &hdr,
                          &AT_AF_TransID,
                          AF_DISCV_ROUTE,
-                         2);//the radius should be one, but there may be a bug of z-stack of 2.51a that it sometimes will not work for end device, so set is as 2 (two) 
-    osal_start_timerEx( AT_App_TaskID,AT_Clean_dead_ED_EVENT,AT_ED_DEAD_Period);// clean the dead end device if the device has no polling request in 1 a miniute
-    times =1;
-  }else if(times==1){
-    // AssocReset();
-    //.devType==ZDP_MGMT_DT_ENDDEV)
-    associated_devices_t *aDevice = AssocFindDevice(0);
-    // Get the number of associated items
-    uint8 aItems = (uint8) AssocCount( PARENT, CHILD_FFD_RX_IDLE );
-    uint8 i=0;
-    for(;i<aItems;i++){
-      // get associated device
-      aDevice = AssocFindDevice(i);
-      if(AssocIsRFChild( aDevice->shortAddr ) && aDevice->linkInfo.rxLqi <2){
-          // set extented address
-          AddrMgrEntry_t  nwkEntry;
-          nwkEntry.user    = ADDRMGR_USER_DEFAULT;
-          nwkEntry.nwkAddr = aDevice->shortAddr;
-          if ( AddrMgrEntryLookupNwk( &nwkEntry ) == TRUE )
-          {
-            AssocRemove( nwkEntry.extAddr );
-          }
+                         AF_DEFAULT_RADIUS );
+    osal_start_timerEx( AT_App_TaskID,AT_Clean_dead_ED_EVENT,60000);//start clean program in 1 mins
+    times =0;
+  }else{
+    times++;
+    if(times==AT_ED_DEAD_Period) {
+      // AssocReset();
+      //.devType==ZDP_MGMT_DT_ENDDEV)
+      associated_devices_t *aDevice;
+      // Get the number of associated items
+      uint8 aItems = (uint8) AssocCount( PARENT, CHILD_FFD_RX_IDLE );
+      uint8 i=0;
+      for(;i<aItems;i++){
+        // get associated device
+        aDevice = AssocFindDevice(i);
+        if(AssocIsRFChild( aDevice->shortAddr ) && aDevice->linkInfo.rxLqi <2){
+            // set extented address
+            AddrMgrEntry_t  nwkEntry;
+            nwkEntry.user    = ADDRMGR_USER_DEFAULT;
+            nwkEntry.nwkAddr = aDevice->shortAddr;
+            if ( AddrMgrEntryLookupNwk( &nwkEntry ) == TRUE )
+            {
+              AssocRemove( nwkEntry.extAddr );
+              //when a device removed, the index will shifted by decrease 1
+              //as well as the aItems also decrease 1
+              i--;
+              aItems--;
+            }
+        }
       }
+    }else{
+      osal_start_timerEx( AT_App_TaskID,AT_Clean_dead_ED_EVENT,60000);
     }
   }
 }
