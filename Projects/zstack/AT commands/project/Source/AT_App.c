@@ -175,6 +175,7 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
     SystemReset(); 
   }
   else if( events & AT_DEV_REPORT_EVENT ){
+    AT_Cmd_ANNCE(0,"\r");//announce in the network
     AT_AF_send_DEV_REPORT();
     return (events ^ AT_DEV_REPORT_EVENT );
   }
