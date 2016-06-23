@@ -3392,6 +3392,12 @@
       <name>$PROJ_DIR$\..\Source\AT_uart.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\Source\AT_uart2.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\AT_uart2.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\Source\AT_ZCL.c</name>
     </file>
     <file>

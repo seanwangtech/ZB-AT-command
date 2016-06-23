@@ -3,6 +3,7 @@
 
 #include "AF.h"
 #include "AT_uart.h"
+#include "AT_uart2.h"
 #include "AT_ONOFF_output.h"
 #include "AT_AF.h"
 #include "AT_App.h"

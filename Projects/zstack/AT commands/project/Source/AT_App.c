@@ -57,7 +57,9 @@ void AT_App_Init(uint8 task_id ){
   
   /*initialise AT_Uart*/
   AT_UartInit(task_id);
-
+  
+  /*initialise second serial port*/
+   AT_UartInit2 ( task_id );
 #if AT_MSG_SEND_MODE
   AT_UartRegisterTaskID( task_id);
 #endif

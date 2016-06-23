@@ -1,7 +1,7 @@
 #ifndef AT_ZDO_H
 #define AT_ZDO_H
 
-
+#include "ZDObject.h"
 // Display Neighbour Table for AT+NTABLE
 // This structure is used to build the Mgmt_Lqi_rsp
 typedef struct
