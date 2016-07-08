@@ -20,6 +20,7 @@
 #include "ZDObject.h"
 
 #include "At_include.h"
+#include "AT_IR.h"
 
 const char* Revision = "Private Revision:3.4 \n\r For Dongle";
 byte AT_Uart_TaskID;
