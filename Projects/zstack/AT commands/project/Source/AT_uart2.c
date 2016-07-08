@@ -7,7 +7,7 @@
 
 #include "At_include.h"
 #include "AT_uart2.h"
-
+#include "AT_IR.h"
 
 uint8 AT_UartInit2( uint8 taskID )
 {
