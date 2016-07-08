@@ -260,6 +260,7 @@ void AT_Cmd_SPSEXP(uint8 start_point, uint8* msg);
 void AT_Cmd_R(uint8 start_point, uint8* msg);
 void AT_Cmd_IDREQ(uint8 start_point, uint8* msg);
 void AT_Cmd_EUIREQ(uint8 start_point, uint8* msg);
+void AT_Cmd_IR(uint8 start_point, uint8* msg);//add
 void AT_Cmd_HELP(uint8 start_point, uint8* msg);
 void AT_Cmd_TEST(uint8 start_point, uint8* msg);
 
