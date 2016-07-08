@@ -17,4 +17,6 @@
 #include "hal_led.h"
 #include "hal_key.h"
 
+#include "AT_IR.h"
+
 #endif

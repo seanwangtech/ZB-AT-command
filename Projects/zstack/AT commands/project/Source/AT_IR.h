@@ -1,6 +1,10 @@
 #include "hal_types.h"
 #include "AF.h"
 
+//ninglvfeihong added to avoid linker error
+#ifndef AT_IR_H
+#define AT_IR_H
+
 #define AT_IR_ENDPOINT 141
 
 #define AT_IR_MAX_CLUSTERS           2
@@ -41,3 +45,5 @@ typedef struct{
 void AT_IR_Register(uint8 *task_id);
 void AT_IR_MessageMSGCB( afIncomingMSGPacket_t *pkt );
 afStatus_t AT_IR_Cmd_send_simple_(uint16 nwkAddr,uint16 CID,uint8 len, uint8 *buff);
+
+#endif
