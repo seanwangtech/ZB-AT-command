@@ -232,6 +232,9 @@ void AT_handleZCL_EP(void){
       AT_ZCL_EP_ENABLE( 0,AT_CMD_EP_ARRAY[i]);
     }
   }
+  //ninglvfeihong
+  //the endpoint 141 should be always active, so force enable it!
+  AT_Cmd_EPENABLE(0, ":1,8D\r");//0x8D is 141, force to enable ZB-IR adaptor endpoint.
 }
 
 uint8 AT_handleEntryEvt(void){
