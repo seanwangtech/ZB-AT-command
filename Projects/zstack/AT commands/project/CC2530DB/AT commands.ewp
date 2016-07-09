@@ -3237,6 +3237,9 @@
     <name>App</name>
     <group>
       <name>app_drivers</name>
+      <excluded>
+        <configuration>RouterEB</configuration>
+      </excluded>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_DHT11.c</name>
       </file>
@@ -3276,51 +3279,57 @@
     </group>
     <group>
       <name>AT_ZCL app</name>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT_data.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_data.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH2.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH2.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH2_data.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH_data.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature_data.c</name>
-      </file>
+      <group>
+        <name>ZCLs</name>
+        <excluded>
+          <configuration>RouterEB</configuration>
+        </excluded>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT_data.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_data.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH2.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH2.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH2_data.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF_SWITCH_data.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_temperature_data.c</name>
+        </file>
+      </group>
       <file>
         <name>$PROJ_DIR$\..\Source\zcl_ha.c</name>
       </file>
@@ -3361,7 +3370,7 @@
         <name>$PROJ_DIR$\..\Source\AT_EXTERN.h</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\Source\At_include.h</name>
+        <name>$PROJ_DIR$\..\Source\AT_include.h</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_ONOFF_output.c</name>
