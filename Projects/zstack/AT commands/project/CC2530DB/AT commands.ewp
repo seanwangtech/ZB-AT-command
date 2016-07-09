@@ -3386,6 +3386,12 @@
       <name>$PROJ_DIR$\..\Source\AT_App.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\Source\AT_IR.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\AT_IR.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\Source\AT_uart.c</name>
     </file>
     <file>

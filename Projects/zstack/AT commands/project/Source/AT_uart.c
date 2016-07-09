@@ -20,6 +20,7 @@
 #include "ZDObject.h"
 
 #include "At_include.h"
+#include "AT_IR.h"
 
 const char* Revision = "Private Revision:3.4 \n\rThe New Stack";
 byte AT_Uart_TaskID;
@@ -91,6 +92,7 @@ const AT_Cmd_t AT_Cmd_Arr[]={
   {"PSEXP",   AT_Cmd_PSEXP,   "Power Saving Experiment PSEXP:<address>,<count>,<interval>"},
   {"SPSEXP",  AT_Cmd_SPSEXP,  "Stop Power Saving Experiment"},
   {"R",       AT_Cmd_R,       "execute command on remote device R:<nodeID>[,SendMode]|<AT command>"},
+  {"IR",      AT_Cmd_IR,      "execute command IR:<Address>,<EP>,<cmd>,<code>"},
   {"HELP",    AT_Cmd_HELP,    "all the AT commands:"}, 
   {"RONOFF1", AT_Cmd_RONOFF1, "RONOFF1:<Address>,<EP>,[<SendMode>][,<ON/OFF>]"},
   {"ESCAN1",   AT_Cmd_ESCAN1,   "Scan The Energy Of All Channels"},
@@ -726,7 +728,35 @@ void AT_Cmd_RONOFF1(uint8 start_point, uint8* msg){
   }
 }
 
-
+/*****************************************************
+  用于发送红外信号
+  AT+IR:<Address>,<EP>,<cmdIR>,<code>
+  AT+IR:,,,
+*********************************************************/
+void AT_Cmd_IR(uint8 start_point, uint8* msg){
+  AT_CmdUnit cmdUnitArr[5];
+  uint8 i,status;
+  AT_IR_t buff;
+  for(i=0;i<5;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);   
+  AT_PARSE_CMD_PATTERN_ERROR(":,,,\r",cmdUnitArr); 
+  buff.cmd=AT_AF_Cmd_req;
+  uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
+  buff.cmdIR=AT_ChartoInt8(&cmdUnitArr[2]);
+  uint8 ext[6];
+  AT_ChartoIntx(&cmdUnitArr[3],ext, 48);
+  buff.code.IRversion=ext[5];
+  buff.code.IRlength=ext[4];
+  buff.code.IRtype=ext[3];
+  buff.code.IRaddress[0]=ext[2];
+  buff.code.IRaddress[1]=ext[1];
+  buff.code.IRvalue=ext[0];
+  uint16 nwk =AT_ChartoInt16(&cmdUnitArr[0]);
+  //HalUARTWrite(HAL_UART_PORT_0,(uint8*)&ext, 6);
+  if(endpoint==AT_IR_ENDPOINT){
+  status = AT_IR_Cmd_send_simple(nwk,AT_IR_CLUSTERID,sizeof(AT_IR_t),&buff);
+  if(status==ZSUCCESS) AT_OK();
+  }
+}
 /*****************************************************
   I – Display Product Identification Information
   Response 
