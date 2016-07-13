@@ -21,12 +21,6 @@
 #define IR_SEND_SUCCESS 0x00
 #define IR_SEND_FAILURE 0xff
 
-//general cluster attri
-#define AT_IR_GEN_OFF    0x00
-#define AT_IR_GEN_ON     0x01
-
-#define REC_IR_ON     0x01
-
 
 //data structure for IR
 #define AT_IR_Cmd_req                      0x00
