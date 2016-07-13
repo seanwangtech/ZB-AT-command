@@ -138,7 +138,7 @@ uint16 AT_ZCL_IR_event_loop( uint8 task_id, uint16 events )
 
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_BasicResetCB
+ * @fn      AT_ZCL_IR_BasicResetCB
  *
  * @brief   Callback from the ZCL General Cluster Library
  *          to set all the Basic Cluster attributes to default values.
@@ -159,7 +159,7 @@ static void AT_ZCL_IR_BasicResetCB( void )
 
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_IdentifyCB
+ * @fn      AT_ZCL_IR_IdentifyCB
  *
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an Identity Command for this application.
@@ -176,7 +176,7 @@ static void AT_ZCL_IR_IdentifyCB( zclIdentify_t *pCmd )
 }
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_ProcessIdentifyTimeChange
+ * @fn      AT_ZCL_IR_ProcessIdentifyTimeChange
  *
  * @brief   Called to process any change to the IdentifyTime attribute.
  *
@@ -204,7 +204,7 @@ static void AT_ZCL_IR_ProcessIdentifyTimeChange( void )
 
 
 /*********************************************************************
- * @fn      AT_ZCL_ONOFF_OnOffCB
+ * @fn      AT_ZCL_IR_OnOffCB
  *
  * @brief   Callback from the ZCL General Cluster Library when
  *          it received an On/Off Command for this application.
@@ -232,30 +232,26 @@ static void AT_ZCL_IR_OnOffCB( uint8 cmd )
       AT_ZCL_IR_OnOff = AT_ZCL_GEN_OFF;
   }
 
-  // In this sample app, we use LED4 to simulate the Light
+  // In this sample app, we use LED2 to simulate the Light
   if ( AT_ZCL_IR_OnOff == AT_ZCL_GEN_ON ){
-    //HalLedSet( HAL_LED_1, HAL_LED_MODE_ON );
-    relay_on();
+    HalLedSet( HAL_LED_2, HAL_LED_MODE_ON );
   }
   else{
-    //HalLedSet( HAL_LED_1, HAL_LED_MODE_OFF );
-    relay_off();
+    HalLedSet( HAL_LED_2, HAL_LED_MODE_OFF );
   }
 }
 
 
 /******************************************************
- * @fn      AT_ZCL_ONOFF_EP_ENABLE
+ * @fn      AT_ZCL_IR_EP_ENABLE
  *
  * @brief   Process  Measurement and Sensing profile call Callback function
 ********************************************************/
 static void AT_ZCL_IR_EP_ENABLE( bool isEnable){
   if(isEnable) {
-    relay_enable();
     AT_ZCL_IR_OnOffCB(COMMAND_OFF);
   }
   else {
-    relay_disable();
     AT_ZCL_IR_BasicResetCB( );
   }
 }
