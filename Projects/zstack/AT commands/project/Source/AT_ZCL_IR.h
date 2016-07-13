@@ -31,4 +31,4 @@ extern void AT_ZCL_IR_Init( byte task_id );
  */
 extern UINT16 AT_ZCL_IR_event_loop( byte task_id, UINT16 events );
 
-//extern void AT_ZCL_IR_EP_ENABLE( bool isEnable);
+extern void AT_ZCL_IR_EP_ENABLE( bool isEnable);
