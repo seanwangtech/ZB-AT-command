@@ -12,10 +12,10 @@
 #include "zcl_ha.h"
 
 #include "AT_ZCL_IR.h"
+#include "AT_IR.h"
 
-
-#define AT_ZCL_IR_DEVICE_VERSION     0
-#define AT_ZCL_IR_FLAGS              0
+//#define AT_ZCL_IR_DEVICE_VERSION     0
+//#define AT_ZCL_IR_FLAGS              0
 
 /*********************************************************************
  * GLOBAL VARIABLES
@@ -145,11 +145,11 @@ const cId_t AT_ZCL_ONOFF_OutClusterList[AT_ZCL_ONOFF_MAX_OUTCLUSTERS] =
 
 SimpleDescriptionFormat_t AT_ZCL_IR_SimpleDesc =
 {
-  AT_ZCL_IR_ENDPOINT,                  //  int Endpoint;
+  AT_IR_ENDPOINT,                  //  int Endpoint;
   ZCL_HA_PROFILE_ID,                     //  uint16 AppProfId[2];
   ZCL_HA_DEVICEID_TEST_DEVICE,           //  uint16 AppDeviceId[2];
-  AT_ZCL_IR_DEVICE_VERSION,            //  int   AppDevVer:4;
-  AT_ZCL_IR_FLAGS,                     //  int   AppFlags:4;
+  AT_IR_DEVICE_VERSION,            //  int   AppDevVer:4;
+  AT_IR_FLAGS,                     //  int   AppFlags:4;
   AT_ZCL_IR_MAX_INCLUSTERS,            //  byte  AppNumInClusters;
   (cId_t *)AT_ZCL_IR_InClusterList,    //  byte *pAppInClusterList;
   0,                                       //  byte  AppNumInClusters;
