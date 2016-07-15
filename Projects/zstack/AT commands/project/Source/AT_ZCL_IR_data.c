@@ -145,7 +145,7 @@ const cId_t AT_ZCL_ONOFF_OutClusterList[AT_ZCL_ONOFF_MAX_OUTCLUSTERS] =
 
 SimpleDescriptionFormat_t AT_ZCL_IR_SimpleDesc =
 {
-  AT_IR_ENDPOINT,                  //  int Endpoint;
+  AT_ZCL_IR_ENDPOINT,                  //  int Endpoint;
   ZCL_HA_PROFILE_ID,                     //  uint16 AppProfId[2];
   ZCL_HA_DEVICEID_TEST_DEVICE,           //  uint16 AppDeviceId[2];
   AT_IR_DEVICE_VERSION,            //  int   AppDevVer:4;
