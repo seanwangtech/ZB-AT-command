@@ -753,7 +753,8 @@ void AT_Cmd_IR(uint8 start_point, uint8* msg){
   buff.code.IRvalue=ext[0];
   uint16 nwk =AT_ChartoInt16(&cmdUnitArr[0]);
   //HalUARTWrite(HAL_UART_PORT_0,(uint8*)&ext, 6);
-  if(endpoint==AT_IR_ENDPOINT){
+#define AT_IR_ZCL_EP 141
+  if(endpoint==AT_IR_ZCL_EP){
   status = AT_IR_Cmd_send_simple(nwk,AT_IR_CLUSTERID,sizeof(AT_IR_t),&buff);
   if(status==ZSUCCESS) AT_OK();
   }

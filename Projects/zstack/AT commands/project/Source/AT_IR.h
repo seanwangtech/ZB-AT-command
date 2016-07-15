@@ -5,7 +5,7 @@
 #ifndef AT_IR_H
 #define AT_IR_H
 
-#define AT_IR_ENDPOINT 141
+#define AT_IR_ENDPOINT 140
 
 #define AT_IR_MAX_CLUSTERS           2
 #define AT_IR_CLUSTERID              0
