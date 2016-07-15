@@ -1,7 +1,7 @@
 #include "hal_types.h"
 #include "AF.h"
 
-#define AT_IR_ENDPOINT 141
+#define AT_IR_ENDPOINT 140
 
 //some general clusterID
 #define AT_IR_MAX_CLUSTERS                          2
