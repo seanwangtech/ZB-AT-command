@@ -75,7 +75,7 @@ void AT_ZCL_IR_Init( byte task_id )
   zcl_registerAttrList( AT_ZCL_IR_ENDPOINT, AT_ZCL_IR_MAX_ATTRIBUTES, AT_ZCL_IR_Attrs );
   
   //register for AT command system enable/disable call back function
- // AT_ZCL_EP_ENABLE_Register(  AT_ZCL_IR_ENDPOINT,AT_ZCL_IR_EP_ENABLE);
+  AT_ZCL_EP_ENABLE_Register(  AT_ZCL_IR_ENDPOINT,AT_ZCL_IR_EP_ENABLE);
   
   //initialize the ONOFF device such as: a relay
   //relay_init();
