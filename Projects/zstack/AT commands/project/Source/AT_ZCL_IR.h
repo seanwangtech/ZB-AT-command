@@ -1,7 +1,7 @@
 
 #include "zcl.h"
 
-#define AT_ZCL_IR_ENDPOINT               10
+#define AT_ZCL_IR_ENDPOINT               141
 #define AT_ZCL_IR_MAX_ATTRIBUTES         8
 
 #define AT_ZCL_GEN_OFF                       0x00
