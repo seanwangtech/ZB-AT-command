@@ -8,6 +8,8 @@
 #define AT_ZCL_GEN_ON                        0x01
 
 #define AT_ZCL_IR_IDENTIFY_TIMEOUT_EVT    0x0001
+#define AT_ZCL_IR_UPDATE_TIMEOUT_EVT      0x0002
+#define AT_ZCL_IR_UPDATE_TIMEOUT_VALUE    300
 /*********************************************************************
  * Global variable
  */
