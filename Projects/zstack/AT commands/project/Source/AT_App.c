@@ -18,6 +18,7 @@
 #include "AT_ONOFF_output.h"
 #include "AT_include.h"
 #include "AT_IR.h"
+#include "AT_ZCL_IR.h"
 
 #include "AT_printf.h"
 
@@ -201,8 +202,8 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
       //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
       const uint8 ONOFF=0; //the IR ROUTER will always on, send the update just for ZigBee keep alive
       AT_AF_send_update(0x8D,ZCL_CLUSTER_ID_GEN_ON_OFF,
-                         ATTRID_ON_OFF,ZCL_DATATYPE_ENUM8,
-                         (uint8*) &ONOFF,0);//time up, so send update
+                         ATTRID_ON_OFF,ZCL_DATATYPE_UINT8,
+                         (uint8*) &AT_ZCL_IR_OnOff,0);//time up, so send update
     }
     return ( events ^ AT_UPDATE_TIMEOUT_EVT );
   }
