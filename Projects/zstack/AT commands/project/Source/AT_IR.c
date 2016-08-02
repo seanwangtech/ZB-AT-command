@@ -78,46 +78,55 @@ AT_IR_t *hdr = (AT_IR_t*)pkt->cmd.Data;
 void AT_IR_req(afIncomingMSGPacket_t *pkt  ){
   AT_IR_t *hdr = (AT_IR_t*)pkt->cmd.Data;
   //uint8 i;
-  uint8 code[5];
+  uint8 code[3];
   uint8 nwk=0x0000;
-  switch (hdr->cmdIR){
-  case SEND_IR_CMD://终端收到AF层发送的红外数据,数据最初是从串口0发出
-  if(hdr->cmdIR==SEND_IR_CMD){
+  //switch (hdr->cmdIR){
+ // case SEND_IR_CMD://终端收到AF层发送的红外数据,数据最初是从串口0发出
+ // if(hdr->cmdIR==SEND_IR_CMD){
      //串口收到来自协调器的红外数据
      hdr->cmd=AT_IR_Cmd_rsp;
      //uint8 status;
-    if(hdr->code.IRlength==0x24){
-     code[0]=0xA1;
-     code[1]=0xF1;
-     code[2]=hdr->code.IRaddress[0];
-     code[3]=hdr->code.IRaddress[1];
-     code[4]=hdr->code.IRvalue;
-     HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&code),5);
+     code[0]=hdr->code.IRhead;
+     code[1]=hdr->cmdIR;
+     code[2]=hdr->code.IRlength;
+     HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&code),3);
+     uint16 num;
+    // HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRdata)),hdr->code.IRlength);
+     if(code[1]==IRDELETE_CMD){
+       num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRkey)),4);
+     }else if((code[1]==IRMONITOR_CMD)||(code[1]==IRKEY_CMD)){
+     num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRdata)),hdr->code.IRlength);
+     }
+     HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRtail)),1);
+     if(num){
      hdr->status=(uint8)IR_SEND_SUCCESS;
      AT_IR_Cmd_send_simple(nwk,AT_IR_CLUSTERID,sizeof(AT_IR_t), hdr);
      }
-    else{
+   //  }
+   // else{
+     else{
      hdr->status=(uint8)IR_SEND_FAILURE;
      AT_IR_Cmd_send_simple(nwk,AT_IR_CLUSTERID,sizeof(AT_IR_t), hdr);
      }
-  }
-    break;
-  case UPLOAD_IR_CMD://协调器收到AF层发送的学习到的红外数据
+     //}
+ // }
+   // break;
+  //case UPLOAD_IR_CMD://协调器收到AF层发送的学习到的红外数据
     //HalUARTWrite(HAL_UART_PORT_1,"hello!\n", sizeof("hello!\n"));
     
     //在串口打印格式：IR:<Address>,<EP>,<MsgType>,<code> 
-    printf("IR:%04X,%02X,%02X,%02X%02X%02x%02X%02X%02x",
-            pkt->srcAddr.addr.shortAddr,
-            pkt->endPoint,
-            hdr->cmdIR,
-            hdr->code.IRversion,
-            hdr->code.IRlength,
-            hdr->code.IRtype,
-            hdr->code.IRaddress[0],
-            hdr->code.IRaddress[1],
-            hdr->code.IRvalue);
-    break;
-  }
+  //  printf("IR:%04X,%02X,%02X,%02X%02X%02x%02X%02X%02x",
+//            pkt->srcAddr.addr.shortAddr,
+//            pkt->endPoint,
+//            hdr->cmdIR,
+//            hdr->code.IRversion,
+//            hdr->code.IRlength,
+//            hdr->code.IRtype,
+//            hdr->code.IRaddress[0],
+//            hdr->code.IRaddress[1],
+//            hdr->code.IRvalue);
+//    break;
+ // }
 } 
 
 void AT_IR_rsp(afIncomingMSGPacket_t *pkt ){

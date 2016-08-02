@@ -17,7 +17,6 @@
 #include "zcl.h"
 #include "AT_ONOFF_output.h"
 #include "AT_include.h"
-#include "AT_IR.h"
 #include "AT_ZCL_IR.h"
 
 #include "AT_printf.h"

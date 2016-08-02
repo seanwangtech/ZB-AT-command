@@ -20,7 +20,7 @@
 #include "ZDObject.h"
 
 #include "At_include.h"
-#include "AT_IR.h"
+
 
 const char* Revision = "Private Revision:3.4 \n\rThe New Stack";
 byte AT_Uart_TaskID;
@@ -737,20 +737,26 @@ void AT_Cmd_RONOFF1(uint8 start_point, uint8* msg){
 void AT_Cmd_IR(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[5];
   uint8 i,status;
+  int j;
   AT_IR_t buff;
   for(i=0;i<5;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);   
   AT_PARSE_CMD_PATTERN_ERROR(":,,,\r",cmdUnitArr); 
   buff.cmd=AT_AF_Cmd_req;
   uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
   buff.cmdIR=AT_ChartoInt8(&cmdUnitArr[2]);
-  uint8 ext[6];
-  AT_ChartoIntx(&cmdUnitArr[3],ext, 48);
-  buff.code.IRversion=ext[5];
-  buff.code.IRlength=ext[4];
-  buff.code.IRtype=ext[3];
-  buff.code.IRaddress[0]=ext[2];
-  buff.code.IRaddress[1]=ext[1];
-  buff.code.IRvalue=ext[0];
+  uint8 size=cmdUnitArr[3].unitLen/2;
+  uint8 ext[128];
+  AT_ChartoIntx(&cmdUnitArr[3],ext,size*8);
+ // buff.code.IRversion=ext[5];
+  buff.code.IRlength=size;
+  buff.code.IRhead=0xEA;
+  buff.code.IRtail=0xEB;
+  for(j=size-1,i=0;j>size-5;j--,i++)
+    buff.code.IRkey[i]=ext[j];
+ // buff.code.IRaddress[0]=ext[2];
+ // buff.code.IRaddress[1]=ext[1];
+  for(j=size-1,i=0;j>=0;j--,i++)
+    buff.code.IRdata[i]=ext[j];
   uint16 nwk =AT_ChartoInt16(&cmdUnitArr[0]);
   //HalUARTWrite(HAL_UART_PORT_0,(uint8*)&ext, 6);
 #define AT_IR_ZCL_EP 141

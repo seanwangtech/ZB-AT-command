@@ -13,11 +13,11 @@
                  config
 ****************************************/
 #define AT_UART_PORT        HAL_UART_PORT_0
-//#define AT_UART_BR HAL_UART_BR_9600
+#define AT_UART_BR HAL_UART_BR_9600
 //#define AT_UART_BR HAL_UART_BR_19200
 //#define AT_UART_BR HAL_UART_BR_38400
 //#define AT_UART_BR HAL_UART_BR_57600
-#define AT_UART_BR HAL_UART_BR_115200
+//#define AT_UART_BR HAL_UART_BR_115200
 
 #define AT_UART_RX_BUFF_MAX     128
 #define AT_UART_TX_BUFF_MAX     128
