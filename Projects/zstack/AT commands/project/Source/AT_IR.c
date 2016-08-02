@@ -95,8 +95,8 @@ void AT_IR_req(afIncomingMSGPacket_t *pkt  ){
      if(code[1]==IRDELETE_CMD){
        num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRkey)),4);
      }else if((code[1]==IRMONITOR_CMD)||(code[1]==IRKEY_CMD)){
-     num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRdata)),hdr->code.IRlength);
-     }
+       num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(hdr->code.IRdata),hdr->code.IRlength);
+    }
      HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRtail)),1);
      if(num){
      hdr->status=(uint8)IR_SEND_SUCCESS;

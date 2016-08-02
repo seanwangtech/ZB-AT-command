@@ -1,6 +1,23 @@
 #ifndef AT_IR_H
 #define AT_IR_H
 
+/*
+在修改AT_IR这一块的代码时，有两个c语言知识点，
+1.
+#ifndef AT_IR_H
+#define AT_IR_H
+...
+#endif
+这个宏定义可以解决一个文件同时多次包含同一个头文件而导致冲突的问题，定义头文件时记得加上
+2.
+在结构体中如果定义了动态数组，如data[],需要先调用内存分配函数分配存储空间，而不能直接赋值
+typedef struct{
+  AT_AF_hdr hdr;
+  uint8 status[];
+}AT_AF_Cmd_REPPRINT_rsp_t;
+上面这个结构体就会根据收到的消息动态分配内存，然后给结构体相应元素赋值。
+*/
+
 #include "hal_types.h"
 #include "AF.h"
 
