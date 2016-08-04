@@ -55,13 +55,13 @@ typedef struct{
   uint8 IRlength;
   //uint8 IRtype;
   //uint8 IRaddress[2];
-  uint8 IRkey[4];
   uint8 IRdata[128];
 }IRcode;
 typedef struct{
   uint8 cmd;
   uint8 cmdIR;
   uint8 status;
+  uint8 IR_EP;
   IRcode code;
 }AT_IR_t;
 

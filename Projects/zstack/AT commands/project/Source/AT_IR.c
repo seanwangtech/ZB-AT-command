@@ -92,11 +92,7 @@ void AT_IR_req(afIncomingMSGPacket_t *pkt  ){
      HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&code),3);
      uint16 num;
     // HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRdata)),hdr->code.IRlength);
-     if(code[1]==IRDELETE_CMD){
-       num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRkey)),4);
-     }else if((code[1]==IRMONITOR_CMD)||(code[1]==IRKEY_CMD)){
-       num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(hdr->code.IRdata),hdr->code.IRlength);
-    }
+     num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(hdr->code.IRdata),hdr->code.IRlength);
      HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRtail)),1);
      if(num){
      hdr->status=(uint8)IR_SEND_SUCCESS;
@@ -131,9 +127,11 @@ void AT_IR_req(afIncomingMSGPacket_t *pkt  ){
 
 void AT_IR_rsp(afIncomingMSGPacket_t *pkt ){
   AT_IR_t *hdr = (AT_IR_t*)pkt->cmd.Data;
-     printf("IR:%04X,%02X,%02X,%2X",
+  AT_RESP_START();
+     printf("IR:%04X,%02X,%02X,%02X",
             pkt->srcAddr.addr.shortAddr,
-            pkt->endPoint,
+            hdr->IR_EP,
             hdr->cmdIR,
             hdr->status);
+     AT_RESP_END();
 }
