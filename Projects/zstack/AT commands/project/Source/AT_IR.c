@@ -89,11 +89,8 @@ void AT_IR_req(afIncomingMSGPacket_t *pkt  ){
      code[2]=hdr->code.IRlength;
      HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&code),3);
      uint16 num;
-     if(code[1]==IRDELETE_CMD){
-       num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRkey)),4);
-     }else if((code[1]==IRMONITOR_CMD)||(code[1]==IRKEY_CMD)){
-       num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(hdr->code.IRdata),hdr->code.IRlength);
-     }
+    // HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRdata)),hdr->code.IRlength);
+     num=HalUARTWrite(HAL_UART_PORT_1,(uint8*)(hdr->code.IRdata),hdr->code.IRlength);
      HalUARTWrite(HAL_UART_PORT_1,(uint8*)(&(hdr->code.IRtail)),1);
      //将发送成功与否的状态返回给协调器
      if(num){
@@ -109,9 +106,11 @@ void AT_IR_req(afIncomingMSGPacket_t *pkt  ){
 void AT_IR_rsp(afIncomingMSGPacket_t *pkt ){
   AT_IR_t *hdr = (AT_IR_t*)pkt->cmd.Data;
   //协调器串口0打印收到的状态信息
-     printf("IR:%04X,%02X,%02X,%2X",
+  AT_RESP_START();
+  printf("IR:%04X,%02X,%02X,%02X",
             pkt->srcAddr.addr.shortAddr,
-            pkt->endPoint,
+            hdr->IR_EP,
             hdr->cmdIR,
             hdr->status);
+  AT_RESP_END();
 }
