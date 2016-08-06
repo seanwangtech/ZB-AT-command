@@ -5,7 +5,7 @@
 #include "zcl.h"
 
 
-#define AT_ZCL_ONOFF_ENDPOINT            101
+#define AT_ZCL_ONOFF_ENDPOINT            102
 #define AT_ZCL_ONOFF_MAX_ATTRIBUTES      10
 #define AT_ZCL_ONOFF_UPDATE_TIMEOUT_VALUE      300      //the unit is seconds. 10 for 10 second£¬300 for 5 mins
 
