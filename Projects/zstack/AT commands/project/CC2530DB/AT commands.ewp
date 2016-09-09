@@ -3237,9 +3237,6 @@
     <name>App</name>
     <group>
       <name>app_drivers</name>
-      <excluded>
-        <configuration>RouterEB</configuration>
-      </excluded>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_DHT11.c</name>
       </file>
@@ -3281,9 +3278,6 @@
       <name>AT_ZCL app</name>
       <group>
         <name>ZCLs</name>
-        <excluded>
-          <configuration>RouterEB</configuration>
-        </excluded>
         <file>
           <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT.c</name>
         </file>
@@ -3292,6 +3286,15 @@
         </file>
         <file>
           <name>$PROJ_DIR$\..\Source\AT_ZCL_DHT_data.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_IR.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_IR.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\Source\AT_ZCL_IR_data.c</name>
         </file>
         <file>
           <name>$PROJ_DIR$\..\Source\AT_ZCL_ONOFF.c</name>
@@ -3370,7 +3373,7 @@
         <name>$PROJ_DIR$\..\Source\AT_EXTERN.h</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\Source\AT_include.h</name>
+        <name>$PROJ_DIR$\..\Source\At_include.h</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Source\AT_ONOFF_output.c</name>

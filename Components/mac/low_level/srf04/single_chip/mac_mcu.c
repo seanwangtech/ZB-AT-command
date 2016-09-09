@@ -237,7 +237,7 @@ MAC_INTERNAL_API void macMcuInit(void)
   HAL_EXIT_CRITICAL_SECTION(s);
 
   /* start timer */
-  MAC_RADIO_TIMER_WAKE_UP();
+    MAC_RADIO_TIMER_WAKE_UP();
 
   /* Enable latch mode and T2 SYNC start. OSAL timer is based on MAC timer. 
    * The SYNC start msut be on when POWER_SAVING is on for this design to work.

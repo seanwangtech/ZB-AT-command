@@ -11,8 +11,8 @@
                                          //if an end device didn't associate in a mini after the dongle start, then remove it from the associated table.
                                         //to some extent, to fix the bug of the z-stack of 2.51a where the end device associate with another router but 
                                         //the dongle powered off. the bug cause the routing fail, this can be fixed by remove it from associated table
-#define AT_UPDATE_TIMEOUT_VALUE   300     //the unit is seconds. 10 for 10 second£¬300 for 5 mins
-#define AT_UPDATE_TIMEOUT_EVT     0x0200
+//#define AT_UPDATE_TIMEOUT_VALUE   10     //the unit is seconds. 10 for 10 second£¬300 for 5 mins
+//#define AT_UPDATE_TIMEOUT_EVT     0x0200
 typedef struct{
   uint16 nwkAddr;
   uint16 count;

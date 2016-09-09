@@ -20,7 +20,7 @@
 #include "ZDObject.h"
 
 #include "At_include.h"
-#include "AT_IR.h"
+
 
 const char* Revision = "Private Revision:3.4 \n\rThe New Stack";
 byte AT_Uart_TaskID;
@@ -734,29 +734,42 @@ void AT_Cmd_RONOFF1(uint8 start_point, uint8* msg){
   AT+IR:<Address>,<EP>,<cmdIR>,<code>
   AT+IR:,,,
 *********************************************************/
+static void AT_IR_toHEX(uint8* buff, uint8 len,uint8* pHex);
+static void AT_IR_toHEX(uint8* buff, uint8 len,uint8* pHex){
+  uint8 i;
+  len =len/2;
+  for(i=0;i<len;i++){
+    pHex[i]=0;
+  }
+  for(i=0;i<len;i++){
+    pHex[i] |= _AT_ChartoInt(buff[2*i+1]);
+    pHex[i] |= _AT_ChartoInt(buff[2*i])<<(1*4);
+  }
+}
 void AT_Cmd_IR(uint8 start_point, uint8* msg){
   AT_CmdUnit cmdUnitArr[5];
   uint8 i,status;
   AT_IR_t buff;
   for(i=0;i<5;i++)start_point = AT_get_next_cmdUnit(&cmdUnitArr[i],start_point, msg);   
   AT_PARSE_CMD_PATTERN_ERROR(":,,,\r",cmdUnitArr); 
+  
+  //return error if the length of code is odd
+  if(cmdUnitArr[3].unitLen%2){
+    AT_ERROR(AT_PARA_ERROR);
+  }
+  
   buff.cmd=AT_AF_Cmd_req;
   uint8 endpoint=AT_ChartoInt8(&cmdUnitArr[1]);
   buff.cmdIR=AT_ChartoInt8(&cmdUnitArr[2]);
-  uint8 ext[6];
-  AT_ChartoIntx(&cmdUnitArr[3],ext, 48);
-  buff.code.IRversion=ext[5];
-  buff.code.IRlength=ext[4];
-  buff.code.IRtype=ext[3];
-  buff.code.IRaddress[0]=ext[2];
-  buff.code.IRaddress[1]=ext[1];
-  buff.code.IRvalue=ext[0];
+  AT_IR_toHEX(cmdUnitArr[3].unit,cmdUnitArr[3].unitLen,buff.code.IRdata);
+  buff.code.IRlength=cmdUnitArr[3].unitLen/2;
+  buff.code.IRhead=0xEA;
+  buff.code.IRtail=0xEB;
+  buff.IR_EP=endpoint;
   uint16 nwk =AT_ChartoInt16(&cmdUnitArr[0]);
   //HalUARTWrite(HAL_UART_PORT_0,(uint8*)&ext, 6);
-  if(endpoint==AT_IR_ENDPOINT){
   status = AT_IR_Cmd_send_simple(nwk,AT_IR_CLUSTERID,sizeof(AT_IR_t),&buff);
   if(status==ZSUCCESS) AT_OK();
-  }
 }
 /*****************************************************
   I ¨C Display Product Identification Information
@@ -842,11 +855,15 @@ void AT_Cmd_AT_F(uint8 start_point, uint8* msg){
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
   AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
   
+  //reset the stm32 module
+  uint8 IR_reset_cmd[] = {0xEA,0xFF,0x04,0xff,0xff,0xff,0xff};
+  HalUARTWrite(HAL_UART_PORT_1,IR_reset_cmd,sizeof(IR_reset_cmd)); //reset the stm32 module
+  
   AT_clear_AT_SYSTEM_NVs();
   if(status=zgWriteStartupOptions( ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE
                                   |ZCD_STARTOPT_DEFAULT_CONFIG_STATE)==ZSUCCESS){
     AT_OK();
-    osal_start_timerEx( AT_Uart_TaskID, AT_RESET_EVENT, 200 ); //set timer ensure OK response from AT command is sent
+    osal_start_timerEx( AT_Uart_TaskID, AT_RESET_EVENT, 500 ); //set timer ensure OK response from AT command is sent
   }
   else AT_ERROR(status);
 }

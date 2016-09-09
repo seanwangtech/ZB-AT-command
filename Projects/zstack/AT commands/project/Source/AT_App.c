@@ -17,7 +17,7 @@
 #include "zcl.h"
 #include "AT_ONOFF_output.h"
 #include "AT_include.h"
-#include "AT_IR.h"
+#include "AT_ZCL_IR.h"
 
 #include "AT_printf.h"
 
@@ -31,7 +31,7 @@ AT_App_Cmd_POWER_SAVING_EXP_t AT_App_Cmd_POWER_SAVING_EXP={0,0,0};
 /*********************************************************************
  * Local VARIABLES
  */
-static uint16 UPDATE_timer = AT_UPDATE_TIMEOUT_VALUE;  //update the sensor status after xxx seconds of the device starting
+//static uint16 UPDATE_timer = AT_UPDATE_TIMEOUT_VALUE;  //update the sensor status after xxx seconds of the device starting
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -83,10 +83,6 @@ void AT_App_Init(uint8 task_id ){
   NLME_PermitJoiningRequest(0);      //Do not permit joining
   
   osal_set_event(task_id, AT_ENTRY_EVENT); 
-  
-  //initialize update-to-COOR timer
-  if(AT_UPDATE_TIMEOUT_VALUE>0 )
-    osal_start_reload_timer( AT_App_TaskID,AT_UPDATE_TIMEOUT_EVT, 1000 ); //reload timer 1 second
 
 }
 
@@ -193,19 +189,19 @@ uint16 AT_App_ProcessEvent( uint8 task_id, uint16 events ){
     return (events ^ AT_Clean_dead_ED_EVENT);
   }
   //deal with the update timer event
-  if ( events & AT_UPDATE_TIMEOUT_EVT )
-  {
-    UPDATE_timer--;
-    if(UPDATE_timer==0){
-      UPDATE_timer= AT_UPDATE_TIMEOUT_VALUE;
-      //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
-      const uint8 ONOFF=0; //the IR ROUTER will always on, send the update just for ZigBee keep alive
-      AT_AF_send_update(0x8D,ZCL_CLUSTER_ID_GEN_ON_OFF,
-                         ATTRID_ON_OFF,ZCL_DATATYPE_ENUM8,
-                         (uint8*) &ONOFF,0);//time up, so send update
-    }
-    return ( events ^ AT_UPDATE_TIMEOUT_EVT );
-  }
+//  if ( events & AT_UPDATE_TIMEOUT_EVT )
+//  {
+//    UPDATE_timer--;
+//    if(UPDATE_timer==0){
+//      UPDATE_timer= AT_UPDATE_TIMEOUT_VALUE;
+//      //afStatus_t AT_AF_send_update(uint8 ep,uint16 clusterId,uint16 attrID,uint8 dataType, uint8* data,uint8 status); //status == 0, indicate succeed
+//      const uint8 ONOFF=0; //the IR ROUTER will always on, send the update just for ZigBee keep alive
+//      AT_AF_send_update(0x8D,ZCL_CLUSTER_ID_GEN_ON_OFF,
+//                         ATTRID_ON_OFF,ZCL_DATATYPE_UINT8,
+//                         (uint8*) &AT_ZCL_IR_OnOff,0);//time up, so send update
+//    }
+//    return ( events ^ AT_UPDATE_TIMEOUT_EVT );
+//  }
   // Discard unknown events
   return 0;
 }

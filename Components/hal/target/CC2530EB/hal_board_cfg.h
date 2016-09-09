@@ -236,8 +236,8 @@ extern void MAC_RfFrontendSetup(void);
                                                                  \
   SLEEPCMD &= ~OSC_PD;                       /* turn on 16MHz RC and 32MHz XOSC */                \
   while (!(SLEEPSTA & XOSC_STB));            /* wait for 32MHz XOSC stable */                     \
-  asm("NOP");                                /* chip bug workaround */                            \
-  for (i=0; i<504; i++) asm("NOP");          /* Require 63us delay for all revs */                \
+  asm("NOP");                                /* chip bug wor akaround */                            \
+  for (i=0; i<504; i++) asm("NOP");          /* Require 63us delay forll revs */                \
   CLKCONCMD = (CLKCONCMD_32MHZ | OSC_32KHZ); /* Select 32MHz XOSC and the source for 32K clock */ \
   while (CLKCONSTA != (CLKCONCMD_32MHZ | OSC_32KHZ)); /* Wait for the change to be effective */   \
   SLEEPCMD |= OSC_PD;                        /* turn off 16MHz RC */                              \

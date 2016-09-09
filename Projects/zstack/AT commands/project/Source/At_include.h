@@ -10,8 +10,8 @@
 #include "AT_ZCL.h"
 #include "AT_ZDO.h"
 #include "AT_printf.h"
-
 #include "hal_uart.h"
+#include "AT_IR.h"
 
 #include "ZDNwkMgr.h"
 
