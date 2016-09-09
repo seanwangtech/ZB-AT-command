@@ -855,11 +855,15 @@ void AT_Cmd_AT_F(uint8 start_point, uint8* msg){
   start_point = AT_get_next_cmdUnit(&cmdUnitArr[0],start_point, msg);
   AT_PARSE_CMD_PATTERN_ERROR("\r",cmdUnitArr); 
   
+  //reset the stm32 module
+  uint8 IR_reset_cmd[] = {0xEA,0xFF,0x04,0xff,0xff,0xff,0xff};
+  HalUARTWrite(HAL_UART_PORT_1,IR_reset_cmd,sizeof(IR_reset_cmd)); //reset the stm32 module
+  
   AT_clear_AT_SYSTEM_NVs();
   if(status=zgWriteStartupOptions( ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE
                                   |ZCD_STARTOPT_DEFAULT_CONFIG_STATE)==ZSUCCESS){
     AT_OK();
-    osal_start_timerEx( AT_Uart_TaskID, AT_RESET_EVENT, 200 ); //set timer ensure OK response from AT command is sent
+    osal_start_timerEx( AT_Uart_TaskID, AT_RESET_EVENT, 500 ); //set timer ensure OK response from AT command is sent
   }
   else AT_ERROR(status);
 }
